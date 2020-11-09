@@ -16,6 +16,7 @@ local _
 
 MOD.isClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
 MOD.frame = nil
+MOD.headers = {}
 MOD.db = nil
 MOD.ldb = nil
 MOD.ldbi = nil -- set when using DBIcon library
@@ -64,13 +65,14 @@ local HEADER_DEFAULTS = { -- default settings to initialize headers
 local addonInitialized = false -- set when the addon is initialized
 local addonEnabled = false -- set when the addon is enabled
 local blizzHidden = false -- set when blizzard buffs and debuffs are hidden
-local headers = {} -- secure headers created by this addon
+local uiScaleChanged = false -- set in combat to defer running event handler
 
 local UnitAura = UnitAura
 local GetTime = GetTime
 local CreateFrame = CreateFrame
 local RegisterAttributeDriver = RegisterAttributeDriver
 local RegisterStateDriver = RegisterStateDriver
+local InCombatLockdown = InCombatLockdown
 
 -- Functions used for pixel pefect calculations
 local pixelScale = 1 -- scale factor used for size and alignment
@@ -91,6 +93,18 @@ local function PSetPoint(frame, point, relativeFrame, relativePoint, x, y)
 	frame:SetPoint(point, relativeFrame, relativePoint, x or 0, y or 0)
 end
 
+-- Print debug messages with variable number of arguments in a useful format
+function MOD.Debug(a, ...)
+	if type(a) == "table" then
+		for k, v in pairs(a) do print(tostring(k) .. " = " .. tostring(v)) end -- if first parameter is a table, print out its fields
+	else
+		local s = tostring(a) -- otherwise first argument is a string but just make sure
+		local parm = {...}
+		for i = 1, #parm do s = s .. " " .. tostring(parm[i]) end -- append remaining arguments converted to strings
+		print(s)
+	end
+end
+
 -- Event called when addon is loaded, good time to load libraries
 function MOD:OnInitialize()
 	if addonInitialized then return end -- only run this code once
@@ -103,16 +117,25 @@ end
 
 -- Adjust pixel perfect scale factor when the UIScale is changed
 local function UIScaleChanged()
-	pixelWidth, pixelHeight = GetPhysicalScreenSize() -- size in pixels of display in full screen, otherwise window size in pixels
-	pixelScale = GetScreenHeight() / pixelHeight -- figure out how big virtual pixels are versus screen pixels
-	MOD.Debug("RPB: pixel w/h/scale", pixelWidth, pixelHeight, pixelScale)
+	if not enteredWorld then return end
+	if InCombatLockdown() then
+		uiScaleChanged = true
+	else
+		local pixelWidth, pixelHeight = GetPhysicalScreenSize() -- size in pixels of display in full screen, otherwise window size in pixels
+		pixelScale = GetScreenHeight() / pixelHeight -- figure out how big virtual pixels are versus screen pixels
+		uiScaleChanged = false
+		MOD.Debug("Buffle: pixel w/h/scale", pixelWidth, pixelHeight, pixelScale)
+		for k, header in pairs(MOD.headers) do
+			MOD.Debug("Buffle: updating", k)
+			MOD.UpdateHeader(header)
+		end
+	end
 end
 
 -- Event called when addon is enabled, good time to register events and chat commands
 function MOD:OnEnable()
 	if addonEnabled then return end -- only run this code once
 	addonEnabled = true
-	UIScaleChanged() -- initialize scale factor for pixel perfect size and alignment
 
 	local b = MOD.CopyTable(HEADER_DEFAULTS) -- initialize settings for player buffs and debuffs
 	b.unit = "player"; b.filter = FILTER_BUFFS; b.name = PLAYER_BUFFS; b.attachPoint = "TOPRIGHT"
@@ -131,25 +154,32 @@ function MOD:OnEnable()
 	self:RegisterEvent("UI_SCALE_CHANGED", UIScaleChanged)
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
 	self:RegisterEvent("UNIT_AURA")
+	self:RegisterEvent("PLAYER_REGEN_ENABLED")
 end
 
 -- Event called when play starts, initialize subsystems that had to wait for system bootstrap
 function MOD:PLAYER_ENTERING_WORLD()
 	if enteredWorld then return end -- only run this code once
 	enteredWorld = true
+	UIScaleChanged() -- initialize scale factor for pixel perfect size and alignment
 
 	if MOD.db.profile.enabled then -- make sure addon is enabled, must do /reload if change in options
 		MOD.CheckBlizzFrames() -- check blizz frames and hide the ones selected on the Defaults tab
 		for name, group in pairs(MOD.db.profile.groups) do
-			if group.enabled then -- create headers for enabled groups, must do /reload if change in options
+			if group.enabled then -- create header for enabled group, must do /reload if change in options
 				MOD.CreateHeader(name, group) -- create the header, set its position, and apply all settings
 			end
 		end
 	end
 end
 
--- Event called when an aura changes on a unit, returns the unit name
+-- Event called when an aura changes on a unit
 function MOD:UNIT_AURA(e, unit)
+end
+
+-- Event called when leaving combat
+function MOD:PLAYER_REGEN_ENABLED(e)
+	if uiScaleChanged then UIScaleChanged() end
 end
 
 -- Create a data broker and minimap icon for the addon
@@ -202,7 +232,7 @@ function MOD.CheckBlizzFrames()
 	else
 		if hideBlizz then show = false else show = blizzHidden end -- only show if this addon hid the frame
 	end
-	MOD.Debug("hide/show", key, "hide:", hide, "show:", show, "vis: ", visible)
+	MOD.Debug("Buffle: hide/show", key, "hide:", hide, "show:", show, "vis: ", visible)
 	if hide then
 		BuffFrame:Hide()
 		TemporaryEnchantFrame:Hide()
@@ -216,18 +246,6 @@ function MOD.CheckBlizzFrames()
 	end
 end
 
--- Print debug messages with variable number of arguments in a useful format
-function MOD.Debug(a, ...)
-	if type(a) == "table" then
-		for k, v in pairs(a) do print(tostring(k) .. " = " .. tostring(v)) end -- if first parameter is a table, print out its fields
-	else
-		local s = tostring(a) -- otherwise first argument is a string but just make sure
-		local parm = {...}
-		for i = 1, #parm do s = s .. " " .. tostring(parm[i]) end -- append remaining arguments converted to strings
-		print(s)
-	end
-end
-
 -- Toggle visibility of the anchors
 function MOD.ToggleAnchors()
 end
@@ -237,7 +255,8 @@ function MOD.CreateHeader(name, group)
 	local unit, filter = group.unit, group.filter
 	local isBuffs = (filter == "BUFFS_FILTER")
 	local header = CreateFrame("Frame", name, UIParent, "SecureAuraHeaderTemplate")
-	MOD.Debug("RPB: header created", name, unit, filter)
+	MOD.headers[name] = header
+	MOD.Debug("Buffle: header created", name, unit, filter)
 	header:SetClampedToScreen(true)
 	header:SetAttribute("unit", unit)
 	header:SetAttribute("filter", filter)
@@ -258,7 +277,7 @@ function MOD:Button_OnLoad(button)
 	local name = header:GetName()
 	local filter = header:GetAttribute("filter")
 	local isBuff = (filter == FILTER_BUFFS)
-	MOD.Debug("RPB: new button", name, filter, isBuff)
+	MOD.Debug("Buffle: new button", name, filter, isBuff)
 
 	button.iconTexture = button:CreateTexture(nil, "ARTWORK")
 	button.iconBorder = button:CreateTexture(nil, "BACKGROUND", nil, 3)
@@ -297,7 +316,7 @@ function MOD:Button_OnAttributeChanged(k, v)
 	if name then
 		local g = MOD.db.profile.groups[name]
 		if g then
-			-- MOD.Debug("RPB: button attribute", button:GetName(), k, v)
+			-- MOD.Debug("Buffle: button attribute", button:GetName(), k, v)
 			if k == "index" then -- update a buff or debuff
 				local unit = header:GetAttribute("unit")
 				local filter = header:GetAttribute("filter")
@@ -333,12 +352,12 @@ function MOD.UpdateHeader(header)
 					if g.directionY > 0 then pt = "TOPLEFT" end
 				end
 				header:SetAttribute("point", pt) -- relative point on icons based on grow and wrap directions
-				MOD.Debug("RPB: grow/wrap", g.directionX, g.directionY, "relative point", pt)
+				MOD.Debug("Buffle: grow/wrap", g.directionX, g.directionY, "relative point", pt)
 
 				local s = BUFFS_TEMPLATE
 				local i = tonumber(g.iconSize) -- use different template for each size, constrained by available templates
 				if i and (i >= 12) and (i <= 64) then i = 2 * math.floor(i / 2); s = s .. tostring(i) end
-				MOD.Debug("RPB: template", s)
+				MOD.Debug("Buffle: template", s)
 				header:SetAttribute("template", s)
 				header:SetAttribute("weaponTemplate", s)
 
@@ -366,12 +385,12 @@ function MOD.UpdateHeader(header)
 				header:SetAttribute("wrapYOffset", PS(wy))
 				header:SetAttribute("minWidth", PS(mw))
 				header:SetAttribute("minHeight", PS(mh))
-				MOD.Debug("RPB: dx/dy", dx, dy, "wx/wy", wx, wy, "mw/mh", mw, mh)
+				MOD.Debug("Buffle: dx/dy", dx, dy, "wx/wy", wx, wy, "mw/mh", mw, mh)
 
 				PSetSize(header, 100, 100)
 				PSetPoint(header, g.attachPoint, g.anchorFrame, g.anchorPoint, g.anchorX, g.anchorY)
 				header:Show()
-				MOD.Debug("RPB: header updated", name)
+				MOD.Debug("Buffle: header updated", name)
 			else
 				header:Hide()
 			end
