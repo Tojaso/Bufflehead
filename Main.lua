@@ -189,7 +189,7 @@ function MOD.InitializeLDB()
 	MOD.ldb = MOD.LibLDB:NewDataObject("Buffle", {
 		type = "launcher",
 		text = "Buffle",
-		icon = "Interface\\Icons\\Spell_Nature_Wispsplode",
+		icon = "Interface\\AddOns\\Buffle\\BuffleIcon",
 		OnClick = function(_, msg)
 			if msg == "RightButton" then
 				if IsShiftKeyDown() then
