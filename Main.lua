@@ -125,6 +125,7 @@ local function UIScaleChanged()
 		pixelScale = GetScreenHeight() / pixelHeight -- figure out how big virtual pixels are versus screen pixels
 		uiScaleChanged = false
 		MOD.Debug("Buffle: pixel w/h/scale", pixelWidth, pixelHeight, pixelScale)
+		MOD.Debug("Buffle: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
 		for k, header in pairs(MOD.headers) do
 			MOD.Debug("Buffle: updating", k)
 			MOD.UpdateHeader(header)
@@ -189,7 +190,7 @@ function MOD.InitializeLDB()
 	MOD.ldb = MOD.LibLDB:NewDataObject("Buffle", {
 		type = "launcher",
 		text = "Buffle",
-		icon = "Interface\\AddOns\\Buffle\\BuffleIcon",
+		icon = "Interface\\AddOns\\Buffle\\Media\\BuffleIcon",
 		OnClick = function(_, msg)
 			if msg == "RightButton" then
 				if IsShiftKeyDown() then
@@ -295,7 +296,7 @@ local function SkinBorder(g, button)
 		button.iconTexture:SetTexCoord(0.07, 0.93, 0.07, 0.93) -- trim away blizzard's default border
 		PSetSize(button.iconTexture, x * 0.86, x * 0.86) -- size icon to fit in center of button
 		button.iconTexture:SetPoint("CENTER", button, "CENTER")
-		button.iconBorder:SetTexture("Interface\\AddOns\\Buffle\\Borders\\IconDefault")
+		button.iconBorder:SetTexture("Interface\\AddOns\\Buffle\\Media\\IconDefault")
 		button.iconBorder:SetAllPoints(button)
 		button.iconBorder:Show()
 	elseif opt == "default" then -- skin with blizzard's default border
