@@ -18,10 +18,9 @@ MOD.isClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
 MOD.frame = nil
 MOD.headers = {}
 MOD.db = nil
-MOD.ldb = nil
-MOD.ldbi = nil -- set when using DBIcon library
-MOD.LibLDB = nil
-MOD.MSQ = nil
+MOD.LibLDB = nil -- LibDataBroker support
+MOD.ldb = nil -- set to addon's data broker object
+MOD.ldbi = nil -- set for addon's minimap icon
 
 local FILTER_BUFFS = "HELPFUL"
 local FILTER_DEBUFFS = "HARMFUL"
@@ -35,7 +34,7 @@ local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. PLAYER_DEBUFFS
 local HEADER_DEFAULTS = { -- default settings to initialize headers
 	enabled = true,
 	iconSize = 36,
-	iconBorder = "default", -- "default", "one", "two", "raven", "masque"
+	iconBorder = "masque", -- "default", "one", "two", "raven", "masque"
 	offsetX = 0,
 	offsetY = 0,
 	growDirection = 1, -- horizontal = 1, otherwise vertical
@@ -62,10 +61,19 @@ local HEADER_DEFAULTS = { -- default settings to initialize headers
 	barPosition = "TOP",
 }
 
+local iconBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
+	bgFile = "Interface\\AddOns\\Buffle\\Media\\WhiteBar",
+	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 1, insets = { left = 0, right = 0, top = 0, bottom = 0 }
+}
+
+local MSQ_ButtonData = { AutoCast = false, AutoCastable = false, Border = false, Checked = false, Cooldown = false, Count = false, Duration = false,
+	Disabled = false, Flash = false, Highlight = false, HotKey = false, Icon = false, Name = false, Normal = false, Pushed = false }
+
 local addonInitialized = false -- set when the addon is initialized
 local addonEnabled = false -- set when the addon is enabled
 local blizzHidden = false -- set when blizzard buffs and debuffs are hidden
 local uiScaleChanged = false -- set in combat to defer running event handler
+local MSQ = false -- replace with Masque reference when available
 
 local UnitAura = UnitAura
 local GetTime = GetTime
@@ -112,7 +120,6 @@ function MOD:OnInitialize()
 	MOD.frame = CreateFrame("Frame")-- create a frame to catch events
 	LoadAddOn("LibDataBroker-1.1")
 	LoadAddOn("LibDBIcon-1.0")
-	MOD.MSQ = LibStub("Masque", true)
 end
 
 -- Adjust pixel perfect scale factor when the UIScale is changed
@@ -151,6 +158,7 @@ function MOD:OnEnable()
 	MOD.db = LibStub("AceDB-3.0"):New("BuffleDB", MOD.DefaultProfile) -- get the current profile
 	MOD:RegisterChatCommand("buffle", function() MOD.OptionsPanel() end)
 	MOD.InitializeLDB() -- initialize the data broker and minimap icon
+	MSQ = LibStub("Masque", true)
 
 	self:RegisterEvent("UI_SCALE_CHANGED", UIScaleChanged)
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -262,6 +270,7 @@ function MOD.CreateHeader(name, group)
 	header:SetAttribute("unit", unit)
 	header:SetAttribute("filter", filter)
 	RegisterAttributeDriver(header, "state-visibility", "[petbattle] hide; show")
+
 	if (unit == "player") then
 		RegisterAttributeDriver(header, "unit", "[vehicleui] vehicle; player")
 		if isBuffs then
@@ -269,6 +278,13 @@ function MOD.CreateHeader(name, group)
 			header:SetAttribute("includeWeapons", 1)
 		end
 	end
+
+	if MSQ and MOD.db.profile.masque then --  create MSQ group if loaded and enabled
+		header._MSQ = MSQ:Group("Buffle", group.name)
+	else
+		header._MSQ = nil
+	end
+
 	MOD.UpdateHeader(header)
 end
 
@@ -282,30 +298,70 @@ function MOD:Button_OnLoad(button)
 
 	button.iconTexture = button:CreateTexture(nil, "ARTWORK")
 	button.iconBorder = button:CreateTexture(nil, "BACKGROUND", nil, 3)
+	button.iconBackdrop = CreateFrame("Frame", nil, button, BackdropTemplateMixin and "BackdropTemplate")
+	button.iconBackdrop:SetFrameLevel(button:GetFrameLevel() - 1)
+
+	if MSQ then -- if MSQ is loaded then initialize its required data table
+		button.buttonMSQ = header._MSQ
+		button.buttonData = {}
+		for k, v in pairs(MSQ_ButtonData) do button.buttonData[k] = v end
+	end
 
 	button:SetScript("OnAttributeChanged", MOD.Button_OnAttributeChanged)
 end
 
+-- Trim and scale icon
+local function IconTextureTrim(tex, icon, trim, iconSize)
+	local left, right, top, bottom = 0, 1, 0, 1 -- default without trim
+	if trim then left = 0.07; right = 0.93; top = 0.07; bottom = 0.93 end -- trim removes 7% of edges
+	tex:SetTexCoord(left, right, top, bottom) -- set the corner coordinates
+	PSetSize(tex, iconSize, iconSize)
+	PSetPoint(tex, "CENTER", icon, "CENTER") -- texture is always positioned in center of icon's frame
+end
+
 -- Skin the icon's border
 local function SkinBorder(g, button)
-	button.iconTexture:ClearAllPoints()
 	button.iconBorder:ClearAllPoints()
+	button.iconBackdrop:ClearAllPoints()
+
 	local opt = g.iconBorder -- option for type of border
-	local x = g.iconSize
 	if opt == "raven" then -- skin with raven's border
-		button.iconTexture:SetTexCoord(0.07, 0.93, 0.07, 0.93) -- trim away blizzard's default border
-		PSetSize(button.iconTexture, x * 0.86, x * 0.86) -- size icon to fit in center of button
-		button.iconTexture:SetPoint("CENTER", button, "CENTER")
+		IconTextureTrim(button.iconTexture, button, true, g.iconSize * 0.86)
 		button.iconBorder:SetTexture("Interface\\AddOns\\Buffle\\Media\\IconDefault")
 		button.iconBorder:SetAllPoints(button)
 		button.iconBorder:Show()
-	elseif opt == "default" then -- skin with blizzard's default border
-		button.iconTexture:SetTexCoord(0, 1, 0, 1) -- show blizzard's default border
-		PSetSize(button.iconTexture, x, x) -- size icon to fill the button
-		button.iconTexture:SetPoint("CENTER", button, "CENTER")
+		button.iconBackdrop:Hide()
+	elseif opt == "one" then -- skin with single pixel border
+		IconTextureTrim(button.iconTexture, button, true, g.iconSize - 2)
+		iconBackdrop.edgeSize = PS(1)
+		button.iconBackdrop:SetAllPoints(button)
+		button.iconBackdrop:SetBackdrop(iconBackdrop)
+		button.iconBackdrop:SetBackdropColor(0, 0, 0, 1)
+		button.iconBackdrop:Show()
 		button.iconBorder:Hide()
-	elseif (opt == "one") or (opt == "two") then -- skin with single or double pixel border
-	elseif opt == "masque" then -- skin using Masque
+	elseif opt == "two" then -- skin with double pixel border
+		IconTextureTrim(button.iconTexture, button, true, g.iconSize - 4)
+		iconBackdrop.edgeSize = PS(2)
+		button.iconBackdrop:SetAllPoints(button)
+		button.iconBackdrop:SetBackdrop(iconBackdrop)
+		button.iconBackdrop:SetBackdropColor(0, 0, 0, 1)
+		button.iconBackdrop:Show()
+		button.iconBorder:Hide()
+	elseif (opt == "masque") and MSQ and button.buttonMSQ and button.buttonData then -- use Masque only if available
+		IconTextureTrim(button.iconTexture, button, false, g.iconSize)
+		button.buttonMSQ:RemoveButton(button, true) -- may be needed so size changes work correctly
+		button.iconBorder:SetAllPoints(button)
+		button.iconBorder:Show()
+		local bdata = button.buttonData
+		bdata.Icon = button.iconTexture
+		bdata.Normal = button:GetNormalTexture()
+		bdata.Border = button.iconBorder
+		button.buttonMSQ:AddButton(button, bdata)
+		button.iconBackdrop:Hide()
+	elseif opt == "default" then -- default is to just show blizzard's standard border
+		IconTextureTrim(button.iconTexture, button, false, g.iconSize)
+		button.iconBorder:Hide()
+		button.iconBackdrop:Hide()
 	end
 end
 
@@ -323,13 +379,15 @@ function MOD:Button_OnAttributeChanged(k, v)
 				local filter = header:GetAttribute("filter")
 				local name, icon, count, btype, duration, expire = UnitAura(unit, v, filter)
 				if name then
-					SkinBorder(g, button)
+					button.iconTexture:SetAllPoints(button)
 					button.iconTexture:SetTexture(icon)
 					button.iconTexture:Show()
+					SkinBorder(g, button)
 					button:Show()
 				else
 					button.iconTexture:Hide()
 					button.iconBorder:Hide()
+					button.iconBackdrop:Hide()
 					button:Hide()
 				end
 			elseif k == "target-slot" then -- update a weapon enchant
@@ -440,6 +498,7 @@ MOD.DefaultProfile = {
 	profile = { -- settings specific to a profile
 		enabled = true, -- enable addon
 		hideBlizz = true, -- hide Blizzard buffs and debuffs
+		masque = true, -- enable use of Masque
 		groups = {}, -- settings for each group of buffs and debuffs
 	},
 }
