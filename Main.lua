@@ -31,35 +31,6 @@ local PLAYER_BUFFS = "PlayerBuffs"
 local PLAYER_DEBUFFS = "PlayerDebuffs"
 local HEADER_PLAYER_BUFFS = HEADER_NAME .. PLAYER_BUFFS
 local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. PLAYER_DEBUFFS
-local HEADER_DEFAULTS = { -- default settings to initialize headers
-	enabled = true,
-	iconSize = 36,
-	iconBorder = "masque", -- "default", "one", "two", "raven", "masque"
-	offsetX = 0,
-	offsetY = 0,
-	growDirection = 1, -- horizontal = 1, otherwise vertical
-	directionX = -1,
-	directionY = -1,
-	spaceX = 2,
-	spaceY = 2,
-	sortMethod = "TIME",
-	sortDirection = "-",
-	separateOwn = true,
-	wrapAfter = 20,
-	maxWraps = 2,
-	showTime = true,
-	timeFont = 0, -- use system font
-	timeFontSize = 14,
-	timeFontOutline = "OUTLINE",
-	timeFormat = 0, -- use default time format
-	timeLimit = 0, -- if timeLimit > 0 then only show time when < timeLimit
-	showBar = false,
-	barHeight = 6,
-	barOffset = 2,
-	barTexture = 0,
-	barBorder = 0,
-	barPosition = "TOP",
-}
 
 local iconBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
 	bgFile = "Interface\\AddOns\\Buffle\\Media\\WhiteBar",
@@ -145,16 +116,6 @@ function MOD:OnEnable()
 	if addonEnabled then return end -- only run this code once
 	addonEnabled = true
 
-	local b = MOD.CopyTable(HEADER_DEFAULTS) -- initialize settings for player buffs and debuffs
-	b.unit = "player"; b.filter = FILTER_BUFFS; b.name = PLAYER_BUFFS; b.attachPoint = "TOPRIGHT"
-	b.anchorFrame = _G.MMHolder or _G.Minimap; b.anchorPoint = "TOPLEFT"; b.anchorX = -20; b.anchorY = 0
-	MOD.DefaultProfile.profile.groups[HEADER_PLAYER_BUFFS] = b
-
-	local d = MOD.CopyTable(HEADER_DEFAULTS)
-	d.unit = "player"; d.filter = FILTER_DEBUFFS; d.name = PLAYER_DEBUFFS; d.attachPoint = "BOTTOMRIGHT"
-	d.anchorFrame = _G.MMHolder or _G.Minimap; d.anchorPoint = "BOTTOMLEFT"; d.anchorX = -20; d.anchorY = 0
-	MOD.DefaultProfile.profile.groups[HEADER_PLAYER_DEBUFFS] = d
-
 	MOD.db = LibStub("AceDB-3.0"):New("BuffleDB", MOD.DefaultProfile) -- get the current profile
 	MOD:RegisterChatCommand("buffle", function() MOD.OptionsPanel() end)
 	MOD.InitializeLDB() -- initialize the data broker and minimap icon
@@ -172,11 +133,35 @@ function MOD:PLAYER_ENTERING_WORLD()
 	enteredWorld = true
 	UIScaleChanged() -- initialize scale factor for pixel perfect size and alignment
 
-	if MOD.db.profile.enabled then -- make sure addon is enabled, must do /reload if change in options
+	if MOD.db.profile.enabled then -- make sure addon is enabled
 		MOD.CheckBlizzFrames() -- check blizz frames and hide the ones selected on the Defaults tab
 		for name, group in pairs(MOD.db.profile.groups) do
-			if group.enabled then -- create header for enabled group, must do /reload if change in options
-				MOD.CreateHeader(name, group) -- create the header, set its position, and apply all settings
+			if group.enabled then -- create header for enabled group, must do /reload if change header-related options
+				local unit, filter = group.unit, group.filter
+				local isBuffs = (filter == "BUFFS_FILTER")
+				local header = CreateFrame("Frame", name, UIParent, "SecureAuraHeaderTemplate")
+				MOD.headers[name] = header
+				MOD.Debug("Buffle: header created", name, unit, filter)
+				header:SetClampedToScreen(true)
+				header:SetAttribute("unit", unit)
+				header:SetAttribute("filter", filter)
+				RegisterAttributeDriver(header, "state-visibility", "[petbattle] hide; show")
+
+				if (unit == "player") then
+					RegisterAttributeDriver(header, "unit", "[vehicleui] vehicle; player")
+					if isBuffs then
+						header:SetAttribute("consolidateTo", 0) -- no consolidation
+						header:SetAttribute("includeWeapons", 1)
+					end
+				end
+
+				if MSQ and MOD.db.profile.masque then --  create MSQ group if loaded and enabled
+					header._MSQ = MSQ:Group("Buffle", group.name)
+				else
+					header._MSQ = nil
+				end
+
+				MOD.UpdateHeader(header)
 			end
 		end
 	end
@@ -260,35 +245,6 @@ end
 function MOD.ToggleAnchors()
 end
 
--- Create secure header for player buffs or debuffs and set essential attributes
-function MOD.CreateHeader(name, group)
-	local unit, filter = group.unit, group.filter
-	local isBuffs = (filter == "BUFFS_FILTER")
-	local header = CreateFrame("Frame", name, UIParent, "SecureAuraHeaderTemplate")
-	MOD.headers[name] = header
-	MOD.Debug("Buffle: header created", name, unit, filter)
-	header:SetClampedToScreen(true)
-	header:SetAttribute("unit", unit)
-	header:SetAttribute("filter", filter)
-	RegisterAttributeDriver(header, "state-visibility", "[petbattle] hide; show")
-
-	if (unit == "player") then
-		RegisterAttributeDriver(header, "unit", "[vehicleui] vehicle; player")
-		if isBuffs then
-			header:SetAttribute("consolidateTo", 0) -- no consolidation
-			header:SetAttribute("includeWeapons", 1)
-		end
-	end
-
-	if MSQ and MOD.db.profile.masque then --  create MSQ group if loaded and enabled
-		header._MSQ = MSQ:Group("Buffle", group.name)
-	else
-		header._MSQ = nil
-	end
-
-	MOD.UpdateHeader(header)
-end
-
 -- Function called when a new aura button is created
 function MOD:Button_OnLoad(button)
 	local header = button:GetParent()
@@ -326,19 +282,20 @@ local function IconTextureTrim(tex, icon, trim, iconSize)
 end
 
 -- Skin the icon's border
-local function SkinBorder(g, button)
+local function SkinBorder(button)
 	button.iconBorder:ClearAllPoints()
 	button.iconBackdrop:ClearAllPoints()
 
-	local opt = g.iconBorder -- option for type of border
+	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
+	local opt = p.iconBorder -- option for type of border
 	if opt == "raven" then -- skin with raven's border
-		IconTextureTrim(button.iconTexture, button, true, g.iconSize * 0.86)
+		IconTextureTrim(button.iconTexture, button, true, p.iconSize * 0.86)
 		button.iconBorder:SetTexture("Interface\\AddOns\\Buffle\\Media\\IconDefault")
 		button.iconBorder:SetAllPoints(button)
 		button.iconBorder:Show()
 		button.iconBackdrop:Hide()
 	elseif opt == "one" then -- skin with single pixel border
-		IconTextureTrim(button.iconTexture, button, true, g.iconSize - 2)
+		IconTextureTrim(button.iconTexture, button, true, p.iconSize - 2)
 		iconBackdrop.edgeSize = PS(1)
 		button.iconBackdrop:SetAllPoints(button)
 		button.iconBackdrop:SetBackdrop(iconBackdrop)
@@ -346,7 +303,7 @@ local function SkinBorder(g, button)
 		button.iconBackdrop:Show()
 		button.iconBorder:Hide()
 	elseif opt == "two" then -- skin with double pixel border
-		IconTextureTrim(button.iconTexture, button, true, g.iconSize - 4)
+		IconTextureTrim(button.iconTexture, button, true, p.iconSize - 4)
 		iconBackdrop.edgeSize = PS(2)
 		button.iconBackdrop:SetAllPoints(button)
 		button.iconBackdrop:SetBackdrop(iconBackdrop)
@@ -354,7 +311,7 @@ local function SkinBorder(g, button)
 		button.iconBackdrop:Show()
 		button.iconBorder:Hide()
 	elseif (opt == "masque") and MSQ and button.buttonMSQ and button.buttonData then -- use Masque only if available
-		IconTextureTrim(button.iconTexture, button, false, g.iconSize)
+		IconTextureTrim(button.iconTexture, button, false, p.iconSize)
 		button.buttonMSQ:RemoveButton(button, true) -- may be needed so size changes work correctly
 		button.iconBorder:SetAllPoints(button)
 		button.iconBorder:Show()
@@ -365,7 +322,7 @@ local function SkinBorder(g, button)
 		button.buttonMSQ:AddButton(button, bdata)
 		button.iconBackdrop:Hide()
 	elseif opt == "default" then -- default is to just show blizzard's standard border
-		IconTextureTrim(button.iconTexture, button, false, g.iconSize)
+		IconTextureTrim(button.iconTexture, button, false, p.iconSize)
 		button.iconBorder:Hide()
 		button.iconBackdrop:Hide()
 	end
@@ -375,30 +332,22 @@ end
 function MOD:Button_OnAttributeChanged(k, v)
 	local button = self
 	local header = button:GetParent()
-	local name = header:GetName()
-	if name then
-		local g = MOD.db.profile.groups[name]
-		if g then
-			-- MOD.Debug("Buffle: button attribute", button:GetName(), k, v)
-			if k == "index" then -- update a buff or debuff
-				local unit = header:GetAttribute("unit")
-				local filter = header:GetAttribute("filter")
-				local name, icon, count, btype, duration, expire = UnitAura(unit, v, filter)
-				if name then
-					button.iconTexture:SetAllPoints(button)
-					button.iconTexture:SetTexture(icon)
-					button.iconTexture:Show()
-					SkinBorder(g, button)
-					button:Show()
-				else
-					button.iconTexture:Hide()
-					button.iconBorder:Hide()
-					button.iconBackdrop:Hide()
-					button:Hide()
-				end
-			elseif k == "target-slot" then -- update a weapon enchant
-			end
+	-- MOD.Debug("Buffle: button attribute", button:GetName(), k, v)
+	if k == "index" then -- update a buff or debuff
+		local unit = header:GetAttribute("unit")
+		local filter = header:GetAttribute("filter")
+		local name, icon, count, btype, duration, expire = UnitAura(unit, v, filter)
+		if name then
+			button.iconTexture:SetAllPoints(button)
+			button.iconTexture:SetTexture(icon)
+			button.iconTexture:Show()
+			SkinBorder(button)
+		else
+			button.iconTexture:Hide()
+			button.iconBorder:Hide()
+			button.iconBackdrop:Hide()
 		end
+		elseif k == "target-slot" then -- update a weapon enchant
 	end
 end
 
@@ -406,43 +355,45 @@ end
 function MOD.UpdateHeader(header)
 	local name = header:GetName()
 	if name then
-		local g = MOD.db.profile.groups[name]
+		local p = MOD.db.profile -- settings shared by buffs and debuffs
+		local g = p.groups[name] -- settings specific to this header
+
 		if g then
 			header:ClearAllPoints() -- set position any time called
 			if g.enabled then
 				local pt = "TOPRIGHT"
-				if g.directionX > 0 then
-					if g.directionY > 0 then pt = "BOTTOMLEFT" else pt = "BOTTOMRIGHT" end
+				if p.directionX > 0 then
+					if p.directionY > 0 then pt = "BOTTOMLEFT" else pt = "BOTTOMRIGHT" end
 				else
-					if g.directionY > 0 then pt = "TOPLEFT" end
+					if p.directionY > 0 then pt = "TOPLEFT" end
 				end
 				header:SetAttribute("point", pt) -- relative point on icons based on grow and wrap directions
-				MOD.Debug("Buffle: grow/wrap", g.directionX, g.directionY, "relative point", pt)
+				MOD.Debug("Buffle: grow/wrap", p.directionX, p.directionY, "relative point", pt)
 
 				local s = BUFFS_TEMPLATE
-				local i = tonumber(g.iconSize) -- use different template for each size, constrained by available templates
+				local i = tonumber(p.iconSize) -- use different template for each size, constrained by available templates
 				if i and (i >= 12) and (i <= 64) then i = 2 * math.floor(i / 2); s = s .. tostring(i) end
 				MOD.Debug("Buffle: template", s)
 				header:SetAttribute("template", s)
 				header:SetAttribute("weaponTemplate", s)
 
-				header:SetAttribute("sortMethod", g.sortMethod)
-				header:SetAttribute("sortDirection", g.sortDirection)
-				header:SetAttribute("separateOwn", g.separateOwn)
-				header:SetAttribute("wrapAfter", g.wrapAfter)
-				header:SetAttribute("maxWraps", g.maxWraps)
+				header:SetAttribute("sortMethod", p.sortMethod)
+				header:SetAttribute("sortDirection", p.sortDirection)
+				header:SetAttribute("separateOwn", p.separateOwn)
+				header:SetAttribute("wrapAfter", p.wrapAfter)
+				header:SetAttribute("maxWraps", p.maxWraps)
 
 				local dx, dy, mw, mh, wx, wy = 0, 0, 0, 0, 0, 0
-				if g.growDirection == 1 then -- grow horizontally
-					dx = g.directionX * (g.spaceX + g.iconSize)
-					wy = g.directionY * (g.spaceY + g.iconSize)
-					mw = (((g.wrapAfter == 1) and 0 or g.spaceX) + g.iconSize) * g.wrapAfter
-					mh = (g.spaceY + g.iconSize) * g.maxWraps
+				if p.growDirection == 1 then -- grow horizontally
+					dx = p.directionX * (p.spaceX + p.iconSize)
+					wy = p.directionY * (p.spaceY + p.iconSize)
+					mw = (((p.wrapAfter == 1) and 0 or p.spaceX) + p.iconSize) * p.wrapAfter
+					mh = (p.spaceY + p.iconSize) * p.maxWraps
 				else -- otherwise grow vertically
-					dy = g.directionY * (g.spaceY + g.iconSize)
-					wx = g.directionX * (g.spaceX + g.iconSize)
-					mw = (g.spaceX + g.iconSize) * g.maxWraps
-					mh = (((g.wrapAfter == 1) and 0 or g.spaceY) + g.iconSize) * g.wrapAfter
+					dy = p.directionY * (p.spaceY + p.iconSize)
+					wx = p.directionX * (p.spaceX + p.iconSize)
+					mw = (p.spaceX + p.iconSize) * p.maxWraps
+					mh = (((p.wrapAfter == 1) and 0 or p.spaceY) + p.iconSize) * p.wrapAfter
 				end
 				header:SetAttribute("xOffset", PS(dx))
 				header:SetAttribute("yOffset", PS(dy))
@@ -463,22 +414,22 @@ function MOD.UpdateHeader(header)
 	end
 end
 
--- Convert color codes from hex number to array with r, g, b, a fields (alpha set to 1.0)
+-- Convert color codes from hex number to array with r, p, b, a fields (alpha set to 1.0)
 function MOD.HexColor(hex)
 	local n = tonumber(hex, 16)
 	local red = math.floor(n / (256 * 256))
 	local green = math.floor(n / 256) % 256
 	local blue = n % 256
 
-	return { r = red/255, g = green/255, b = blue/255, a = 1.0 }
+	return { r = red/255, p = green/255, b = blue/255, a = 1.0 }
 	-- return CreateColor(red/255, green/255, blue/255, 1)
 end
 
 -- Return a copy of a color, if c is nil then return nil
 function MOD.CopyColor(c)
 	if not c then return nil end
-	-- return CreateColor(c.r, c.g, c.b, c.a)
-	return { r = c.r, g = c.g, b = c.b, a = c.a }
+	-- return CreateColor(c.r, c.p, c.b, c.a)
+	return { r = c.r, p = c.p, b = c.b, a = c.a }
 end
 
 -- Return a copy of the contents of a table, assumes contents are at most one table deep
@@ -505,6 +456,55 @@ MOD.DefaultProfile = {
 		enabled = true, -- enable addon
 		hideBlizz = true, -- hide Blizzard buffs and debuffs
 		masque = true, -- enable use of Masque
-		groups = {}, -- settings for each group of buffs and debuffs
+		iconSize = 36,
+		iconBorder = "masque", -- "default", "one", "two", "raven", "masque"
+		offsetX = 0,
+		offsetY = 0,
+		growDirection = 1, -- horizontal = 1, otherwise vertical
+		directionX = -1,
+		directionY = -1,
+		spaceX = 2,
+		spaceY = 2,
+		sortMethod = "TIME",
+		sortDirection = "-",
+		separateOwn = true,
+		wrapAfter = 20,
+		maxWraps = 2,
+		showTime = true,
+		timeFont = 0, -- use system font
+		timeFontSize = 14,
+		timeFontOutline = "OUTLINE",
+		timeFormat = 0, -- use default time format
+		timeLimit = 0, -- if timeLimit > 0 then only show time when < timeLimit
+		showBar = false,
+		barHeight = 6,
+		barOffset = 2,
+		barTexture = 0,
+		barBorder = 0,
+		barPosition = "TOP",
+		groups = {
+			[HEADER_PLAYER_BUFFS] = {
+				enabled = true,
+				unit = "player",
+				filter = FILTER_BUFFS,
+				name = PLAYER_BUFFS,
+				attachPoint = "TOPRIGHT",
+				anchorFrame = _G.MMHolder or _G.Minimap,
+				anchorPoint = "TOPLEFT",
+				anchorX = -44,
+				anchorY = 0,
+			},
+			[HEADER_PLAYER_DEBUFFS] = {
+				enabled = true,
+				unit = "player",
+				filter = FILTER_DEBUFFS,
+				name = PLAYER_DEBUFFS,
+				attachPoint = "TOPRIGHT",
+				anchorFrame = _G.MMHolder or _G.Minimap,
+				anchorPoint = "BOTTOMLEFT",
+				anchorX = -44,
+				anchorY = 0,
+			},
+		},
 	},
 }
