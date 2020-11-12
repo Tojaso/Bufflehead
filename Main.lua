@@ -184,6 +184,7 @@ end
 
 -- Event called when an aura changes on a unit
 function MOD:UNIT_AURA(e, unit)
+	MOD.Debug("Buffle: UNIT_AURA", unit)
 end
 
 -- Event called when leaving combat
@@ -299,7 +300,12 @@ function MOD:Button_OnLoad(button)
 	button.iconTexture = button:CreateTexture(nil, "ARTWORK")
 	button.iconBorder = button:CreateTexture(nil, "BACKGROUND", nil, 3)
 	button.iconBackdrop = CreateFrame("Frame", nil, button, BackdropTemplateMixin and "BackdropTemplate")
-	button.iconBackdrop:SetFrameLevel(button:GetFrameLevel() - 1)
+	button.iconBackdrop:SetFrameLevel(button:GetFrameLevel() - 1) -- behind icon
+	button.timeText = button:CreateFontString(nil, "OVERLAY")
+	button.countText = button:CreateFontString(nil, "OVERLAY")
+	button.bar = CreateFrame("StatusBar", nil, button, BackdropTemplateMixin and "BackdropTemplate")
+	button.bar:SetFrameLevel(button:GetFrameLevel() + 1) -- in front of icon
+	button.bar:SetFrameStrata(button:GetFrameStrata())
 
 	if MSQ then -- if MSQ is loaded then initialize its required data table
 		button.buttonMSQ = header._MSQ
