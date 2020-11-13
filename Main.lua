@@ -37,6 +37,10 @@ local pixelBackdrop = { -- backdrop initialization for icons when using optional
 	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 1, insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
 
+local anchorBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
+	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }
+}
+
 local MSQ_ButtonData = { AutoCast = false, AutoCastable = false, Border = false, Checked = false, Cooldown = false, Count = false, Duration = false,
 	Disabled = false, Flash = false, Highlight = false, HotKey = false, Icon = false, Name = false, Normal = false, Pushed = false }
 
@@ -161,6 +165,7 @@ function MOD:PLAYER_ENTERING_WORLD()
 					header._MSQ = nil
 				end
 
+				header.anchorBackdrop = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate")
 				MOD.UpdateHeader(header)
 			end
 		end
@@ -374,6 +379,7 @@ function MOD.UpdateHeader(header)
 		local g = p.groups[name] -- settings specific to this header
 
 		if g then
+			local red, green = 1, 0 -- anchor color
 			local filter = header:GetAttribute("filter")
 			header:ClearAllPoints() -- set position any time called
 			if g.enabled then
@@ -390,6 +396,7 @@ function MOD.UpdateHeader(header)
 				local i = tonumber(p.iconSize) -- use different template for each size, constrained by available templates
 				if i and (i >= 12) and (i <= 64) then i = 2 * math.floor(i / 2); s = s .. tostring(i) end
 				if filter == FILTER_BUFFS then
+					red = 0; green = 1
 					header:SetAttribute("consolidateTo", 0) -- no consolidation
 					header:SetAttribute("weaponTemplate", s)
 					MOD.Debug("Buffle: weaponTemplate", s)
@@ -426,6 +433,14 @@ function MOD.UpdateHeader(header)
 				PSetSize(header, 100, 100)
 				PSetPoint(header, g.attachPoint, g.anchorFrame, g.anchorPoint, g.anchorX, g.anchorY)
 				header:Show()
+
+				PSetSize(header.anchorBackdrop, mw - 2, mh - 2)
+				PSetPoint(header.anchorBackdrop, g.attachPoint, g.anchorFrame, g.anchorPoint, g.anchorX, g.anchorY)
+				anchorBackdrop.edgeSize = PS(2)
+				header.anchorBackdrop:SetBackdrop(anchorBackdrop)
+				header.anchorBackdrop:SetBackdropBorderColor(red, green, 0, 0.75) -- buffs have green border and debuffs have red border
+				if p.locked then header.anchorBackdrop:Hide() else header.anchorBackdrop:Show() end
+
 				MOD.Debug("Buffle: header updated", name)
 			else
 				header:Hide()
@@ -525,10 +540,11 @@ MOD.DefaultProfile = {
 	},
 	profile = { -- settings specific to a profile
 		enabled = true, -- enable addon
-		hideBlizz = false, -- hide Blizzard buffs and debuffs
+		hideBlizz = true, -- hide Blizzard buffs and debuffs
+		locked = true, -- hide the anchors when locked
 		masque = true, -- enable use of Masque
 		iconSize = 36,
-		iconBorder = "two", -- "default", "one", "two", "raven", "masque"
+		iconBorder = "one", -- "default", "one", "two", "raven", "masque"
 		offsetX = 0,
 		offsetY = 0,
 		growDirection = 1, -- horizontal = 1, otherwise vertical
@@ -574,9 +590,9 @@ MOD.DefaultProfile = {
 				name = PLAYER_DEBUFFS,
 				attachPoint = "TOPRIGHT",
 				anchorFrame = _G.MMHolder or _G.Minimap,
-				anchorPoint = "BOTTOMLEFT",
+				anchorPoint = "TOPLEFT",
 				anchorX = -44,
-				anchorY = 0,
+				anchorY = -84, -- set to roughly maxWraps * (iconSize + spaceY) + 8
 			},
 		},
 	},
