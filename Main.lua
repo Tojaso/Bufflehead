@@ -32,7 +32,7 @@ local PLAYER_DEBUFFS = "PlayerDebuffs"
 local HEADER_PLAYER_BUFFS = HEADER_NAME .. PLAYER_BUFFS
 local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. PLAYER_DEBUFFS
 
-local iconBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
+local pixelBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
 	bgFile = "Interface\\AddOns\\Buffle\\Media\\WhiteBar",
 	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 1, insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
@@ -138,7 +138,6 @@ function MOD:PLAYER_ENTERING_WORLD()
 		for name, group in pairs(MOD.db.profile.groups) do
 			if group.enabled then -- create header for enabled group, must do /reload if change header-related options
 				local unit, filter = group.unit, group.filter
-				local isBuffs = (filter == "BUFFS_FILTER")
 				local header = CreateFrame("Frame", name, UIParent, "SecureAuraHeaderTemplate")
 				MOD.headers[name] = header
 				MOD.Debug("Buffle: header created", name, unit, filter)
@@ -149,9 +148,10 @@ function MOD:PLAYER_ENTERING_WORLD()
 
 				if (unit == "player") then
 					RegisterAttributeDriver(header, "unit", "[vehicleui] vehicle; player")
-					if isBuffs then
-						header:SetAttribute("consolidateTo", 0) -- no consolidation
+					if filter == FILTER_BUFFS then
+						header:SetAttribute("consolidateDuration", -1) -- no consolidation
 						header:SetAttribute("includeWeapons", 1)
+						MOD.Debug("Buffle: includeWeapons!")
 					end
 				end
 
@@ -250,8 +250,7 @@ function MOD:Button_OnLoad(button)
 	local header = button:GetParent()
 	local name = header:GetName()
 	local filter = header:GetAttribute("filter")
-	local isBuff = (filter == FILTER_BUFFS)
-	MOD.Debug("Buffle: new button", name, filter, isBuff)
+	MOD.Debug("Buffle: new button", name, filter)
 
 	button.iconTexture = button:CreateTexture(nil, "ARTWORK")
 	button.iconBorder = button:CreateTexture(nil, "BACKGROUND", nil, 3)
@@ -289,24 +288,24 @@ local function SkinBorder(button)
 	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
 	local opt = p.iconBorder -- option for type of border
 	if opt == "raven" then -- skin with raven's border
-		IconTextureTrim(button.iconTexture, button, true, p.iconSize * 0.86)
+		IconTextureTrim(button.iconTexture, button, true, p.iconSize * 0.91)
 		button.iconBorder:SetTexture("Interface\\AddOns\\Buffle\\Media\\IconDefault")
 		button.iconBorder:SetAllPoints(button)
 		button.iconBorder:Show()
 		button.iconBackdrop:Hide()
 	elseif opt == "one" then -- skin with single pixel border
 		IconTextureTrim(button.iconTexture, button, true, p.iconSize - 2)
-		iconBackdrop.edgeSize = PS(1)
+		pixelBackdrop.edgeSize = PS(1)
 		button.iconBackdrop:SetAllPoints(button)
-		button.iconBackdrop:SetBackdrop(iconBackdrop)
+		button.iconBackdrop:SetBackdrop(pixelBackdrop)
 		button.iconBackdrop:SetBackdropColor(0, 0, 0, 1)
 		button.iconBackdrop:Show()
 		button.iconBorder:Hide()
 	elseif opt == "two" then -- skin with double pixel border
 		IconTextureTrim(button.iconTexture, button, true, p.iconSize - 4)
-		iconBackdrop.edgeSize = PS(2)
+		pixelBackdrop.edgeSize = PS(2)
 		button.iconBackdrop:SetAllPoints(button)
-		button.iconBackdrop:SetBackdrop(iconBackdrop)
+		button.iconBackdrop:SetBackdrop(pixelBackdrop)
 		button.iconBackdrop:SetBackdropColor(0, 0, 0, 1)
 		button.iconBackdrop:Show()
 		button.iconBorder:Hide()
@@ -338,7 +337,8 @@ function MOD:Button_OnAttributeChanged(k, v)
 		local filter = header:GetAttribute("filter")
 		local name, icon, count, btype, duration, expire = UnitAura(unit, v, filter)
 		if name then
-			button.iconTexture:SetAllPoints(button)
+			button.iconTexture:ClearAllPoints(button)
+			button.iconTexture:SetPoint("CENTER", button, "CENTER")
 			button.iconTexture:SetTexture(icon)
 			button.iconTexture:Show()
 			SkinBorder(button)
@@ -347,7 +347,22 @@ function MOD:Button_OnAttributeChanged(k, v)
 			button.iconBorder:Hide()
 			button.iconBackdrop:Hide()
 		end
-		elseif k == "target-slot" then -- update a weapon enchant
+	elseif k == "target-slot" then -- update player weapon enchant (v == 16 or 17)
+		-- MOD.Debug("Buffle: weapon", v)
+		if (v == 16) or (v == 17) then -- mainhand or offhand slot
+			local _, expire, _, _, _, offExpire = GetWeaponEnchantInfo()
+			if v == 17 then expire = offExpire end
+			local icon = GetInventoryItemTexture("player", v)
+			button.iconTexture:ClearAllPoints(button)
+			button.iconTexture:SetPoint("CENTER", button, "CENTER")
+			button.iconTexture:SetTexture(icon)
+			button.iconTexture:Show()
+			SkinBorder(button)
+		else
+			button.iconTexture:Hide()
+			button.iconBorder:Hide()
+			button.iconBackdrop:Hide()
+		end
 	end
 end
 
@@ -359,6 +374,7 @@ function MOD.UpdateHeader(header)
 		local g = p.groups[name] -- settings specific to this header
 
 		if g then
+			local filter = header:GetAttribute("filter")
 			header:ClearAllPoints() -- set position any time called
 			if g.enabled then
 				local pt = "TOPRIGHT"
@@ -373,9 +389,13 @@ function MOD.UpdateHeader(header)
 				local s = BUFFS_TEMPLATE
 				local i = tonumber(p.iconSize) -- use different template for each size, constrained by available templates
 				if i and (i >= 12) and (i <= 64) then i = 2 * math.floor(i / 2); s = s .. tostring(i) end
-				MOD.Debug("Buffle: template", s)
+				if filter == FILTER_BUFFS then
+					header:SetAttribute("consolidateTo", 0) -- no consolidation
+					header:SetAttribute("weaponTemplate", s)
+					MOD.Debug("Buffle: weaponTemplate", s)
+				end
 				header:SetAttribute("template", s)
-				header:SetAttribute("weaponTemplate", s)
+				MOD.Debug("Buffle: template", s)
 
 				header:SetAttribute("sortMethod", p.sortMethod)
 				header:SetAttribute("sortDirection", p.sortDirection)
@@ -447,6 +467,57 @@ function MOD.CopyTable(a)
 	return b
 end
 
+-- Convert a time value into a compact text string using a selected display format
+local TimeFormatOptions = {
+	{ 1, 1, 1, 1, 1 }, { 1, 1, 1, 3, 5 }, { 1, 1, 1, 3, 4 }, { 2, 3, 1, 2, 3 }, -- 4
+	{ 2, 3, 1, 2, 2 }, { 2, 3, 1, 3, 4 }, { 2, 3, 1, 3, 5 }, { 2, 2, 2, 2, 3 }, -- 8
+	{ 2, 2, 2, 2, 2 }, { 2, 2, 2, 2, 4 }, { 2, 2, 2, 3, 4 }, { 2, 2, 2, 3, 5 }, -- 12
+	{ 2, 3, 2, 2, 3 }, { 2, 3, 2, 2, 2 }, { 2, 3, 2, 2, 4 }, { 2, 3, 2, 3, 4 }, -- 16
+	{ 2, 3, 2, 3, 5 }, { 2, 3, 3, 2, 3 }, { 2, 3, 3, 2, 2 }, { 2, 3, 3, 2, 4 }, -- 20
+	{ 2, 3, 3, 3, 4 }, { 2, 3, 3, 3, 5 }, { 3, 3, 3, 2, 3 }, { 3, 3, 3, 3, 5 }, -- 24
+	{ 4, 3, 1, 2, 3 }, { 4, 3, 1, 2, 2 }, { 4, 3, 1, 3, 4 }, { 4, 3, 1, 3, 5 }, -- 28
+	{ 5, 1, 1, 2, 3 }, { 5, 1, 1, 2, 2 }, { 5, 1, 1, 3, 4 }, { 5, 1, 1, 3, 5 }, -- 32
+	{ 3, 3, 3, 2, 2 }, { 3, 3, 3, 3, 4 }, -- 34
+}
+
+function MOD.FormatTime(t, timeFormat, timeSpaces, timeCase)
+	if not timeFormat or (timeFormat > #MOD.Nest_TimeFormatOptions) then timeFormat = 24 end -- default to most compact
+	timeFormat = math.floor(timeFormat)
+	if timeFormat < 1 then timeFormat = 1 end
+	local opt = TimeFormatOptions[timeFormat]
+	local d, h, m, hplus, mplus, s, ts, f
+	local o1, o2, o3, o4, o5 = opt[1], opt[2], opt[3], opt[4], opt[5]
+	if t >= 86400 then -- special case for more than one day which applies regardless of selected format
+		d = math.floor(t / 86400); h = math.floor((t - (d * 86400)) / 3600)
+		if (d >= 2) then f = string.format("%.0fd", d) else f = string.format("%.0fd %.0fh", d, h) end
+	else
+		h = math.floor(t / 3600); m = math.floor((t - (h * 3600)) / 60); s = math.floor(t - (h * 3600) - (m * 60))
+		hplus = math.floor((t + 3599.99) / 3600); mplus = math.floor((t - (h * 3600) + 59.99) / 60) -- provides compatibility with tooltips
+		ts = math.floor(t * 10) / 10 -- truncated to a tenth second
+		if t >= 3600 then
+			if o1 == 1 then f = string.format("%.0f:%02.0f:%02.0f", h, m, s) elseif o1 == 2 then f = string.format("%.0fh %.0fm", h, m)
+				elseif o1 == 3 then f = string.format("%.0fh", hplus) elseif o1 == 4 then f = string.format("%.0fh %.0f", h, m)
+				else f = string.format("%.0f:%02.0f", h, m) end
+		elseif t >= 120 then
+			if o2 == 1 then f = string.format("%.0f:%02.0f", m, s) elseif o2 == 2 then f = string.format("%.0fm %.0fs", m, s)
+				else f = string.format("%.0fm", mplus) end
+		elseif t >= 60 then
+			if o3 == 1 then f = string.format("%.0f:%02.0f", m, s) elseif o3 == 2 then f = string.format("%.0fm %.0fs", m, s)
+				else f = string.format("%.0fm", mplus) end
+		elseif t >= 10 then
+			if o4 == 1 then f = string.format(":%02.0f", s) elseif o4 == 2 then f = string.format("%.0fs", s)
+				else f = string.format("%.0f", s) end
+		else
+			if o5 == 1 then f = string.format(":%02.0f", s) elseif o5 == 2 then f = string.format("%.1fs", ts)
+				elseif o5 == 3 then f = string.format("%.0fs", s) elseif o5 == 4 then f = string.format("%.1f", ts)
+				else f = string.format("%.0f", s) end
+		end
+	end
+	if not timeSpaces then f = string.gsub(f, " ", "") end
+	if timeCase then f = string.upper(f) end
+	return f
+end
+
 -- Default profile description used to initialize the SavedVariables persistent database
 MOD.DefaultProfile = {
 	global = { -- shared settings for all characters
@@ -454,10 +525,10 @@ MOD.DefaultProfile = {
 	},
 	profile = { -- settings specific to a profile
 		enabled = true, -- enable addon
-		hideBlizz = true, -- hide Blizzard buffs and debuffs
+		hideBlizz = false, -- hide Blizzard buffs and debuffs
 		masque = true, -- enable use of Masque
 		iconSize = 36,
-		iconBorder = "masque", -- "default", "one", "two", "raven", "masque"
+		iconBorder = "two", -- "default", "one", "two", "raven", "masque"
 		offsetX = 0,
 		offsetY = 0,
 		growDirection = 1, -- horizontal = 1, otherwise vertical
@@ -475,6 +546,8 @@ MOD.DefaultProfile = {
 		timeFontSize = 14,
 		timeFontOutline = "OUTLINE",
 		timeFormat = 0, -- use default time format
+		timeSpaces = false, -- if true include spaces in time text
+		timeCase = false, -- if true use upper case in time text
 		timeLimit = 0, -- if timeLimit > 0 then only show time when < timeLimit
 		showBar = false,
 		barHeight = 6,
