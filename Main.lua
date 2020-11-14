@@ -32,12 +32,13 @@ local PLAYER_DEBUFFS = "PlayerDebuffs"
 local HEADER_PLAYER_BUFFS = HEADER_NAME .. PLAYER_BUFFS
 local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. PLAYER_DEBUFFS
 
-local pixelBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
+local pixelOneBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
 	bgFile = "Interface\\AddOns\\Buffle\\Media\\WhiteBar",
 	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 1, insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
 
-local anchorBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
+local pixelTwoBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
+	bgFile = "Interface\\AddOns\\Buffle\\Media\\WhiteBar",
 	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
 
@@ -49,6 +50,7 @@ local addonEnabled = false -- set when the addon is enabled
 local blizzHidden = false -- set when blizzard buffs and debuffs are hidden
 local uiScaleChanged = false -- set in combat to defer running event handler
 local MSQ = false -- replace with Masque reference when available
+local weaponDurations = {} -- best guess for weapon buff durations, indexed by enchant id
 
 local UnitAura = UnitAura
 local GetTime = GetTime
@@ -105,13 +107,21 @@ local function UIScaleChanged()
 	else
 		local pixelWidth, pixelHeight = GetPhysicalScreenSize() -- size in pixels of display in full screen, otherwise window size in pixels
 		pixelScale = GetScreenHeight() / pixelHeight -- figure out how big virtual pixels are versus screen pixels
+		pixelOneBackdrop.edgeSize = PS(1) -- update one pixel border size
+		pixelTwoBackdrop.edgeSize = PS(2) -- update two pixel border size
 		uiScaleChanged = false
 		MOD.Debug("Buffle: pixel w/h/scale", pixelWidth, pixelHeight, pixelScale)
 		MOD.Debug("Buffle: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
-		for k, header in pairs(MOD.headers) do
-			MOD.Debug("Buffle: updating", k)
-			MOD.UpdateHeader(header)
-		end
+		MOD.UpdateAll()
+	end
+end
+
+-- Completely redraw everything that can be redrawn without /reload
+-- Only execute this when not in combat, defer to when leave combat if necessary
+function MOD.UpdateAll()
+	for k, header in pairs(MOD.headers) do
+		MOD.Debug("Buffle: updating", k)
+		MOD.UpdateHeader(header)
 	end
 end
 
@@ -127,7 +137,6 @@ function MOD:OnEnable()
 
 	self:RegisterEvent("UI_SCALE_CHANGED", UIScaleChanged)
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
-	self:RegisterEvent("UNIT_AURA")
 	self:RegisterEvent("PLAYER_REGEN_ENABLED")
 end
 
@@ -170,11 +179,6 @@ function MOD:PLAYER_ENTERING_WORLD()
 			end
 		end
 	end
-end
-
--- Event called when an aura changes on a unit
-function MOD:UNIT_AURA(e, unit)
-	MOD.Debug("Buffle: UNIT_AURA", unit)
 end
 
 -- Event called when leaving combat
@@ -236,18 +240,28 @@ function MOD.CheckBlizzFrames()
 	if hide then
 		BuffFrame:Hide()
 		TemporaryEnchantFrame:Hide()
-		BuffFrame:UnregisterAllEvents()
 		blizzHidden = true
 	elseif show then
 		BuffFrame:Show()
 		TemporaryEnchantFrame:Show()
-		BuffFrame:RegisterEvent("UNIT_AURA")
 		blizzHidden = false
 	end
 end
 
 -- Toggle visibility of the anchors
 function MOD.ToggleAnchors()
+end
+
+-- Get weapon enchant duration, since this is not supplied by blizzard look at current detected duration
+-- and compare it to longest previous duration for the given weapon buff in order to find maximum detected
+local function WeaponDuration(buff, duration)
+	local maxd = weaponDurations[buff]
+	if not maxd or (duration > maxd) then
+		weaponDurations[buff] = math.floor(duration + 0.5) -- round up
+	else
+		if maxd > duration then duration = maxd end
+	end
+	return duration
 end
 
 -- Function called when a new aura button is created
@@ -262,7 +276,9 @@ function MOD:Button_OnLoad(button)
 	button.iconBackdrop = CreateFrame("Frame", nil, button, BackdropTemplateMixin and "BackdropTemplate")
 	button.iconBackdrop:SetFrameLevel(button:GetFrameLevel() - 1) -- behind icon
 	button.timeText = button:CreateFontString(nil, "OVERLAY")
+	button.timeText:SetFontObject(ChatFontNormal)
 	button.countText = button:CreateFontString(nil, "OVERLAY")
+	button.countText:SetFontObject(ChatFontNormal)
 	button.bar = CreateFrame("StatusBar", nil, button, BackdropTemplateMixin and "BackdropTemplate")
 	button.bar:SetFrameLevel(button:GetFrameLevel() + 1) -- in front of icon
 	button.bar:SetFrameStrata(button:GetFrameStrata())
@@ -298,20 +314,12 @@ local function SkinBorder(button)
 		button.iconBorder:SetAllPoints(button)
 		button.iconBorder:Show()
 		button.iconBackdrop:Hide()
-	elseif opt == "one" then -- skin with single pixel border
-		IconTextureTrim(button.iconTexture, button, true, p.iconSize - 2)
-		pixelBackdrop.edgeSize = PS(1)
+	elseif (opt == "one") or (opt == "two") then -- skin with single or double pixel border
+		IconTextureTrim(button.iconTexture, button, true, p.iconSize - ((opt == "one") and 2 or 4))
 		button.iconBackdrop:SetAllPoints(button)
-		button.iconBackdrop:SetBackdrop(pixelBackdrop)
-		button.iconBackdrop:SetBackdropColor(0, 0, 0, 1)
-		button.iconBackdrop:Show()
-		button.iconBorder:Hide()
-	elseif opt == "two" then -- skin with double pixel border
-		IconTextureTrim(button.iconTexture, button, true, p.iconSize - 4)
-		pixelBackdrop.edgeSize = PS(2)
-		button.iconBackdrop:SetAllPoints(button)
-		button.iconBackdrop:SetBackdrop(pixelBackdrop)
-		button.iconBackdrop:SetBackdropColor(0, 0, 0, 1)
+		button.iconBackdrop:SetBackdrop((opt == "one") and pixelOneBackdrop or pixelTwoBackdrop)
+		button.iconBackdrop:SetBackdropColor(0, 0, 0, 0)
+		button.iconBackdrop:SetBackdropBorderColor(1, 1, 1, 1)
 		button.iconBackdrop:Show()
 		button.iconBorder:Hide()
 	elseif (opt == "masque") and MSQ and button.buttonMSQ and button.buttonData then -- use Masque only if available
@@ -332,11 +340,78 @@ local function SkinBorder(button)
 	end
 end
 
+-- Clear the time text
+local function StopButtonTime(button)
+	button:SetScript("OnUpdate", nil) -- stop updating the time text
+	button._expire = nil
+	button._update = nil
+	button.timeText:SetText(" ")
+	button.timeText:Hide()
+end
+
+-- Update the time text for a button, triggered OnUpdate so keep it quick
+local function UpdateButtonTime(button)
+	if button then -- make sure valid call
+		local now = GetTime()
+		local remaining = button._expire - now
+		if remaining > 0.05 then
+			if (button._update == 0) or ((now - button._update) > 0.05) then -- about 20/second
+				-- if IsAltKeyDown() then MOD.Debug("updateTime", remaining, now - button._update) end
+				button._update = now
+				button.timeText:SetText(MOD.FormatTime(remaining))
+			end
+		else
+			StopButtonTime(button)
+		end
+	end
+end
+
+-- Validate that have a valid font reference
+local function ValidFont(name) return (name and (type(name) == "string") and (name ~= "")) end
+
+-- Configure the button's time text for given duration and expire values
+local function SkinTime(button, duration, expire)
+	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
+	local bt = button.timeText
+	local remaining = (expire or 0) - GetTime()
+
+	if p.showTime and duration and duration > 0.1 and remaining > 0.05 then -- check if valid time parameters
+		if ValidFont(p.font) then bt:SetFont(p.font, p.fontSize, p.fontFlags) end
+		bt:SetText("0:00:00") -- set to widest time string, note this is overwritten later with correct string!
+		local timeMaxWidth = bt:GetStringWidth() -- get maximum text width using current font
+		PSetSize(bt, timeMaxWidth, p.fontSize + 2)
+		PSetPoint(bt, "TOP", button, "BOTTOM")
+		-- if IsAltKeyDown() then MOD.Debug("skinTime", remaining) end
+		button._expire = expire
+		button._update = 0
+		UpdateButtonTime(button)
+		bt:Show()
+		button:SetScript("OnUpdate", UpdateButtonTime) -- start updating time text
+	else
+		StopButtonTime(button)
+	end
+end
+
+-- Configure the button's count text for given value
+local function SkinCount(button, count)
+	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
+	local ct = button.countText
+
+	if p.showCount and count and count > 1 then -- check if valid parameters
+		if ValidFont(p.font) then ct:SetFont(p.font, p.fontSize, p.fontFlags) end
+		PSetPoint(ct, "CENTER", button, "CENTER")
+		ct:SetText(count)
+		ct:Show()
+	else
+		ct:Hide()
+	end
+end
+
 -- Function called when an attribute for a button changes
 function MOD:Button_OnAttributeChanged(k, v)
 	local button = self
 	local header = button:GetParent()
-	-- MOD.Debug("Buffle: button attribute", button:GetName(), k, v)
+	-- if IsAltKeyDown() then MOD.Debug("Buffle: button attribute", button:GetName(), k, v) end
 	if k == "index" then -- update a buff or debuff
 		local unit = header:GetAttribute("unit")
 		local filter = header:GetAttribute("filter")
@@ -347,22 +422,28 @@ function MOD:Button_OnAttributeChanged(k, v)
 			button.iconTexture:SetTexture(icon)
 			button.iconTexture:Show()
 			SkinBorder(button)
+			SkinTime(button, duration, expire)
+			SkinCount(button, count)
 		else
 			button.iconTexture:Hide()
 			button.iconBorder:Hide()
 			button.iconBackdrop:Hide()
 		end
 	elseif k == "target-slot" then -- update player weapon enchant (v == 16 or 17)
-		-- MOD.Debug("Buffle: weapon", v)
 		if (v == 16) or (v == 17) then -- mainhand or offhand slot
-			local _, expire, _, _, _, offExpire = GetWeaponEnchantInfo()
-			if v == 17 then expire = offExpire end
+			local _, remaining, _, id, _, offRemaining, _, offId = GetWeaponEnchantInfo()
+			if v == 17 then remaining = offRemaining; id = offId end
+			remaining = remaining / 1000 -- blizz function returned milliseconds
+			local expire = remaining + GetTime()
+			local duration = WeaponDuration(id, remaining)
 			local icon = GetInventoryItemTexture("player", v)
 			button.iconTexture:ClearAllPoints(button)
 			button.iconTexture:SetPoint("CENTER", button, "CENTER")
 			button.iconTexture:SetTexture(icon)
 			button.iconTexture:Show()
 			SkinBorder(button)
+			SkinTime(button, duration, expire)
+			-- MOD.Debug("Buffle: weapon", v, id, remaining, duration)
 		else
 			button.iconTexture:Hide()
 			button.iconBorder:Hide()
@@ -436,9 +517,9 @@ function MOD.UpdateHeader(header)
 
 				PSetSize(header.anchorBackdrop, mw - 2, mh - 2)
 				PSetPoint(header.anchorBackdrop, g.attachPoint, g.anchorFrame, g.anchorPoint, g.anchorX, g.anchorY)
-				anchorBackdrop.edgeSize = PS(2)
-				header.anchorBackdrop:SetBackdrop(anchorBackdrop)
-				header.anchorBackdrop:SetBackdropBorderColor(red, green, 0, 0.75) -- buffs have green border and debuffs have red border
+				header.anchorBackdrop:SetBackdrop(pixelTwoBackdrop)
+				header.anchorBackdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
+				header.anchorBackdrop:SetBackdropBorderColor(red, green, 0, 0.6) -- buffs have green border and debuffs have red border
 				if p.locked then header.anchorBackdrop:Hide() else header.anchorBackdrop:Show() end
 
 				MOD.Debug("Buffle: header updated", name)
@@ -541,10 +622,10 @@ MOD.DefaultProfile = {
 	profile = { -- settings specific to a profile
 		enabled = true, -- enable addon
 		hideBlizz = true, -- hide Blizzard buffs and debuffs
-		locked = true, -- hide the anchors when locked
+		locked = false, -- hide the anchors when locked
 		masque = true, -- enable use of Masque
 		iconSize = 36,
-		iconBorder = "one", -- "default", "one", "two", "raven", "masque"
+		iconBorder = "two", -- "default", "one", "two", "raven", "masque"
 		offsetX = 0,
 		offsetY = 0,
 		growDirection = 1, -- horizontal = 1, otherwise vertical
@@ -558,9 +639,10 @@ MOD.DefaultProfile = {
 		wrapAfter = 20,
 		maxWraps = 2,
 		showTime = true,
-		timeFont = 0, -- use system font
-		timeFontSize = 14,
-		timeFontOutline = "OUTLINE",
+		showCount = true,
+		font = 0, -- use system font
+		fontSize = 14,
+		fontFlags = "OUTLINE",
 		timeFormat = 0, -- use default time format
 		timeSpaces = false, -- if true include spaces in time text
 		timeCase = false, -- if true use upper case in time text
