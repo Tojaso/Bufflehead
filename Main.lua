@@ -32,12 +32,12 @@ local PLAYER_DEBUFFS = "PlayerDebuffs"
 local HEADER_PLAYER_BUFFS = HEADER_NAME .. PLAYER_BUFFS
 local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. PLAYER_DEBUFFS
 
-local pixelOneBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
+local onePixelBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
 	bgFile = "Interface\\AddOns\\Buffle\\Media\\WhiteBar",
 	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 1, insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
 
-local pixelTwoBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
+local twoPixelBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
 	bgFile = "Interface\\AddOns\\Buffle\\Media\\WhiteBar",
 	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
@@ -107,8 +107,8 @@ local function UIScaleChanged()
 	else
 		local pixelWidth, pixelHeight = GetPhysicalScreenSize() -- size in pixels of display in full screen, otherwise window size in pixels
 		pixelScale = GetScreenHeight() / pixelHeight -- figure out how big virtual pixels are versus screen pixels
-		pixelOneBackdrop.edgeSize = PS(1) -- update one pixel border size
-		pixelTwoBackdrop.edgeSize = PS(2) -- update two pixel border size
+		onePixelBackdrop.edgeSize = PS(1) -- update one pixel border size
+		twoPixelBackdrop.edgeSize = PS(2) -- update two pixel border size
 		uiScaleChanged = false
 		MOD.Debug("Buffle: pixel w/h/scale", pixelWidth, pixelHeight, pixelScale)
 		MOD.Debug("Buffle: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
@@ -280,8 +280,10 @@ function MOD:Button_OnLoad(button)
 	button.countText = button:CreateFontString(nil, "OVERLAY")
 	button.countText:SetFontObject(ChatFontNormal)
 	button.bar = CreateFrame("StatusBar", nil, button, BackdropTemplateMixin and "BackdropTemplate")
-	button.bar:SetFrameLevel(button:GetFrameLevel() + 1) -- in front of icon
+	button.bar:SetFrameLevel(button:GetFrameLevel() + 4) -- in front of icon
 	button.bar:SetFrameStrata(button:GetFrameStrata())
+	button.barBackdrop = CreateFrame("Frame", nil, button.bar, BackdropTemplateMixin and "BackdropTemplate")
+	button.barBackdrop:SetFrameLevel(button:GetFrameLevel() + 3) -- behind bar but in front of icon
 
 	if MSQ then -- if MSQ is loaded then initialize its required data table
 		button.buttonMSQ = header._MSQ
@@ -303,42 +305,48 @@ end
 
 -- Skin the icon's border
 local function SkinBorder(button)
-	button.iconBorder:ClearAllPoints()
-	button.iconBackdrop:ClearAllPoints()
-
 	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
+	local bib = button.iconBorder
+	local bik = button.iconBackdrop
+	local tex = button.iconTexture
 	local opt = p.iconBorder -- option for type of border
+	bib:ClearAllPoints()
+	bik:ClearAllPoints()
+
 	if opt == "raven" then -- skin with raven's border
-		IconTextureTrim(button.iconTexture, button, true, p.iconSize * 0.91)
-		button.iconBorder:SetTexture("Interface\\AddOns\\Buffle\\Media\\IconDefault")
-		button.iconBorder:SetAllPoints(button)
-		button.iconBorder:Show()
-		button.iconBackdrop:Hide()
+		IconTextureTrim(tex, button, true, p.iconSize * 0.91)
+		bib:SetTexture("Interface\\AddOns\\Buffle\\Media\\IconDefault")
+		bib:SetAllPoints(button)
+		bib:Show()
+		bik:Hide()
 	elseif (opt == "one") or (opt == "two") then -- skin with single or double pixel border
-		IconTextureTrim(button.iconTexture, button, true, p.iconSize - ((opt == "one") and 2 or 4))
-		button.iconBackdrop:SetAllPoints(button)
-		button.iconBackdrop:SetBackdrop((opt == "one") and pixelOneBackdrop or pixelTwoBackdrop)
-		button.iconBackdrop:SetBackdropColor(0, 0, 0, 0)
-		button.iconBackdrop:SetBackdropBorderColor(1, 1, 1, 1)
-		button.iconBackdrop:Show()
-		button.iconBorder:Hide()
+		IconTextureTrim(tex, button, true, p.iconSize - ((opt == "one") and 2 or 4))
+		bik:SetAllPoints(button)
+		bik:SetBackdrop((opt == "one") and onePixelBackdrop or twoPixelBackdrop)
+		bik:SetBackdropColor(0, 0, 0, 0)
+		bik:SetBackdropBorderColor(1, 1, 1, 1)
+		bik:Show()
+		bib:Hide()
 	elseif (opt == "masque") and MSQ and button.buttonMSQ and button.buttonData then -- use Masque only if available
-		IconTextureTrim(button.iconTexture, button, false, p.iconSize)
+		IconTextureTrim(tex, button, false, p.iconSize)
 		button.buttonMSQ:RemoveButton(button, true) -- may be needed so size changes work correctly
-		button.iconBorder:SetAllPoints(button)
-		button.iconBorder:Show()
+		bib:SetAllPoints(button)
+		bib:Show()
 		local bdata = button.buttonData
-		bdata.Icon = button.iconTexture
+		bdata.Icon = tex
 		bdata.Normal = button:GetNormalTexture()
-		bdata.Border = button.iconBorder
+		bdata.Border = bib
 		button.buttonMSQ:AddButton(button, bdata)
-		button.iconBackdrop:Hide()
-	elseif opt == "default" then -- default is to just show blizzard's standard border
-		IconTextureTrim(button.iconTexture, button, false, p.iconSize)
-		button.iconBorder:Hide()
-		button.iconBackdrop:Hide()
+		bik:Hide()
+	else -- default is to just show blizzard's standard border
+		IconTextureTrim(tex, button, false, p.iconSize)
+		bib:Hide()
+		bik:Hide()
 	end
 end
+
+-- Validate that have a valid font reference
+local function ValidFont(name) return (name and (type(name) == "string") and (name ~= "")) end
 
 -- Clear the time text
 local function StopButtonTime(button)
@@ -351,7 +359,7 @@ end
 
 -- Update the time text for a button, triggered OnUpdate so keep it quick
 local function UpdateButtonTime(button)
-	if button then -- make sure valid call
+	if button and button._expire then -- make sure valid call
 		local now = GetTime()
 		local remaining = button._expire - now
 		if remaining > 0.05 then
@@ -366,16 +374,13 @@ local function UpdateButtonTime(button)
 	end
 end
 
--- Validate that have a valid font reference
-local function ValidFont(name) return (name and (type(name) == "string") and (name ~= "")) end
-
 -- Configure the button's time text for given duration and expire values
 local function SkinTime(button, duration, expire)
 	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
 	local bt = button.timeText
 	local remaining = (expire or 0) - GetTime()
 
-	if p.showTime and duration and duration > 0.1 and remaining > 0.05 then -- check if valid time parameters
+	if p.showTime and duration and duration > 0.1 and remaining > 0.05 then -- check if limited duration
 		if ValidFont(p.font) then bt:SetFont(p.font, p.fontSize, p.fontFlags) end
 		bt:SetText("0:00:00") -- set to widest time string, note this is overwritten later with correct string!
 		local timeMaxWidth = bt:GetStringWidth() -- get maximum text width using current font
@@ -407,6 +412,83 @@ local function SkinCount(button, count)
 	end
 end
 
+-- Clear the button's bar
+local function StopBar(bb)
+	if bb then
+		bb:SetScript("OnUpdate", nil) -- stop updating the time text
+		bb._duration = nil
+		bb._expire = nil
+		bb:Hide()
+	end
+end
+
+-- Update the amount of fill for a button's bar, triggered OnUpdate so keep it quick
+local function UpdateBar(bb)
+	if bb and bb._duration and bb._expire then -- make sure valid call
+		local now = GetTime()
+		local duration = bb._duration
+		local remaining = bb._expire - now
+
+		if duration and (remaining > 0) then
+			-- if IsAltKeyDown() then MOD.Debug("updateBar", duration, remaining) end
+			if remaining > duration then remaining = duration end -- range check
+			bb:SetValue(remaining)
+		else
+			StopBar(button)
+		end
+	end
+end
+
+-- Configure the button's bar
+local function SkinBar(button, duration, expire)
+	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
+	local bb = button.bar
+	local remaining = (expire or 0) - GetTime()
+
+	if p.showBar and duration and duration > 0.1 and remaining > 0.05 then
+		PSetPoint(bb, p.barAttachPoint, button, p.barAnchorPoint, p.barAnchorX, p.barAnchorY)
+		PSetSize(bb, (p.barWidth > 0) and p.barWidth or p.iconSize, (p.barHeight > 0) and p.barHeight or p.iconSize)
+		bb:SetStatusBarTexture("Interface\\AddOns\\Buffle\\Media\\WhiteBar")
+		bb:SetStatusBarColor(0, 1, 0, 1)
+		bb:SetMinMaxValues(0, duration)
+		-- fix incorrect status bar textures (backdrop gets same as foreground texture) and color
+		-- add backdrop with one or two pixel border and background color at 60% opacity
+		-- if IsAltKeyDown() then MOD.Debug("skinBar", duration, remaining) end
+		bb._duration = duration
+		bb._expire = expire
+		UpdateBar(bb)
+		bb:Show()
+		bb:SetScript("OnUpdate", UpdateBar) -- start updating bar fill
+	else
+		StopBar(bb)
+		bb:Hide()
+	end
+end
+
+-- Skin the bar's border
+local function SkinBarBorder(button)
+	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
+	local bbk = button.barBackdrop
+	local opt = p.barBorder -- option for type of border
+	local br, bg, bb, ba = 0.5, 0.5, 0.5, 0.8 -- default bar backdrop color
+	local dr, dg, db, da = 1, 1, 1, 1 -- default bar border color
+
+	if (opt == "one") or (opt == "two") then -- skin bar with single pixel border
+		local delta, drop = 4, twoPixelBackdrop
+		if opt == "one" then delta = 2; drop = onePixelBackdrop end
+		PSetPoint(bbk, "CENTER", button.bar, "CENTER")
+		local bw, bh = (p.barWidth > 0) and p.barWidth or p.iconSize, p.barHeight
+		PSetSize(bbk, bw, bh)
+		PSetSize(button.bar, bw - delta, bh - delta)
+		bbk:SetBackdrop(drop)
+		bbk:SetBackdropColor(br, bg, bb, ba)
+		bbk:SetBackdropBorderColor(dr, dg, db, da)
+		bbk:Show()
+	else -- default is to not show a bar border
+		bbk:Hide()
+	end
+end
+
 -- Function called when an attribute for a button changes
 function MOD:Button_OnAttributeChanged(k, v)
 	local button = self
@@ -423,11 +505,14 @@ function MOD:Button_OnAttributeChanged(k, v)
 			button.iconTexture:Show()
 			SkinBorder(button)
 			SkinTime(button, duration, expire)
+			SkinBar(button, duration, expire)
 			SkinCount(button, count)
+			SkinBarBorder(button)
 		else
 			button.iconTexture:Hide()
 			button.iconBorder:Hide()
 			button.iconBackdrop:Hide()
+			button.barBackdrop:Hide()
 		end
 	elseif k == "target-slot" then -- update player weapon enchant (v == 16 or 17)
 		if (v == 16) or (v == 17) then -- mainhand or offhand slot
@@ -443,11 +528,14 @@ function MOD:Button_OnAttributeChanged(k, v)
 			button.iconTexture:Show()
 			SkinBorder(button)
 			SkinTime(button, duration, expire)
+			SkinBar(button, duration, expire)
+			SkinBarBorder(button)
 			-- MOD.Debug("Buffle: weapon", v, id, remaining, duration)
 		else
 			button.iconTexture:Hide()
 			button.iconBorder:Hide()
 			button.iconBackdrop:Hide()
+			button.barBackdrop:Hide()
 		end
 	end
 end
@@ -517,7 +605,7 @@ function MOD.UpdateHeader(header)
 
 				PSetSize(header.anchorBackdrop, mw - 2, mh - 2)
 				PSetPoint(header.anchorBackdrop, g.attachPoint, g.anchorFrame, g.anchorPoint, g.anchorX, g.anchorY)
-				header.anchorBackdrop:SetBackdrop(pixelTwoBackdrop)
+				header.anchorBackdrop:SetBackdrop(twoPixelBackdrop)
 				header.anchorBackdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
 				header.anchorBackdrop:SetBackdropBorderColor(red, green, 0, 0.6) -- buffs have green border and debuffs have red border
 				if p.locked then header.anchorBackdrop:Hide() else header.anchorBackdrop:Show() end
@@ -626,13 +714,15 @@ MOD.DefaultProfile = {
 		masque = true, -- enable use of Masque
 		iconSize = 36,
 		iconBorder = "two", -- "default", "one", "two", "raven", "masque"
+		iconBorderColor = "white", -- "white", "black", "custom"
+		iconDebuffColor = true, -- use debuff color for border if applicable
 		offsetX = 0,
 		offsetY = 0,
 		growDirection = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1,
 		directionY = -1,
 		spaceX = 2,
-		spaceY = 2,
+		spaceY = 12, -- include separation for time text and bar height
 		sortMethod = "TIME",
 		sortDirection = "-",
 		separateOwn = true,
@@ -647,12 +737,17 @@ MOD.DefaultProfile = {
 		timeSpaces = false, -- if true include spaces in time text
 		timeCase = false, -- if true use upper case in time text
 		timeLimit = 0, -- if timeLimit > 0 then only show time when < timeLimit
-		showBar = false,
-		barHeight = 6,
-		barOffset = 2,
-		barTexture = 0,
-		barBorder = 0,
-		barPosition = "TOP",
+		showBar = true,
+		barColor = 0, -- 0 = default color for buff/debuff
+		barBackdropColor = 0, -- 0 = default backdrop color for buff/debuff
+		barWidth = 0, -- defaults to same as icon width
+		barHeight = 10,
+		barBorder = "two", -- "none", "one", "two"
+		barBorderColor = "white", -- "white", "black", "custom"
+		barAttachPoint = "TOP",
+		barAnchorPoint = "BOTTOM",
+		barAnchorX = 0,
+		barAnchorY = -4,
 		groups = {
 			[HEADER_PLAYER_BUFFS] = {
 				enabled = true,
@@ -674,7 +769,7 @@ MOD.DefaultProfile = {
 				anchorFrame = _G.MMHolder or _G.Minimap,
 				anchorPoint = "TOPLEFT",
 				anchorX = -44,
-				anchorY = -84, -- set to roughly maxWraps * (iconSize + spaceY) + 8
+				anchorY = -100, -- set to roughly maxWraps * (iconSize + spaceY)
 			},
 		},
 	},
