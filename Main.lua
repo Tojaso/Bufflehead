@@ -54,10 +54,14 @@ local weaponDurations = {} -- best guess for weapon buff durations, indexed by e
 
 local UnitAura = UnitAura
 local GetTime = GetTime
+local GetScreenHeight = GetScreenHeight
+local GetPhysicalScreenSize = GetPhysicalScreenSize
 local CreateFrame = CreateFrame
 local RegisterAttributeDriver = RegisterAttributeDriver
 local RegisterStateDriver = RegisterStateDriver
 local InCombatLockdown = InCombatLockdown
+local GetWeaponEnchantInfo = GetWeaponEnchantInfo
+local GetInventoryItemTexture = GetInventoryItemTexture
 
 -- Functions used for pixel pefect calculations
 local pixelScale = 1 -- scale factor used for size and alignment
@@ -110,8 +114,8 @@ local function UIScaleChanged()
 		onePixelBackdrop.edgeSize = PS(1) -- update one pixel border size
 		twoPixelBackdrop.edgeSize = PS(2) -- update two pixel border size
 		uiScaleChanged = false
-		MOD.Debug("Buffle: pixel w/h/scale", pixelWidth, pixelHeight, pixelScale)
-		MOD.Debug("Buffle: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
+		-- MOD.Debug("Buffle: pixel w/h/scale", pixelWidth, pixelHeight, pixelScale)
+		-- MOD.Debug("Buffle: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
 		MOD.UpdateAll()
 	end
 end
@@ -120,7 +124,7 @@ end
 -- Only execute this when not in combat, defer to when leave combat if necessary
 function MOD.UpdateAll()
 	for k, header in pairs(MOD.headers) do
-		MOD.Debug("Buffle: updating", k)
+		-- MOD.Debug("Buffle: updating", k)
 		MOD.UpdateHeader(header)
 	end
 end
@@ -153,7 +157,7 @@ function MOD:PLAYER_ENTERING_WORLD()
 				local unit, filter = group.unit, group.filter
 				local header = CreateFrame("Frame", name, UIParent, "SecureAuraHeaderTemplate")
 				MOD.headers[name] = header
-				MOD.Debug("Buffle: header created", name, unit, filter)
+				-- MOD.Debug("Buffle: header created", name, unit, filter)
 				header:SetClampedToScreen(true)
 				header:SetAttribute("unit", unit)
 				header:SetAttribute("filter", filter)
@@ -164,7 +168,6 @@ function MOD:PLAYER_ENTERING_WORLD()
 					if filter == FILTER_BUFFS then
 						header:SetAttribute("consolidateDuration", -1) -- no consolidation
 						header:SetAttribute("includeWeapons", 1)
-						MOD.Debug("Buffle: includeWeapons!")
 					end
 				end
 
@@ -236,7 +239,7 @@ function MOD.CheckBlizzFrames()
 	else
 		if hideBlizz then show = false else show = blizzHidden end -- only show if this addon hid the frame
 	end
-	MOD.Debug("Buffle: hide/show", key, "hide:", hide, "show:", show, "vis: ", visible)
+	-- MOD.Debug("Buffle: hide/show", key, "hide:", hide, "show:", show, "vis: ", visible)
 	if hide then
 		BuffFrame:Hide()
 		TemporaryEnchantFrame:Hide()
@@ -269,7 +272,7 @@ function MOD:Button_OnLoad(button)
 	local header = button:GetParent()
 	local name = header:GetName()
 	local filter = header:GetAttribute("filter")
-	MOD.Debug("Buffle: new button", name, filter)
+	-- MOD.Debug("Buffle: new button", name, filter)
 
 	button.iconTexture = button:CreateTexture(nil, "ARTWORK")
 	button.iconBorder = button:CreateTexture(nil, "BACKGROUND", nil, 3)
@@ -559,7 +562,7 @@ function MOD.UpdateHeader(header)
 					if p.directionY > 0 then pt = "TOPLEFT" end
 				end
 				header:SetAttribute("point", pt) -- relative point on icons based on grow and wrap directions
-				MOD.Debug("Buffle: grow/wrap", p.directionX, p.directionY, "relative point", pt)
+				-- MOD.Debug("Buffle: grow/wrap", p.directionX, p.directionY, "relative point", pt)
 
 				local s = BUFFS_TEMPLATE
 				local i = tonumber(p.iconSize) -- use different template for each size, constrained by available templates
@@ -568,11 +571,8 @@ function MOD.UpdateHeader(header)
 					red = 0; green = 1
 					header:SetAttribute("consolidateTo", 0) -- no consolidation
 					header:SetAttribute("weaponTemplate", s)
-					MOD.Debug("Buffle: weaponTemplate", s)
 				end
 				header:SetAttribute("template", s)
-				MOD.Debug("Buffle: template", s)
-
 				header:SetAttribute("sortMethod", p.sortMethod)
 				header:SetAttribute("sortDirection", p.sortDirection)
 				header:SetAttribute("separateOwn", p.separateOwn)
@@ -597,7 +597,7 @@ function MOD.UpdateHeader(header)
 				header:SetAttribute("wrapYOffset", PS(wy))
 				header:SetAttribute("minWidth", PS(mw))
 				header:SetAttribute("minHeight", PS(mh))
-				MOD.Debug("Buffle: dx/dy", dx, dy, "wx/wy", wx, wy, "mw/mh", mw, mh)
+				-- MOD.Debug("Buffle: dx/dy", dx, dy, "wx/wy", wx, wy, "mw/mh", mw, mh)
 
 				PSetSize(header, 100, 100)
 				PSetPoint(header, g.attachPoint, g.anchorFrame, g.anchorPoint, g.anchorX, g.anchorY)
@@ -609,8 +609,6 @@ function MOD.UpdateHeader(header)
 				header.anchorBackdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
 				header.anchorBackdrop:SetBackdropBorderColor(red, green, 0, 0.6) -- buffs have green border and debuffs have red border
 				if p.locked then header.anchorBackdrop:Hide() else header.anchorBackdrop:Show() end
-
-				MOD.Debug("Buffle: header updated", name)
 			else
 				header:Hide()
 			end
