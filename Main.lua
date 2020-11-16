@@ -51,6 +51,7 @@ local blizzHidden = false -- set when blizzard buffs and debuffs are hidden
 local uiScaleChanged = false -- set in combat to defer running event handler
 local MSQ = false -- replace with Masque reference when available
 local weaponDurations = {} -- best guess for weapon buff durations, indexed by enchant id
+local pg, pp -- global and character-specific profiles
 
 local UnitAura = UnitAura
 local GetTime = GetTime
@@ -134,7 +135,9 @@ function MOD:OnEnable()
 	if addonEnabled then return end -- only run this code once
 	addonEnabled = true
 
-	MOD.db = LibStub("AceDB-3.0"):New("BuffleDB", MOD.DefaultProfile) -- get the current profile
+	MOD.db = LibStub("AceDB-3.0"):New("BuffleDB", MOD.DefaultProfile) -- get current profile
+	pg = MOD.db.global; pp = MOD.db.profile
+
 	MOD:RegisterChatCommand("buffle", function() MOD.OptionsPanel() end)
 	MOD.InitializeLDB() -- initialize the data broker and minimap icon
 	MSQ = LibStub("Masque", true)
@@ -150,9 +153,9 @@ function MOD:PLAYER_ENTERING_WORLD()
 	enteredWorld = true
 	UIScaleChanged() -- initialize scale factor for pixel perfect size and alignment
 
-	if MOD.db.profile.enabled then -- make sure addon is enabled
+	if pp.enabled then -- make sure addon is enabled
 		MOD.CheckBlizzFrames() -- check blizz frames and hide the ones selected on the Defaults tab
-		for name, group in pairs(MOD.db.profile.groups) do
+		for name, group in pairs(pp.groups) do
 			if group.enabled then -- create header for enabled group, must do /reload if change header-related options
 				local unit, filter = group.unit, group.filter
 				local header = CreateFrame("Frame", name, UIParent, "SecureAuraHeaderTemplate")
@@ -171,7 +174,7 @@ function MOD:PLAYER_ENTERING_WORLD()
 					end
 				end
 
-				if MSQ and MOD.db.profile.masque then --  create MSQ group if loaded and enabled
+				if MSQ and pg.masque then --  create MSQ group if loaded and enabled
 					header._MSQ = MSQ:Group("Buffle", group.name)
 				else
 					header._MSQ = nil
@@ -200,14 +203,14 @@ function MOD.InitializeLDB()
 		OnClick = function(_, msg)
 			if msg == "RightButton" then
 				if IsShiftKeyDown() then
-					MOD.db.profile.hideBlizz = not MOD.db.profile.hideBlizz
+					pg.hideBlizz = not pg.hideBlizz
 					MOD.CheckBlizzFrames()
 				else
 					MOD.ToggleAnchors()
 				end
 			elseif msg == "LeftButton" then
 				if IsShiftKeyDown() then
-					MOD.db.profile.enabled = not MOD.db.profile.enabled
+					pp.enabled = not pp.enabled
 				else
 					MOD.OptionsPanel()
 				end
@@ -224,20 +227,19 @@ function MOD.InitializeLDB()
 	})
 
 	MOD.ldbi = LibStub("LibDBIcon-1.0", true)
-	if MOD.ldbi then MOD.ldbi:Register("Buffle", MOD.ldb, MOD.db.global.Minimap) end
+	if MOD.ldbi then MOD.ldbi:Register("Buffle", MOD.ldb, pg.Minimap) end
 end
 
 -- Show or hide the blizzard buff frames, called during update so synched with other changes
 function MOD.CheckBlizzFrames()
 	if not MOD.isClassic and C_PetBattles.IsInBattle() then return end -- don't change visibility of any frame during pet battles
 	local frame = _G.BuffFrame
-	local hideBlizz = MOD.db.profile.hideBlizz
 	local hide, show = false, false
 	local visible = frame:IsShown()
 	if visible then
-		if hideBlizz then hide = true end
+		if pg.hideBlizz then hide = true end
 	else
-		if hideBlizz then show = false else show = blizzHidden end -- only show if this addon hid the frame
+		if pg.hideBlizz then show = false else show = blizzHidden end -- only show if this addon hid the frame
 	end
 	-- MOD.Debug("Buffle: hide/show", key, "hide:", hide, "show:", show, "vis: ", visible)
 	if hide then
@@ -280,8 +282,7 @@ function MOD:Button_OnLoad(button)
 	button.iconBackdrop = CreateFrame("Frame", nil, button, BackdropTemplateMixin and "BackdropTemplate")
 	button.iconBackdrop:SetFrameLevel(level - 1) -- behind icon
 	button.clock = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
-	button.clock.noCooldownCount = true
-	button.clock.noOCC = true
+	button.clock.noCooldownCount = pg.hideOmniCC; button.clock.noOCC = pg.hideOmniCC
 	button.clock:SetHideCountdownNumbers(true)
 	button.clock:SetFrameLevel(level + 2) -- in front of icon but behind bar
 	button.clock:SetDrawBling(false)
@@ -315,22 +316,21 @@ end
 
 -- Skin the icon's border
 local function SkinBorder(button)
-	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
 	local bib = button.iconBorder
 	local bik = button.iconBackdrop
 	local tex = button.iconTexture
-	local opt = p.iconBorder -- option for type of border
+	local opt = pp.iconBorder -- option for type of border
 	bib:ClearAllPoints()
 	bik:ClearAllPoints()
 
 	if opt == "raven" then -- skin with raven's border
-		IconTextureTrim(tex, button, true, p.iconSize * 0.91)
+		IconTextureTrim(tex, button, true, pp.iconSize * 0.91)
 		bib:SetTexture("Interface\\AddOns\\Buffle\\Media\\IconDefault")
 		bib:SetAllPoints(button)
 		bib:Show()
 		bik:Hide()
 	elseif (opt == "one") or (opt == "two") then -- skin with single or double pixel border
-		IconTextureTrim(tex, button, true, p.iconSize - ((opt == "one") and 2 or 4))
+		IconTextureTrim(tex, button, true, pp.iconSize - ((opt == "one") and 2 or 4))
 		bik:SetAllPoints(button)
 		bik:SetBackdrop((opt == "one") and onePixelBackdrop or twoPixelBackdrop)
 		bik:SetBackdropColor(0, 0, 0, 0)
@@ -338,7 +338,7 @@ local function SkinBorder(button)
 		bik:Show()
 		bib:Hide()
 	elseif (opt == "masque") and MSQ and button.buttonMSQ and button.buttonData then -- use Masque only if available
-		IconTextureTrim(tex, button, false, p.iconSize)
+		IconTextureTrim(tex, button, false, pp.iconSize)
 		button.buttonMSQ:RemoveButton(button, true) -- may be needed so size changes work correctly
 		bib:SetAllPoints(button)
 		bib:Show()
@@ -349,7 +349,7 @@ local function SkinBorder(button)
 		button.buttonMSQ:AddButton(button, bdata)
 		bik:Hide()
 	else -- default is to just show blizzard's standard border
-		IconTextureTrim(tex, button, false, p.iconSize)
+		IconTextureTrim(tex, button, false, pp.iconSize)
 		bib:Hide()
 		bik:Hide()
 	end
@@ -357,11 +357,10 @@ end
 
 -- Skin the icon's clock overlay, must be done after skinning the border
 local function SkinClock(button, duration, expire)
-	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
 	local bc = button.clock
 	bc:ClearAllPoints()
 
-	if p.showClock and duration and duration > 0 and expire and expire > 0 then
+	if pp.showClock and duration and duration > 0 and expire and expire > 0 then
 		local w, h = button.iconTexture:GetSize()
 		bc:SetSize(w, h) -- icon texture was already sized and scaled
 		bc:SetPoint("CENTER", button, "CENTER")
@@ -404,16 +403,15 @@ end
 
 -- Configure the button's time text for given duration and expire values
 local function SkinTime(button, duration, expire)
-	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
 	local bt = button.timeText
 	local remaining = (expire or 0) - GetTime()
 
-	if p.showTime and duration and duration > 0.1 and remaining > 0.05 then -- check if limited duration
-		if ValidFont(p.font) then bt:SetFont(p.font, p.fontSize, p.fontFlags) end
+	if pp.showTime and duration and duration > 0.1 and remaining > 0.05 then -- check if limited duration
+		if ValidFont(pp.font) then bt:SetFont(pp.font, pp.fontSize, pp.fontFlags) end
 		bt:SetText("0:00:00") -- set to widest time string, note this is overwritten later with correct string!
 		local timeMaxWidth = bt:GetStringWidth() -- get maximum text width using current font
-		PSetSize(bt, timeMaxWidth, p.fontSize + 2)
-		PSetPoint(bt, "TOP", button, "BOTTOM", p.timeX, p.timeY)
+		PSetSize(bt, timeMaxWidth, pp.fontSize + 2)
+		PSetPoint(bt, "TOP", button, "BOTTOM", pp.timeX, pp.timeY)
 		-- if IsAltKeyDown() then MOD.Debug("skinTime", remaining) end
 		button._expire = expire
 		button._update = 0
@@ -427,11 +425,10 @@ end
 
 -- Configure the button's count text for given value
 local function SkinCount(button, count)
-	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
 	local ct = button.countText
 
-	if p.showCount and count and count > 1 then -- check if valid parameters
-		if ValidFont(p.font) then ct:SetFont(p.font, p.fontSize, p.fontFlags) end
+	if pp.showCount and count and count > 1 then -- check if valid parameters
+		if ValidFont(pp.font) then ct:SetFont(pp.font, pp.fontSize, pp.fontFlags) end
 		PSetPoint(ct, "CENTER", button, "CENTER")
 		ct:SetText(count)
 		ct:Show()
@@ -469,16 +466,15 @@ end
 
 -- Configure the button's bar
 local function SkinBar(button, duration, expire)
-	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
 	local bb = button.bar
 	local remaining = (expire or 0) - GetTime()
 
-	if p.showBar and duration and duration > 0.1 and remaining > 0.05 then
-		PSetPoint(bb, p.barAttachPoint, button, p.barAnchorPoint, p.barAnchorX, p.barAnchorY)
-		PSetSize(bb, (p.barWidth > 0) and p.barWidth or p.iconSize, (p.barHeight > 0) and p.barHeight or p.iconSize)
-		bb:SetOrientation(p.barOrientation)
-		bb:SetFillStyle(p.barFillStyle)
-		bb:SetReverseFill(p.barReverseFill)
+	if pp.showBar and duration and duration > 0.1 and remaining > 0.05 then
+		PSetPoint(bb, pp.barAttachPoint, button, pp.barAnchorPoint, pp.barAnchorX, pp.barAnchorY)
+		PSetSize(bb, (pp.barWidth > 0) and pp.barWidth or pp.iconSize, (pp.barHeight > 0) and pp.barHeight or pp.iconSize)
+		bb:SetOrientation(pp.barOrientation)
+		bb:SetFillStyle(pp.barFillStyle)
+		bb:SetReverseFill(pp.barReverseFill)
 		bb:SetStatusBarTexture("Interface\\AddOns\\Buffle\\Media\\WhiteBar")
 		bb:SetStatusBarColor(0, 1, 0, 1)
 		bb:SetMinMaxValues(0, duration)
@@ -498,9 +494,8 @@ end
 
 -- Skin the bar's border
 local function SkinBarBorder(button)
-	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
 	local bbk = button.barBackdrop
-	local opt = p.barBorder -- option for type of border
+	local opt = pp.barBorder -- option for type of border
 	local br, bg, bb, ba = 0.5, 0.5, 0.5, 0.8 -- default bar backdrop color
 	local dr, dg, db, da = 1, 1, 1, 1 -- default bar border color
 
@@ -508,7 +503,7 @@ local function SkinBarBorder(button)
 		local delta, drop = 4, twoPixelBackdrop
 		if opt == "one" then delta = 2; drop = onePixelBackdrop end
 		PSetPoint(bbk, "CENTER", button.bar, "CENTER")
-		local bw, bh = (p.barWidth > 0) and p.barWidth or p.iconSize, p.barHeight
+		local bw, bh = (pp.barWidth > 0) and pp.barWidth or pp.iconSize, pp.barHeight
 		PSetSize(bbk, bw, bh)
 		PSetSize(button.bar, bw - delta, bh - delta)
 		bbk:SetBackdrop(drop)
@@ -524,7 +519,7 @@ end
 function MOD:Button_OnAttributeChanged(k, v)
 	local button = self
 	local header = button:GetParent()
-	-- if IsAltKeyDown() then MOD.Debug("Buffle: button attribute", button:GetName(), k, v) end
+
 	if k == "index" then -- update a buff or debuff
 		local unit = header:GetAttribute("unit")
 		local filter = header:GetAttribute("filter")
@@ -577,25 +572,24 @@ end
 function MOD.UpdateHeader(header)
 	local name = header:GetName()
 	if name then
-		local p = MOD.db.profile -- settings shared by buffs and debuffs
-		local g = p.groups[name] -- settings specific to this header
+		local group = pp.groups[name] -- settings specific to this header
 
-		if g then
+		if group then
 			local red, green = 1, 0 -- anchor color
 			local filter = header:GetAttribute("filter")
 			header:ClearAllPoints() -- set position any time called
-			if g.enabled then
+			if group.enabled then
 				local pt = "TOPRIGHT"
-				if p.directionX > 0 then
-					if p.directionY > 0 then pt = "BOTTOMLEFT" else pt = "BOTTOMRIGHT" end
+				if pp.directionX > 0 then
+					if pp.directionY > 0 then pt = "BOTTOMLEFT" else pt = "BOTTOMRIGHT" end
 				else
-					if p.directionY > 0 then pt = "TOPLEFT" end
+					if pp.directionY > 0 then pt = "TOPLEFT" end
 				end
 				header:SetAttribute("point", pt) -- relative point on icons based on grow and wrap directions
-				-- MOD.Debug("Buffle: grow/wrap", p.directionX, p.directionY, "relative point", pt)
+				-- MOD.Debug("Buffle: grow/wrap", pp.directionX, pp.directionY, "relative point", pt)
 
 				local s = BUFFS_TEMPLATE
-				local i = tonumber(p.iconSize) -- use different template for each size, constrained by available templates
+				local i = tonumber(pp.iconSize) -- use different template for each size, constrained by available templates
 				if i and (i >= 12) and (i <= 64) then i = 2 * math.floor(i / 2); s = s .. tostring(i) end
 				if filter == FILTER_BUFFS then
 					red = 0; green = 1
@@ -603,23 +597,23 @@ function MOD.UpdateHeader(header)
 					header:SetAttribute("weaponTemplate", s)
 				end
 				header:SetAttribute("template", s)
-				header:SetAttribute("sortMethod", p.sortMethod)
-				header:SetAttribute("sortDirection", p.sortDirection)
-				header:SetAttribute("separateOwn", p.separateOwn)
-				header:SetAttribute("wrapAfter", p.wrapAfter)
-				header:SetAttribute("maxWraps", p.maxWraps)
+				header:SetAttribute("sortMethod", pp.sortMethod)
+				header:SetAttribute("sortDirection", pp.sortDirection)
+				header:SetAttribute("separateOwn", pp.separateOwn)
+				header:SetAttribute("wrapAfter", pp.wrapAfter)
+				header:SetAttribute("maxWraps", pp.maxWraps)
 
 				local dx, dy, mw, mh, wx, wy = 0, 0, 0, 0, 0, 0
-				if p.growDirection == 1 then -- grow horizontally
-					dx = p.directionX * (p.spaceX + p.iconSize)
-					wy = p.directionY * (p.spaceY + p.iconSize)
-					mw = (((p.wrapAfter == 1) and 0 or p.spaceX) + p.iconSize) * p.wrapAfter
-					mh = (p.spaceY + p.iconSize) * p.maxWraps
+				if pp.growDirection == 1 then -- grow horizontally
+					dx = pp.directionX * (pp.spaceX + pp.iconSize)
+					wy = pp.directionY * (pp.spaceY + pp.iconSize)
+					mw = (((pp.wrapAfter == 1) and 0 or pp.spaceX) + pp.iconSize) * pp.wrapAfter
+					mh = (pp.spaceY + pp.iconSize) * pp.maxWraps
 				else -- otherwise grow vertically
-					dy = p.directionY * (p.spaceY + p.iconSize)
-					wx = p.directionX * (p.spaceX + p.iconSize)
-					mw = (p.spaceX + p.iconSize) * p.maxWraps
-					mh = (((p.wrapAfter == 1) and 0 or p.spaceY) + p.iconSize) * p.wrapAfter
+					dy = pp.directionY * (pp.spaceY + pp.iconSize)
+					wx = pp.directionX * (pp.spaceX + pp.iconSize)
+					mw = (pp.spaceX + pp.iconSize) * pp.maxWraps
+					mh = (((pp.wrapAfter == 1) and 0 or pp.spaceY) + pp.iconSize) * pp.wrapAfter
 				end
 				header:SetAttribute("xOffset", PS(dx))
 				header:SetAttribute("yOffset", PS(dy))
@@ -630,53 +624,20 @@ function MOD.UpdateHeader(header)
 				-- MOD.Debug("Buffle: dx/dy", dx, dy, "wx/wy", wx, wy, "mw/mh", mw, mh)
 
 				PSetSize(header, 100, 100)
-				PSetPoint(header, g.attachPoint, g.anchorFrame, g.anchorPoint, g.anchorX, g.anchorY)
+				PSetPoint(header, group.attachPoint, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
 				header:Show()
 
 				PSetSize(header.anchorBackdrop, mw - 2, mh - 2)
-				PSetPoint(header.anchorBackdrop, g.attachPoint, g.anchorFrame, g.anchorPoint, g.anchorX, g.anchorY)
+				PSetPoint(header.anchorBackdrop, group.attachPoint, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
 				header.anchorBackdrop:SetBackdrop(twoPixelBackdrop)
 				header.anchorBackdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
 				header.anchorBackdrop:SetBackdropBorderColor(red, green, 0, 0.6) -- buffs have green border and debuffs have red border
-				if p.locked then header.anchorBackdrop:Hide() else header.anchorBackdrop:Show() end
+				if pp.locked then header.anchorBackdrop:Hide() else header.anchorBackdrop:Show() end
 			else
 				header:Hide()
 			end
 		end
 	end
-end
-
--- Convert color codes from hex number to array with r, p, b, a fields (alpha set to 1.0)
-function MOD.HexColor(hex)
-	local n = tonumber(hex, 16)
-	local red = math.floor(n / (256 * 256))
-	local green = math.floor(n / 256) % 256
-	local blue = n % 256
-
-	return { r = red/255, p = green/255, b = blue/255, a = 1.0 }
-	-- return CreateColor(red/255, green/255, blue/255, 1)
-end
-
--- Return a copy of a color, if c is nil then return nil
-function MOD.CopyColor(c)
-	if not c then return nil end
-	-- return CreateColor(c.r, c.p, c.b, c.a)
-	return { r = c.r, p = c.p, b = c.b, a = c.a }
-end
-
--- Return a copy of the contents of a table, assumes contents are at most one table deep
-function MOD.CopyTable(a)
-	local b = {}
-  for k, v in pairs(a) do
-		if type(v) == "table" then
-			local t = {}
-			for k1, v1 in pairs(v) do t[k1] = v1 end
-			b[k] = t
-		else
-			b[k] = v
-		end
-	end
-	return b
 end
 
 -- Convert a time value into a compact text string using a selected display format
@@ -733,13 +694,14 @@ end
 -- Default profile description used to initialize the SavedVariables persistent database
 MOD.DefaultProfile = {
 	global = { -- shared settings for all characters
+		hideBlizz = true, -- hide Blizzard buffs and debuffs
+		masque = true, -- enable use of Masque
+		hideOmniCC = true, -- disable OmniCC writing into the buttons
 		Minimap = { hide = false, minimapPos = 200, radius = 80, }, -- saved DBIcon minimap settings
 	},
 	profile = { -- settings specific to a profile
 		enabled = true, -- enable addon
-		hideBlizz = true, -- hide Blizzard buffs and debuffs
 		locked = false, -- hide the anchors when locked
-		masque = true, -- enable use of Masque
 		iconSize = 36,
 		iconBorder = "two", -- "default", "one", "two", "raven", "masque"
 		iconBorderColor = "white", -- "white", "black", "custom"

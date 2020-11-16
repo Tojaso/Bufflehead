@@ -23,6 +23,39 @@ local Off = 0 -- value used to designate an option is turned off
 local function IsOff(value) return value == nil or value == Off end -- return true if option is turned off
 local function IsOn(value) return value ~= nil and value ~= Off end -- return true if option is turned on
 
+-- Convert color codes from hex number to array with r, pp, b, a fields (alpha set to 1.0)
+function MOD.HexColor(hex)
+	local n = tonumber(hex, 16)
+	local red = math.floor(n / (256 * 256))
+	local green = math.floor(n / 256) % 256
+	local blue = n % 256
+
+	return { r = red/255, pp = green/255, b = blue/255, a = 1.0 }
+	-- return CreateColor(red/255, green/255, blue/255, 1)
+end
+
+-- Return a copy of a color, if c is nil then return nil
+function MOD.CopyColor(c)
+	if not c then return nil end
+	-- return CreateColor(c.r, c.pp, c.b, c.a)
+	return { r = c.r, g = c.g, b = c.b, a = c.a }
+end
+
+-- Return a copy of the contents of a table, assumes contents are at most one table deep
+function MOD.CopyTable(a)
+	local b = {}
+  for k, v in pairs(a) do
+		if type(v) == "table" then
+			local t = {}
+			for k1, v1 in pairs(v) do t[k1] = v1 end
+			b[k] = t
+		else
+			b[k] = v
+		end
+	end
+	return b
+end
+
 -- Update options in case anything changes
 local function UpdateOptions()
 	if initialized and acedia.OpenFrames["Buffle"] then
