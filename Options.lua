@@ -3,6 +3,7 @@
 local MOD = Buffle
 local _
 local initialized = false -- set when options are first accessed
+local pg, pp -- global and character-specific profiles
 
 local acereg = LibStub("AceConfigRegistry-3.0")
 local acedia = LibStub("AceConfigDialog-3.0")
@@ -73,6 +74,7 @@ local function InitializeOptions()
 	acereg:RegisterOptionsTable("Buffle: "..options.args.FrontPage.name, options.args.FrontPage)
 	acereg:RegisterOptionsTable("Buffle: "..options.args.profile.name, options.args.profile)
 	acedia:AddToBlizOptions("Buffle Options", "Buffle")
+	pg = MOD.db.global; pp = MOD.db.profile
 
 	local w, h = 890, 680 -- somewhat arbitrary numbers that seem to work for the configuration dialog layout
 	acedia:SetDefaultSize("Buffle", w, h)
@@ -106,14 +108,14 @@ MOD.OptionsTable = {
 						EnableGroup = {
 							type = "toggle", order = 10, name = "Enable Addon",
 							desc = "If checked, this addon is enabled, otherwise all features are disabled.",
-							get = function(info) return MOD.db.profile.enabled end,
-							set = function(info, value) MOD.db.profile.enabled = value end,
+							get = function(info) return pp.enabled end,
+							set = function(info, value) pp.enabled = value end,
 						},
 						EnableHideBlizz = {
 							type = "toggle", order = 20, name = "Hide Blizzard",
 							desc = "If checked, hide the default Blizzard buffs and debuffs.",
-							get = function(info) return MOD.db.profile.hideBlizz end,
-							set = function(info, value) MOD.db.profile.hideBlizz = value end,
+							get = function(info) return pg.hideBlizz end,
+							set = function(info, value) pg.hideBlizz = value end,
 						},
 						EnableMinimapIcon = {
 							type = "toggle", order = 35, name = "Minimap Icon",
