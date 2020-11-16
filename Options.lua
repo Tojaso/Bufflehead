@@ -108,8 +108,8 @@ MOD.OptionsTable = {
 						EnableGroup = {
 							type = "toggle", order = 10, name = "Enable Addon",
 							desc = "If checked, this addon is enabled, otherwise all features are disabled.",
-							get = function(info) return pp.enabled end,
-							set = function(info, value) pp.enabled = value end,
+							get = function(info) return pg.enabled end,
+							set = function(info, value) pg.enabled = value end,
 						},
 						EnableHideBlizz = {
 							type = "toggle", order = 20, name = "Hide Blizzard",
@@ -121,9 +121,9 @@ MOD.OptionsTable = {
 							type = "toggle", order = 35, name = "Minimap Icon",
 							desc = "If checked, add a minimap icon for toggling the options panel.",
 							hidden = function(info) return MOD.ldbi == nil end,
-							get = function(info) return not MOD.db.global.Minimap.hide end,
+							get = function(info) return not pg.Minimap.hide end,
 							set = function(info, value)
-								MOD.db.global.Minimap.hide = not value
+								pg.Minimap.hide = not value
 								if value then MOD.ldbi:Show("Buffle") else MOD.ldbi:Hide("Buffle") end
 							end,
 						},

@@ -153,7 +153,7 @@ function MOD:PLAYER_ENTERING_WORLD()
 	enteredWorld = true
 	UIScaleChanged() -- initialize scale factor for pixel perfect size and alignment
 
-	if pp.enabled then -- make sure addon is enabled
+	if pg.enabled then -- make sure addon is enabled
 		MOD.CheckBlizzFrames() -- check blizz frames and hide the ones selected on the Defaults tab
 		for name, group in pairs(pp.groups) do
 			if group.enabled then -- create header for enabled group, must do /reload if change header-related options
@@ -210,7 +210,7 @@ function MOD.InitializeLDB()
 				end
 			elseif msg == "LeftButton" then
 				if IsShiftKeyDown() then
-					pp.enabled = not pp.enabled
+					pg.enabled = not pg.enabled
 				else
 					MOD.OptionsPanel()
 				end
@@ -691,20 +691,18 @@ end
 -- Default profile description used to initialize the SavedVariables persistent database
 MOD.DefaultProfile = {
 	global = { -- shared settings for all characters
+		enabled = true, -- enable addon
 		hideBlizz = true, -- hide Blizzard buffs and debuffs
 		masque = true, -- enable use of Masque
 		hideOmniCC = true, -- disable OmniCC writing into the buttons
 		Minimap = { hide = false, minimapPos = 200, radius = 80, }, -- saved DBIcon minimap settings
 	},
 	profile = { -- settings specific to a profile
-		enabled = true, -- enable addon
 		locked = false, -- hide the anchors when locked
 		iconSize = 36,
 		iconBorder = "two", -- "default", "one", "two", "raven", "masque"
 		iconBorderColor = "white", -- "white", "black", "custom"
 		iconDebuffColor = true, -- use debuff color for border if applicable
-		offsetX = 0,
-		offsetY = 0,
 		growDirection = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1,
 		directionY = -1,
