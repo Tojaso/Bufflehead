@@ -519,52 +519,49 @@ end
 function MOD:Button_OnAttributeChanged(k, v)
 	local button = self
 	local header = button:GetParent()
+	local show, hide = false, false
+	local name, icon, count, btype, duration, expire
+	local enchant, remaining, id, offEnchant, offRemaining, offCount, offId
 
 	if k == "index" then -- update a buff or debuff
 		local unit = header:GetAttribute("unit")
 		local filter = header:GetAttribute("filter")
-		local name, icon, count, btype, duration, expire = UnitAura(unit, v, filter)
+		name, icon, count, btype, duration, expire = UnitAura(unit, v, filter)
 		if name then
-			button.iconTexture:ClearAllPoints(button)
-			button.iconTexture:SetPoint("CENTER", button, "CENTER")
-			button.iconTexture:SetTexture(icon)
-			button.iconTexture:Show()
-			SkinBorder(button)
-			SkinClock(button, duration, expire) -- after border!
-			SkinTime(button, duration, expire)
-			SkinBar(button, duration, expire)
-			SkinCount(button, count)
-			SkinBarBorder(button)
+			show = true
 		else
-			button.iconTexture:Hide()
-			button.iconBorder:Hide()
-			button.iconBackdrop:Hide()
-			button.barBackdrop:Hide()
+			hide = true
 		end
 	elseif k == "target-slot" then -- update player weapon enchant (v == 16 or 17)
 		if (v == 16) or (v == 17) then -- mainhand or offhand slot
-			local _, remaining, _, id, _, offRemaining, _, offId = GetWeaponEnchantInfo()
-			if v == 17 then remaining = offRemaining; id = offId end
+			enchant, remaining, count, id, offEnchant, offRemaining, offCount, offId = GetWeaponEnchantInfo()
+			if v == 17 then enchant = offEnchant; remaining = offRemaining; count = offCount; id = offId end
 			remaining = remaining / 1000 -- blizz function returned milliseconds
-			local expire = remaining + GetTime()
-			local duration = WeaponDuration(id, remaining)
-			local icon = GetInventoryItemTexture("player", v)
-			button.iconTexture:ClearAllPoints(button)
-			button.iconTexture:SetPoint("CENTER", button, "CENTER")
-			button.iconTexture:SetTexture(icon)
-			button.iconTexture:Show()
-			SkinBorder(button)
-			SkinClock(button, duration, expire) -- after border!
-			SkinTime(button, duration, expire)
-			SkinBar(button, duration, expire)
-			SkinBarBorder(button)
-			-- MOD.Debug("Buffle: weapon", v, id, remaining, duration)
+			expire = remaining + GetTime()
+			duration = WeaponDuration(id, remaining)
+			icon = GetInventoryItemTexture("player", v)
+			show = true
 		else
-			button.iconTexture:Hide()
-			button.iconBorder:Hide()
-			button.iconBackdrop:Hide()
-			button.barBackdrop:Hide()
+			hide = true
 		end
+	end
+
+	if show then
+		button.iconTexture:ClearAllPoints(button)
+		button.iconTexture:SetPoint("CENTER", button, "CENTER")
+		button.iconTexture:SetTexture(icon)
+		button.iconTexture:Show()
+		SkinBorder(button)
+		SkinClock(button, duration, expire) -- after border!
+		SkinTime(button, duration, expire)
+		SkinBar(button, duration, expire)
+		SkinCount(button, count)
+		SkinBarBorder(button)
+	elseif hide then
+		button.iconTexture:Hide()
+		button.iconBorder:Hide()
+		button.iconBackdrop:Hide()
+		button.barBackdrop:Hide()
 	end
 end
 
