@@ -272,21 +272,28 @@ function MOD:Button_OnLoad(button)
 	local header = button:GetParent()
 	local name = header:GetName()
 	local filter = header:GetAttribute("filter")
+	local level = button:GetFrameLevel()
 	-- MOD.Debug("Buffle: new button", name, filter)
 
 	button.iconTexture = button:CreateTexture(nil, "ARTWORK")
 	button.iconBorder = button:CreateTexture(nil, "BACKGROUND", nil, 3)
 	button.iconBackdrop = CreateFrame("Frame", nil, button, BackdropTemplateMixin and "BackdropTemplate")
-	button.iconBackdrop:SetFrameLevel(button:GetFrameLevel() - 1) -- behind icon
+	button.iconBackdrop:SetFrameLevel(level - 1) -- behind icon
+	button.clock = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
+	button.clock.noCooldownCount = true
+	button.clock.noOCC = true
+	button.clock:SetHideCountdownNumbers(true)
+	button.clock:SetFrameLevel(level + 2) -- in front of icon but behind bar
+	button.clock:SetDrawBling(false)
+	button.clock:SetDrawEdge(true)
 	button.timeText = button:CreateFontString(nil, "OVERLAY")
 	button.timeText:SetFontObject(ChatFontNormal)
 	button.countText = button:CreateFontString(nil, "OVERLAY")
 	button.countText:SetFontObject(ChatFontNormal)
 	button.bar = CreateFrame("StatusBar", nil, button, BackdropTemplateMixin and "BackdropTemplate")
-	button.bar:SetFrameLevel(button:GetFrameLevel() + 4) -- in front of icon
-	button.bar:SetFrameStrata(button:GetFrameStrata())
+	button.bar:SetFrameLevel(level + 4) -- in front of icon
 	button.barBackdrop = CreateFrame("Frame", nil, button.bar, BackdropTemplateMixin and "BackdropTemplate")
-	button.barBackdrop:SetFrameLevel(button:GetFrameLevel() + 3) -- behind bar but in front of icon
+	button.barBackdrop:SetFrameLevel(level + 3) -- behind bar but in front of icon
 
 	if MSQ then -- if MSQ is loaded then initialize its required data table
 		button.buttonMSQ = header._MSQ
@@ -348,6 +355,24 @@ local function SkinBorder(button)
 	end
 end
 
+-- Skin the icon's clock overlay, must be done after skinning the border
+local function SkinClock(button, duration, expire)
+	local p = MOD.db.profile -- profile settings are shared across buffs and debuffs
+	local bc = button.clock
+	bc:ClearAllPoints()
+
+	if p.showClock and duration and duration > 0 and expire and expire > 0 then
+		local w, h = button.iconTexture:GetSize()
+		bc:SetSize(w, h) -- icon texture was already sized and scaled
+		bc:SetPoint("CENTER", button, "CENTER")
+		bc:SetCooldown(expire - duration, duration)
+		bc:Show()
+	else
+		bc:SetCooldown(0, 0)
+		bc:Hide()
+	end
+end
+
 -- Validate that have a valid font reference
 local function ValidFont(name) return (name and (type(name) == "string") and (name ~= "")) end
 
@@ -388,7 +413,7 @@ local function SkinTime(button, duration, expire)
 		bt:SetText("0:00:00") -- set to widest time string, note this is overwritten later with correct string!
 		local timeMaxWidth = bt:GetStringWidth() -- get maximum text width using current font
 		PSetSize(bt, timeMaxWidth, p.fontSize + 2)
-		PSetPoint(bt, "TOP", button, "BOTTOM")
+		PSetPoint(bt, "TOP", button, "BOTTOM", p.timeX, p.timeY)
 		-- if IsAltKeyDown() then MOD.Debug("skinTime", remaining) end
 		button._expire = expire
 		button._update = 0
@@ -451,6 +476,9 @@ local function SkinBar(button, duration, expire)
 	if p.showBar and duration and duration > 0.1 and remaining > 0.05 then
 		PSetPoint(bb, p.barAttachPoint, button, p.barAnchorPoint, p.barAnchorX, p.barAnchorY)
 		PSetSize(bb, (p.barWidth > 0) and p.barWidth or p.iconSize, (p.barHeight > 0) and p.barHeight or p.iconSize)
+		bb:SetOrientation(p.barOrientation)
+		bb:SetFillStyle(p.barFillStyle)
+		bb:SetReverseFill(p.barReverseFill)
 		bb:SetStatusBarTexture("Interface\\AddOns\\Buffle\\Media\\WhiteBar")
 		bb:SetStatusBarColor(0, 1, 0, 1)
 		bb:SetMinMaxValues(0, duration)
@@ -507,6 +535,7 @@ function MOD:Button_OnAttributeChanged(k, v)
 			button.iconTexture:SetTexture(icon)
 			button.iconTexture:Show()
 			SkinBorder(button)
+			SkinClock(button, duration, expire) -- after border!
 			SkinTime(button, duration, expire)
 			SkinBar(button, duration, expire)
 			SkinCount(button, count)
@@ -530,6 +559,7 @@ function MOD:Button_OnAttributeChanged(k, v)
 			button.iconTexture:SetTexture(icon)
 			button.iconTexture:Show()
 			SkinBorder(button)
+			SkinClock(button, duration, expire) -- after border!
 			SkinTime(button, duration, expire)
 			SkinBar(button, duration, expire)
 			SkinBarBorder(button)
@@ -727,19 +757,25 @@ MOD.DefaultProfile = {
 		wrapAfter = 20,
 		maxWraps = 2,
 		showTime = true,
-		showCount = true,
-		font = 0, -- use system font
-		fontSize = 14,
-		fontFlags = "OUTLINE",
+		timeX = 0,
+		timeY = -14,
 		timeFormat = 0, -- use default time format
 		timeSpaces = false, -- if true include spaces in time text
 		timeCase = false, -- if true use upper case in time text
 		timeLimit = 0, -- if timeLimit > 0 then only show time when < timeLimit
+		showCount = true,
+		font = 0, -- use system font
+		fontSize = 14,
+		fontFlags = "OUTLINE",
+		showClock = true, -- show clock overlay to indicate remaining time
 		showBar = true,
 		barColor = 0, -- 0 = default color for buff/debuff
 		barBackdropColor = 0, -- 0 = default backdrop color for buff/debuff
 		barWidth = 0, -- defaults to same as icon width
 		barHeight = 10,
+		barOrientation = "HORIZONTAL", -- "HORIZONTAL" or "VERTICAL"
+		barFillStyle = "STANDARD", -- "STANDARD", "STANDARD_NO_RANGE_FILL", "CENTER", "REVERSE"
+		barReverseFill = false, -- true = right-to-left, false = left-to-right
 		barBorder = "two", -- "none", "one", "two"
 		barBorderColor = "white", -- "white", "black", "custom"
 		barAttachPoint = "TOP",
