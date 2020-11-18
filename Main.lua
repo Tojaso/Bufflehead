@@ -42,14 +42,11 @@ local twoPixelBackdrop = { -- backdrop initialization for icons when using optio
 	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
 
-local MSQ_ButtonData = { AutoCast = false, AutoCastable = false, Border = false, Checked = false, Cooldown = false, Count = false, Duration = false,
-	Disabled = false, Flash = false, Highlight = false, HotKey = false, Icon = false, Name = false, Normal = false, Pushed = false }
-
 local addonInitialized = false -- set when the addon is initialized
 local addonEnabled = false -- set when the addon is enabled
 local blizzHidden = false -- set when blizzard buffs and debuffs are hidden
 local uiScaleChanged = false -- set in combat to defer running event handler
-local MSQ = false -- replace with Masque reference when available
+local MSQ_ButtonData = nil
 local weaponDurations = {} -- best guess for weapon buff durations, indexed by enchant id
 local pg, pp -- global and character-specific profiles
 
@@ -140,7 +137,10 @@ function MOD:OnEnable()
 
 	MOD:RegisterChatCommand("buffle", function() MOD.OptionsPanel() end)
 	MOD.InitializeLDB() -- initialize the data broker and minimap icon
-	MSQ = LibStub("Masque", true)
+	MOD.MSQ = LibStub("Masque", true)
+	MSQ_ButtonData = { AutoCast = false, AutoCastable = false, Border = false, Checked = false, Cooldown = false, Count = false, Duration = false,
+		Disabled = false, Flash = false, Highlight = false, HotKey = false, Icon = false, Name = false, Normal = false, Pushed = false }
+
 
 	self:RegisterEvent("UI_SCALE_CHANGED", UIScaleChanged)
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -174,8 +174,8 @@ function MOD:PLAYER_ENTERING_WORLD()
 					end
 				end
 
-				if MSQ and pg.masque then --  create MSQ group if loaded and enabled
-					header._MSQ = MSQ:Group("Buffle", group.name)
+				if MOD.MSQ then --  create MSQ group if the Masque addon is loaded
+					header._MSQ = MOD.MSQ:Group("Buffle", group.name)
 				else
 					header._MSQ = nil
 				end
@@ -245,10 +245,12 @@ function MOD.CheckBlizzFrames()
 	if hide then
 		BuffFrame:Hide()
 		TemporaryEnchantFrame:Hide()
+		BuffFrame:UnregisterAllEvents()
 		blizzHidden = true
 	elseif show then
 		BuffFrame:Show()
 		TemporaryEnchantFrame:Show()
+		BuffFrame:RegisterEvent("UNIT_AURA")
 		blizzHidden = false
 	end
 end
@@ -281,8 +283,10 @@ function MOD:Button_OnLoad(button)
 	button.iconBorder = button:CreateTexture(nil, "BACKGROUND", nil, 3)
 	button.iconBackdrop = CreateFrame("Frame", nil, button, BackdropTemplateMixin and "BackdropTemplate")
 	button.iconBackdrop:SetFrameLevel(level - 1) -- behind icon
+	button.iconHighlight = button:CreateTexture(nil, "HIGHLIGHT")
+	button.iconHighlight:SetColorTexture(1, 1, 1, 0.5)
 	button.clock = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
-	button.clock.noCooldownCount = pg.hideOmniCC; button.clock.noOCC = pg.hideOmniCC
+	button.clock.noCooldownCount = pg.hideOmniCC -- enable or disable OmniCC text
 	button.clock:SetHideCountdownNumbers(true)
 	button.clock:SetFrameLevel(level + 2) -- in front of icon but behind bar
 	button.clock:SetDrawBling(false)
@@ -296,7 +300,7 @@ function MOD:Button_OnLoad(button)
 	button.barBackdrop = CreateFrame("Frame", nil, button.bar, BackdropTemplateMixin and "BackdropTemplate")
 	button.barBackdrop:SetFrameLevel(level + 3) -- behind bar but in front of icon
 
-	if MSQ then -- if MSQ is loaded then initialize its required data table
+	if MOD.MSQ then -- if MSQ is loaded then initialize its required data table
 		button.buttonMSQ = header._MSQ
 		button.buttonData = {}
 		for k, v in pairs(MSQ_ButtonData) do button.buttonData[k] = v end
@@ -308,7 +312,7 @@ end
 -- Trim and scale icon
 local function IconTextureTrim(tex, icon, trim, iconSize)
 	local left, right, top, bottom = 0, 1, 0, 1 -- default without trim
-	if trim then left = 0.07; right = 0.93; top = 0.07; bottom = 0.93 end -- trim removes 7% of edges
+	if trim then left = 0.08; right = 0.92; top = 0.08; bottom = 0.92 end -- trim removes 7% of edges
 	tex:SetTexCoord(left, right, top, bottom) -- set the corner coordinates
 	PSetSize(tex, iconSize, iconSize)
 	PSetPoint(tex, "CENTER", icon, "CENTER") -- texture is always positioned in center of icon's frame
@@ -318,16 +322,20 @@ end
 local function SkinBorder(button)
 	local bib = button.iconBorder
 	local bik = button.iconBackdrop
+	local bih = button.iconHighlight
 	local tex = button.iconTexture
+	local masqueLoaded = MOD.MSQ and button.buttonMSQ and button.buttonData
 	local opt = pp.iconBorder -- option for type of border
 	bib:ClearAllPoints()
 	bik:ClearAllPoints()
+	if masqueLoaded then button.buttonMSQ:RemoveButton(button, true) end
 
 	if opt == "raven" then -- skin with raven's border
-		IconTextureTrim(tex, button, true, pp.iconSize * 0.91)
-		bib:SetTexture("Interface\\AddOns\\Buffle\\Media\\IconDefault")
+		IconTextureTrim(tex, button, true, pp.iconSize * 0.86)
 		bib:SetAllPoints(button)
+		bib:SetTexture("Interface\\AddOns\\Buffle\\Media\\IconDefault")
 		bib:Show()
+		bih:Hide()
 		bik:Hide()
 	elseif (opt == "one") or (opt == "two") then -- skin with single or double pixel border
 		IconTextureTrim(tex, button, true, pp.iconSize - ((opt == "one") and 2 or 4))
@@ -336,21 +344,25 @@ local function SkinBorder(button)
 		bik:SetBackdropColor(0, 0, 0, 0)
 		bik:SetBackdropBorderColor(1, 1, 1, 1)
 		bik:Show()
+		bih:Hide()
 		bib:Hide()
-	elseif (opt == "masque") and MSQ and button.buttonMSQ and button.buttonData then -- use Masque only if available
+	elseif (opt == "masque") and masqueLoaded then -- use Masque only if available
 		IconTextureTrim(tex, button, false, pp.iconSize)
-		button.buttonMSQ:RemoveButton(button, true) -- may be needed so size changes work correctly
 		bib:SetAllPoints(button)
 		bib:Show()
+		bih:Show()
 		local bdata = button.buttonData
 		bdata.Icon = tex
 		bdata.Normal = button:GetNormalTexture()
+		bdata.Cooldown = button.clock
 		bdata.Border = bib
+		bdata.Highlight = button.iconHighlight
 		button.buttonMSQ:AddButton(button, bdata)
 		bik:Hide()
 	else -- default is to just show blizzard's standard border
 		IconTextureTrim(tex, button, false, pp.iconSize)
 		bib:Hide()
+		bih:Hide()
 		bik:Hide()
 	end
 end
@@ -407,10 +419,10 @@ local function SkinTime(button, duration, expire)
 	local remaining = (expire or 0) - GetTime()
 
 	if pp.showTime and duration and duration > 0.1 and remaining > 0.05 then -- check if limited duration
-		if ValidFont(pp.font) then bt:SetFont(pp.font, pp.fontSize, pp.fontFlags) end
+		if ValidFont(pp.timeFont) then bt:SetFont(pp.timeFont, pp.timeFontSize, pp.timeFontFlags) end
 		bt:SetText("0:00:00") -- set to widest time string, note this is overwritten later with correct string!
 		local timeMaxWidth = bt:GetStringWidth() -- get maximum text width using current font
-		PSetSize(bt, timeMaxWidth, pp.fontSize + 2)
+		PSetSize(bt, timeMaxWidth, pp.timeFontSize + 2)
 		PSetPoint(bt, "TOP", button, "BOTTOM", pp.timeX, pp.timeY)
 		-- if IsAltKeyDown() then MOD.Debug("skinTime", remaining) end
 		button._expire = expire
@@ -428,7 +440,7 @@ local function SkinCount(button, count)
 	local ct = button.countText
 
 	if pp.showCount and count and count > 1 then -- check if valid parameters
-		if ValidFont(pp.font) then ct:SetFont(pp.font, pp.fontSize, pp.fontFlags) end
+		if ValidFont(pp.countFont) then ct:SetFont(pp.countFont, pp.countFontSize, pp.countFontFlags) end
 		PSetPoint(ct, "CENTER", button, "CENTER")
 		ct:SetText(count)
 		ct:Show()
@@ -547,18 +559,17 @@ function MOD:Button_OnAttributeChanged(k, v)
 	end
 
 	if show then
-		button.iconTexture:ClearAllPoints(button)
-		button.iconTexture:SetPoint("CENTER", button, "CENTER")
 		button.iconTexture:SetTexture(icon)
 		button.iconTexture:Show()
 		SkinBorder(button)
-		SkinClock(button, duration, expire) -- after border!
+		SkinClock(button, duration, expire) -- after highlight!
 		SkinTime(button, duration, expire)
 		SkinBar(button, duration, expire)
 		SkinCount(button, count)
 		SkinBarBorder(button)
 	elseif hide then
 		button.iconTexture:Hide()
+		button.iconHighlight:Hide()
 		button.iconBorder:Hide()
 		button.iconBackdrop:Hide()
 		button.barBackdrop:Hide()
@@ -688,20 +699,24 @@ function MOD.FormatTime(t, timeFormat, timeSpaces, timeCase)
 	return f
 end
 
+function MOD.GetBuffsPercentX() return 20 end
+function MOD.SetBuffsPercentX(value) end
+function MOD.GetBuffsPercentY() return 10 end
+function MOD.SetBuffsPercentY(value) end
+
 -- Default profile description used to initialize the SavedVariables persistent database
 MOD.DefaultProfile = {
 	global = { -- shared settings for all characters
 		enabled = true, -- enable addon
 		hideBlizz = true, -- hide Blizzard buffs and debuffs
-		masque = true, -- enable use of Masque
-		hideOmniCC = true, -- disable OmniCC writing into the buttons
 		Minimap = { hide = false, minimapPos = 200, radius = 80, }, -- saved DBIcon minimap settings
+		hideOmniCC = true, -- only valid if OmniCC addon is available
 	},
 	profile = { -- settings specific to a profile
 		locked = false, -- hide the anchors when locked
 		iconSize = 36,
-		iconBorder = "two", -- "default", "one", "two", "raven", "masque"
-		iconBorderColor = "white", -- "white", "black", "custom"
+		iconBorder = "raven", -- "default", "one", "two", "raven", "masque"
+		iconBorderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 },
 		iconDebuffColor = true, -- use debuff color for border if applicable
 		growDirection = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1,
@@ -720,10 +735,17 @@ MOD.DefaultProfile = {
 		timeSpaces = false, -- if true include spaces in time text
 		timeCase = false, -- if true use upper case in time text
 		timeLimit = 0, -- if timeLimit > 0 then only show time when < timeLimit
+		timeFont = 0, -- use system font
+		timeFontSize = 14,
+		timeFontFlags = "OUTLINE",
+		timeColor = 0, -- use default
 		showCount = true,
-		font = 0, -- use system font
-		fontSize = 14,
-		fontFlags = "OUTLINE",
+		countX = 0,
+		countY = 0,
+		countFont = 0, -- use system font
+		countFontSize = 14,
+		countFontFlags = "OUTLINE",
+		countColor = 0, -- use default
 		showClock = true, -- show clock overlay to indicate remaining time
 		showBar = true,
 		barColor = 0, -- 0 = default color for buff/debuff

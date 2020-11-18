@@ -1,8 +1,8 @@
-## Interface: 90001
-## Title: Buffle: Simply Ducky Auras
-## Notes: Skins the default buffs, including weapon enchants, and debuffs
+## Interface: 90002
+## Title: Buffle: Simply Ducky Player Buffs and Debuffs
+## Notes: Skins player buffs and debuffs
 ## Author: Tojaso/Tomber
-## Version: 9.0.1
+## Version: 9.0.2
 ## DefaultState: enabled
 ## OptionalDependencies: Masque
 ## SavedVariables: BuffleDB
