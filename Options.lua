@@ -209,17 +209,23 @@ MOD.OptionsTable = {
 							set = function(info, value) pp.iconBorder = "two"; UpdateAll() end,
 						},
 						spacer = { type = "description", name = "", order = 100 },
-						IconBorderColor = {
-							type = "color", order = 110, name = "Color", hasAlpha = true,
-							desc = "Set color for the icon's border.",
-							get = function(info) local t = pp.iconBorderColor return t.r, t.g, t.b, t.a end,
-							set = function(info, r, g, b, a) local t = pp.iconBorderColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
+						BuffColor = {
+							type = "color", order = 110, name = "Buffs", hasAlpha = true,
+							desc = "Set color for buff icon borders.",
+							get = function(info) local t = pp.iconBuffBorderColor return t.r, t.g, t.b, t.a end,
+							set = function(info, r, g, b, a) local t = pp.iconBuffBorderColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
 						},
-						DebuffBorderColor = {
-							type = "toggle", order = 120, name = "Use Debuff Colors",
-							desc = "Use debuff colors for icon borders when appropriate.",
-							get = function(info) return pp.iconDebuffColor end,
-							set = function(info, value) pp.iconDebuffColor = value; UpdateAll() end,
+						DebuffColor = {
+							type = "color", order = 120, name = "Debuffs", hasAlpha = true,
+							desc = "Set color for debuff icons borders.",
+							get = function(info) local t = pp.iconDebuffBorderColor return t.r, t.g, t.b, t.a end,
+							set = function(info, r, g, b, a) local t = pp.iconDebuffBorderColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
+						},
+						DebuffTypeColor = {
+							type = "toggle", order = 130, name = "Override with Debuff Type Color",
+							desc = "Use debuff type colors for icon borders when appropriate.",
+							get = function(info) return pp.debuffColoring end,
+							set = function(info, value) pp.debuffColoring = value; UpdateAll() end,
 						},
 					},
 				},

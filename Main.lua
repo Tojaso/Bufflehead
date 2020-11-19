@@ -319,7 +319,7 @@ local function IconTextureTrim(tex, icon, trim, iconSize)
 end
 
 -- Skin the icon's border
-local function SkinBorder(button)
+local function SkinBorder(button, c)
 	local bib = button.iconBorder
 	local bik = button.iconBackdrop
 	local bih = button.iconHighlight
@@ -329,11 +329,13 @@ local function SkinBorder(button)
 	bib:ClearAllPoints()
 	bik:ClearAllPoints()
 	if masqueLoaded then button.buttonMSQ:RemoveButton(button, true) end
+	if not c then c = { r = 0.5, g = 0.5, b = 0.5, a = 1 } end
 
 	if opt == "raven" then -- skin with raven's border
 		IconTextureTrim(tex, button, true, pp.iconSize * 0.86)
 		bib:SetAllPoints(button)
 		bib:SetTexture("Interface\\AddOns\\Buffle\\Media\\IconDefault")
+		bib:SetVertexColor(c.r, c.g, c.b, c.a or 1)
 		bib:Show()
 		bih:Hide()
 		bik:Hide()
@@ -342,13 +344,14 @@ local function SkinBorder(button)
 		bik:SetAllPoints(button)
 		bik:SetBackdrop((opt == "one") and onePixelBackdrop or twoPixelBackdrop)
 		bik:SetBackdropColor(0, 0, 0, 0)
-		bik:SetBackdropBorderColor(1, 1, 1, 1)
+		bik:SetBackdropBorderColor(c.r, c.g, c.b, c.a or 1)
 		bik:Show()
 		bih:Hide()
 		bib:Hide()
 	elseif (opt == "masque") and masqueLoaded then -- use Masque only if available
 		IconTextureTrim(tex, button, false, pp.iconSize)
 		bib:SetAllPoints(button)
+		bib:SetVertexColor(c.r, c.g, c.b, c.a or 1)
 		bib:Show()
 		bih:Show()
 		local bdata = button.buttonData
@@ -531,16 +534,25 @@ end
 function MOD:Button_OnAttributeChanged(k, v)
 	local button = self
 	local header = button:GetParent()
+	local unit = header:GetAttribute("unit")
+	local filter = header:GetAttribute("filter")
 	local show, hide = false, false
 	local name, icon, count, btype, duration, expire
 	local enchant, remaining, id, offEnchant, offRemaining, offCount, offId
+	local color = pp.iconBuffBorderColor
 
 	if k == "index" then -- update a buff or debuff
-		local unit = header:GetAttribute("unit")
-		local filter = header:GetAttribute("filter")
 		name, icon, count, btype, duration, expire = UnitAura(unit, v, filter)
 		if name then
 			show = true
+			if filter == FILTER_DEBUFFS then
+				color = pp.iconDebuffBorderColor
+				if pp.debuffColoring then
+					btype = btype or "none"
+					local c = _G.DebuffTypeColor[btype]
+					if c then color = c end
+				end
+			end
 		else
 			hide = true
 		end
@@ -561,7 +573,7 @@ function MOD:Button_OnAttributeChanged(k, v)
 	if show then
 		button.iconTexture:SetTexture(icon)
 		button.iconTexture:Show()
-		SkinBorder(button)
+		SkinBorder(button, color)
 		SkinClock(button, duration, expire) -- after highlight!
 		SkinTime(button, duration, expire)
 		SkinBar(button, duration, expire)
@@ -716,8 +728,9 @@ MOD.DefaultProfile = {
 		locked = false, -- hide the anchors when locked
 		iconSize = 36,
 		iconBorder = "raven", -- "default", "one", "two", "raven", "masque"
-		iconBorderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 },
-		iconDebuffColor = true, -- use debuff color for border if applicable
+		iconBuffBorderColor = { r = 0.5, g = 1, b = 0.5, a = 1 },
+		iconDebuffBorderColor = { r = 1, g = 0.5, b = 0.5, a = 1 },
+		debuffColoring = true, -- use debuff color for border if applicable
 		growDirection = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1,
 		directionY = -1,
@@ -738,25 +751,27 @@ MOD.DefaultProfile = {
 		timeFont = 0, -- use system font
 		timeFontSize = 14,
 		timeFontFlags = "OUTLINE",
-		timeColor = 0, -- use default
+		timeColor = { r = 1, g = 1, b = 1, a = 1 },
 		showCount = true,
 		countX = 0,
 		countY = 0,
 		countFont = 0, -- use system font
 		countFontSize = 14,
 		countFontFlags = "OUTLINE",
-		countColor = 0, -- use default
+		countColor = { r = 1, g = 1, b = 1, a = 1 },
 		showClock = true, -- show clock overlay to indicate remaining time
 		showBar = true,
-		barColor = 0, -- 0 = default color for buff/debuff
-		barBackdropColor = 0, -- 0 = default backdrop color for buff/debuff
+		barBuffColor = { r = 0, g = 0.75, b = 0, a = 1 },
+		barDebuffColor = { r = 0.75, g = 0, b = 0, a = 1 },
+		barBuffBackdropColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 },
+		barDebuffBackdropColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 },
 		barWidth = 0, -- defaults to same as icon width
 		barHeight = 10,
 		barOrientation = "HORIZONTAL", -- "HORIZONTAL" or "VERTICAL"
 		barFillStyle = "STANDARD", -- "STANDARD", "STANDARD_NO_RANGE_FILL", "CENTER", "REVERSE"
 		barReverseFill = false, -- true = right-to-left, false = left-to-right
 		barBorder = "two", -- "none", "one", "two"
-		barBorderColor = "white", -- "white", "black", "custom"
+		barBorderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 },
 		barAttachPoint = "TOP",
 		barAnchorPoint = "BOTTOM",
 		barAnchorX = 0,
