@@ -101,6 +101,13 @@ function MOD:OnInitialize()
 	LoadAddOn("LibDBIcon-1.0")
 end
 
+-- Adjust a backdrop's edgeSize and insets for pixel perfect factor
+local function SetInsets(backdrop, x)
+	backdrop.edgeSize = x
+	local t = backdrop.insets
+	t.left = x; t.right = x; t.top = x; t.bottom = x
+end
+
 -- Adjust pixel perfect scale factor when the UIScale is changed
 local function UIScaleChanged()
 	if not enteredWorld then return end
@@ -109,8 +116,8 @@ local function UIScaleChanged()
 	else
 		local pixelWidth, pixelHeight = GetPhysicalScreenSize() -- size in pixels of display in full screen, otherwise window size in pixels
 		pixelScale = GetScreenHeight() / pixelHeight -- figure out how big virtual pixels are versus screen pixels
-		onePixelBackdrop.edgeSize = PS(1) -- update one pixel border size
-		twoPixelBackdrop.edgeSize = PS(2) -- update two pixel border size
+		SetInsets(onePixelBackdrop, PS(1)) -- update one pixel border size
+		SetInsets(twoPixelBackdrop, PS(2)) -- update two pixel border size
 		uiScaleChanged = false
 		-- MOD.Debug("Buffle: pixel w/h/scale", pixelWidth, pixelHeight, pixelScale)
 		-- MOD.Debug("Buffle: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
@@ -423,6 +430,8 @@ local function SkinTime(button, duration, expire)
 
 	if pp.showTime and duration and duration > 0.1 and remaining > 0.05 then -- check if limited duration
 		if ValidFont(pp.timeFont) then bt:SetFont(pp.timeFont, pp.timeFontSize, pp.timeFontFlags) end
+		local c = pp.timeColor
+		bt:SetTextColor(c.r, c.g, c.b, c.a)
 		bt:SetText("0:00:00") -- set to widest time string, note this is overwritten later with correct string!
 		local timeMaxWidth = bt:GetStringWidth() -- get maximum text width using current font
 		PSetSize(bt, timeMaxWidth, pp.timeFontSize + 2)
@@ -444,8 +453,10 @@ local function SkinCount(button, count)
 
 	if pp.showCount and count and count > 1 then -- check if valid parameters
 		if ValidFont(pp.countFont) then ct:SetFont(pp.countFont, pp.countFontSize, pp.countFontFlags) end
-		PSetPoint(ct, "CENTER", button, "CENTER")
+		local c = pp.countColor
+		ct:SetTextColor(c.r, c.g, c.b, c.a)
 		ct:SetText(count)
+		PSetPoint(ct, "CENTER", button, "CENTER")
 		ct:Show()
 	else
 		ct:Hide()
@@ -480,7 +491,7 @@ local function UpdateBar(bb)
 end
 
 -- Configure the button's bar
-local function SkinBar(button, duration, expire)
+local function SkinBar(button, duration, expire, barColor)
 	local bb = button.bar
 	local remaining = (expire or 0) - GetTime()
 
@@ -491,11 +502,9 @@ local function SkinBar(button, duration, expire)
 		bb:SetFillStyle(pp.barFillStyle)
 		bb:SetReverseFill(pp.barReverseFill)
 		bb:SetStatusBarTexture("Interface\\AddOns\\Buffle\\Media\\WhiteBar")
-		bb:SetStatusBarColor(0, 1, 0, 1)
+		local c = barColor
+		bb:SetStatusBarColor(c.r, c.g, c.b, c.a)
 		bb:SetMinMaxValues(0, duration)
-		-- fix incorrect status bar textures (backdrop gets same as foreground texture) and color
-		-- add backdrop with one or two pixel border and background color at 60% opacity
-		-- if IsAltKeyDown() then MOD.Debug("skinBar", duration, remaining) end
 		bb._duration = duration
 		bb._expire = expire
 		UpdateBar(bb)
@@ -508,11 +517,9 @@ local function SkinBar(button, duration, expire)
 end
 
 -- Skin the bar's border
-local function SkinBarBorder(button)
+local function SkinBarBorder(button, barColor, barBorderColor)
 	local bbk = button.barBackdrop
 	local opt = pp.barBorder -- option for type of border
-	local br, bg, bb, ba = 0.5, 0.5, 0.5, 0.8 -- default bar backdrop color
-	local dr, dg, db, da = 1, 1, 1, 1 -- default bar border color
 
 	if (opt == "one") or (opt == "two") then -- skin bar with single pixel border
 		local delta, drop = 4, twoPixelBackdrop
@@ -522,8 +529,11 @@ local function SkinBarBorder(button)
 		PSetSize(bbk, bw, bh)
 		PSetSize(button.bar, bw - delta, bh - delta)
 		bbk:SetBackdrop(drop)
-		bbk:SetBackdropColor(br, bg, bb, ba)
-		bbk:SetBackdropBorderColor(dr, dg, db, da)
+
+		local c = barColor
+		bbk:SetBackdropColor(c.r, c.g, c.b, pp.barBackgroundOpacity)
+		c = barBorderColor -- bar backdrop color
+		bbk:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
 		bbk:Show()
 	else -- default is to not show a bar border
 		bbk:Hide()
@@ -539,18 +549,21 @@ function MOD:Button_OnAttributeChanged(k, v)
 	local show, hide = false, false
 	local name, icon, count, btype, duration, expire
 	local enchant, remaining, id, offEnchant, offRemaining, offCount, offId
-	local color = pp.iconBuffBorderColor
+	local borderColor = pp.iconBuffBorderColor
+	local barColor = pp.barBuffColor
+	local barBorderColor = pp.barBorderColor
 
 	if k == "index" then -- update a buff or debuff
 		name, icon, count, btype, duration, expire = UnitAura(unit, v, filter)
 		if name then
 			show = true
 			if filter == FILTER_DEBUFFS then
-				color = pp.iconDebuffBorderColor
+				borderColor = pp.iconDebuffBorderColor
+				barColor = pp.barDebuffColor
 				if pp.debuffColoring then
 					btype = btype or "none"
 					local c = _G.DebuffTypeColor[btype]
-					if c then color = c end
+					if c then borderColor = c end
 				end
 			end
 		else
@@ -573,12 +586,12 @@ function MOD:Button_OnAttributeChanged(k, v)
 	if show then
 		button.iconTexture:SetTexture(icon)
 		button.iconTexture:Show()
-		SkinBorder(button, color)
+		SkinBorder(button, borderColor)
 		SkinClock(button, duration, expire) -- after highlight!
 		SkinTime(button, duration, expire)
-		SkinBar(button, duration, expire)
+		SkinBar(button, duration, expire, barColor)
 		SkinCount(button, count)
-		SkinBarBorder(button)
+		SkinBarBorder(button, barColor, barBorderColor)
 	elseif hide then
 		button.iconTexture:Hide()
 		button.iconHighlight:Hide()
@@ -744,7 +757,7 @@ MOD.DefaultProfile = {
 		showTime = true,
 		timeX = 0,
 		timeY = -14,
-		timeFormat = 0, -- use default time format
+		timeFormat = 24, -- use simple time format
 		timeSpaces = false, -- if true include spaces in time text
 		timeCase = false, -- if true use upper case in time text
 		timeLimit = 0, -- if timeLimit > 0 then only show time when < timeLimit
@@ -763,8 +776,7 @@ MOD.DefaultProfile = {
 		showBar = true,
 		barBuffColor = { r = 0, g = 0.75, b = 0, a = 1 },
 		barDebuffColor = { r = 0.75, g = 0, b = 0, a = 1 },
-		barBuffBackdropColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 },
-		barDebuffBackdropColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 },
+		barBackgroundOpacity = 0.6,
 		barWidth = 0, -- defaults to same as icon width
 		barHeight = 10,
 		barOrientation = "HORIZONTAL", -- "HORIZONTAL" or "VERTICAL"
