@@ -549,7 +549,7 @@ function MOD:Button_OnAttributeChanged(k, v)
 	local show, hide = false, false
 	local name, icon, count, btype, duration, expire
 	local enchant, remaining, id, offEnchant, offRemaining, offCount, offId
-	local borderColor = pp.iconBuffBorderColor
+	local borderColor = pp.iconBorderColor
 	local barColor = pp.barBuffColor
 	local barBorderColor = pp.barBorderColor
 
@@ -558,7 +558,6 @@ function MOD:Button_OnAttributeChanged(k, v)
 		if name then
 			show = true
 			if filter == FILTER_DEBUFFS then
-				borderColor = pp.iconDebuffBorderColor
 				barColor = pp.barDebuffColor
 				if pp.debuffColoring then
 					btype = btype or "none"
@@ -741,8 +740,7 @@ MOD.DefaultProfile = {
 		locked = false, -- hide the anchors when locked
 		iconSize = 36,
 		iconBorder = "raven", -- "default", "one", "two", "raven", "masque"
-		iconBuffBorderColor = { r = 0.5, g = 1, b = 0.5, a = 1 },
-		iconDebuffBorderColor = { r = 1, g = 0.5, b = 0.5, a = 1 },
+		iconBorderColor = { r = 0.5, g = 1, b = 0.5, a = 1 },
 		debuffColoring = true, -- use debuff color for border if applicable
 		growDirection = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1,

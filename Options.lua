@@ -209,17 +209,11 @@ MOD.OptionsTable = {
 							set = function(info, value) pp.iconBorder = "two"; UpdateAll() end,
 						},
 						spacer = { type = "description", name = "", order = 100 },
-						BuffColor = {
-							type = "color", order = 110, name = "Buffs", hasAlpha = true,
+						BorderColor = {
+							type = "color", order = 110, name = "Border Color", hasAlpha = true,
 							desc = "Set color for buff icon borders.",
-							get = function(info) local t = pp.iconBuffBorderColor return t.r, t.g, t.b, t.a end,
-							set = function(info, r, g, b, a) local t = pp.iconBuffBorderColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
-						},
-						DebuffColor = {
-							type = "color", order = 120, name = "Debuffs", hasAlpha = true,
-							desc = "Set color for debuff icons borders.",
-							get = function(info) local t = pp.iconDebuffBorderColor return t.r, t.g, t.b, t.a end,
-							set = function(info, r, g, b, a) local t = pp.iconDebuffBorderColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
+							get = function(info) local t = pp.iconBorderColor return t.r, t.g, t.b, t.a end,
+							set = function(info, r, g, b, a) local t = pp.iconBorderColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
 						},
 						DebuffTypeColor = {
 							type = "toggle", order = 130, name = "Debuff Type Color",
