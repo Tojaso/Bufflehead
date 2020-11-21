@@ -48,6 +48,7 @@ local blizzHidden = false -- set when blizzard buffs and debuffs are hidden
 local uiScaleChanged = false -- set in combat to defer running event handler
 local MSQ_ButtonData = nil
 local weaponDurations = {} -- best guess for weapon buff durations, indexed by enchant id
+local buffTooltip = {} -- temporary table for getting weapon enchant names
 local pg, pp -- global and character-specific profiles
 
 local UnitAura = UnitAura
@@ -90,6 +91,56 @@ function MOD.Debug(a, ...)
 		for i = 1, #parm do s = s .. " " .. tostring(parm[i]) end -- append remaining arguments converted to strings
 		print(s)
 	end
+end
+
+-- Initialize tooltip to be used for determining weapon buffs
+-- This code is based on the Pitbull implementation
+local function InitializeBuffTooltip()
+	buffTooltip = CreateFrame("GameTooltip", nil, UIParent)
+	buffTooltip:SetOwner(UIParent, "ANCHOR_NONE")
+	local fs = buffTooltip:CreateFontString()
+	fs:SetFontObject(_G.GameFontNormal)
+	buffTooltip.tooltipLines = {} -- cache of font strings for each line in the tooltip
+	for i = 1, 30 do
+		local ls = buffTooltip:CreateFontString()
+		ls:SetFontObject(_G.GameFontNormal)
+		buffTooltip:AddFontStrings(ls, fs)
+		buffTooltip.tooltipLines[i] = ls
+	end
+end
+
+-- Return the temporary table for storing buff tooltips
+local function GetBuffTooltip()
+	buffTooltip:ClearLines()
+	if not buffTooltip:IsOwned(UIParent) then buffTooltip:SetOwner(UIParent, "ANCHOR_NONE") end
+	return buffTooltip
+end
+
+-- No easy way to get this info, so scan item slot info for mainhand and offhand weapons using a tooltip
+-- Weapon buffs are usually formatted in tooltips as name strings followed by remaining time in parentheses
+-- This routine scans the tooltip for the first line that is in this format and extracts the weapon buff name without rank or time
+local function GetWeaponBuffName(weaponSlot)
+	local tt = GetBuffTooltip()
+	tt:SetInventoryItem("player", weaponSlot)
+	for i = 1, 30 do
+		local text = tt.tooltipLines[i]:GetText()
+		if text then
+			local name = text:match("^(.+) %(%d+ [^$)]+%)$") -- extract up to left paren if match weapon buff format
+			if name then
+				name = (name:match("^(.*) %d+$")) or name -- remove any trailing numbers
+				return name
+			end
+		else
+			break
+		end
+	end
+
+	local id = GetInventoryItemID("player", weaponSlot) -- fall back to returning weapon name
+	if id then
+		local name = C_Item.GetItemNameByID(id)
+		if name then return name end -- fall back to returning name of the weapon
+	end
+	return "Unknown Enchant [" .. v .. "]"
 end
 
 -- Event called when addon is loaded, good time to load libraries
@@ -144,10 +195,12 @@ function MOD:OnEnable()
 
 	MOD:RegisterChatCommand("buffle", function() MOD.OptionsPanel() end)
 	MOD.InitializeLDB() -- initialize the data broker and minimap icon
+	MOD.LSM = LibStub("LibSharedMedia-3.0")
 	MOD.MSQ = LibStub("Masque", true)
 	MSQ_ButtonData = { AutoCast = false, AutoCastable = false, Border = false, Checked = false, Cooldown = false, Count = false, Duration = false,
 		Disabled = false, Flash = false, Highlight = false, HotKey = false, Icon = false, Name = false, Normal = false, Pushed = false }
 
+	InitializeBuffTooltip()
 
 	self:RegisterEvent("UI_SCALE_CHANGED", UIScaleChanged)
 	self:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -301,7 +354,7 @@ function MOD:Button_OnLoad(button)
 	button.timeText = button:CreateFontString(nil, "OVERLAY")
 	button.timeText:SetFontObject(ChatFontNormal)
 	button.countText = button:CreateFontString(nil, "OVERLAY")
-	button.countText:SetFontObject(ChatFontNormal)
+	button.labelText = button:CreateFontString(nil, "OVERLAY")
 	button.bar = CreateFrame("StatusBar", nil, button, BackdropTemplateMixin and "BackdropTemplate")
 	button.bar:SetFrameLevel(level + 4) -- in front of icon
 	button.barBackdrop = CreateFrame("Frame", nil, button.bar, BackdropTemplateMixin and "BackdropTemplate")
@@ -397,6 +450,15 @@ end
 -- Validate that have a valid font reference
 local function ValidFont(name) return (name and (type(name) == "string") and (name ~= "")) end
 
+-- Return font flags based on text settings
+local function GetFontFlags(flags)
+	local ff = ""
+	if flags.outline then ff = "OUTLINE" end
+	if flags.thick then if ff == "" then ff = "THICKOUTLINE" else ff = ff .. ", THICKOUTLINE" end end
+	if flags.mono then if ff == "" then ff = "MONOCHROME" else ff = ff .. ", MONOCHROME" end end
+	return ff
+end
+
 -- Clear the time text
 local function StopButtonTime(button)
 	button:SetScript("OnUpdate", nil) -- stop updating the time text
@@ -429,12 +491,21 @@ local function SkinTime(button, duration, expire)
 	local remaining = (expire or 0) - GetTime()
 
 	if pp.showTime and duration and duration > 0.1 and remaining > 0.05 then -- check if limited duration
-		if ValidFont(pp.timeFont) then bt:SetFont(pp.timeFont, pp.timeFontSize, pp.timeFontFlags) end
+		bt:ClearAllPoints() -- need to reset because size changes
+		bt:SetFontObject(ChatFontNormal)
+		local font = pp.timeFontPath
+		if ValidFont(font) then
+			local flags = GetFontFlags(pp.timeFontFlags)
+			bt:SetFont(font, pp.timeFontSize, flags)
+		elseif ValidFont(pp.timeFont) then
+			pp.timeFontPath = MOD.LSM:Fetch("font", pp.timeFont)	
+		end
 		local c = pp.timeColor
 		bt:SetTextColor(c.r, c.g, c.b, c.a)
-		bt:SetText("0:00:00") -- set to widest time string, note this is overwritten later with correct string!
-		local timeMaxWidth = bt:GetStringWidth() -- get maximum text width using current font
-		PSetSize(bt, timeMaxWidth, pp.timeFontSize + 2)
+		bt:SetShadowColor(0, 0, 0, pp.timeShadow and 1 or 0)
+		-- bt:SetText("0:00:00") -- set to widest time string, note this is overwritten later with correct string!
+		-- local timeMaxWidth = bt:GetStringWidth() -- get maximum text width using current font
+		-- PSetSize(bt, timeMaxWidth, pp.timeFontSize + 2)
 		PSetPoint(bt, "TOP", button, "BOTTOM", pp.timeX, pp.timeY)
 		-- if IsAltKeyDown() then MOD.Debug("skinTime", remaining) end
 		button._expire = expire
@@ -452,14 +523,47 @@ local function SkinCount(button, count)
 	local ct = button.countText
 
 	if pp.showCount and count and count > 1 then -- check if valid parameters
-		if ValidFont(pp.countFont) then ct:SetFont(pp.countFont, pp.countFontSize, pp.countFontFlags) end
+		ct:SetFontObject(ChatFontNormal)
+		local font = pp.countFontPath
+		if ValidFont(font) then
+			local flags = GetFontFlags(pp.countFontFlags)
+			ct:SetFont(font, pp.countFontSize, flags)
+		elseif ValidFont(pp.countFont) then
+			pp.countFontPath = MOD.LSM:Fetch("font", pp.countFont)
+		end
 		local c = pp.countColor
 		ct:SetTextColor(c.r, c.g, c.b, c.a)
+		ct:SetShadowColor(0, 0, 0, pp.countShadow and 1 or 0)
 		ct:SetText(count)
 		PSetPoint(ct, "CENTER", button, "CENTER")
 		ct:Show()
 	else
 		ct:Hide()
+	end
+end
+
+-- Configure the button's count text for given value
+local function SkinLabel(button, name)
+	local lt = button.labelText
+
+	if pp.showLabel and name and name ~= "" then -- check if valid parameters
+		lt:SetFontObject(ChatFontNormal)
+		local font = pp.labelFontPath
+		if ValidFont(font) then
+			local flags = GetFontFlags(pp.labelFontFlags)
+			lt:SetFont(font, pp.labelFontSize, flags)
+		elseif ValidFont(pp.labelFont) then
+			pp.labelFontPath = MOD.LSM:Fetch("font", pp.labelFont)
+		end
+
+		local c = pp.labelColor
+		lt:SetTextColor(c.r, c.g, c.b, c.a)
+		lt:SetShadowColor(0, 0, 0, pp.labelShadow and 1 or 0)
+		lt:SetText(name)
+		PSetPoint(lt, "BOTTOM", button, "TOP")
+		lt:Show()
+	else
+		lt:Hide()
 	end
 end
 
@@ -568,14 +672,16 @@ function MOD:Button_OnAttributeChanged(k, v)
 		else
 			hide = true
 		end
-	elseif k == "target-slot" then -- update player weapon enchant (v == 16 or 17)
-		if (v == 16) or (v == 17) then -- mainhand or offhand slot
-			enchant, remaining, count, id, offEnchant, offRemaining, offCount, offId = GetWeaponEnchantInfo()
-			if v == 17 then enchant = offEnchant; remaining = offRemaining; count = offCount; id = offId end
+	elseif k == "target-slot" and ((v == 16) or (v == 17)) then -- player mainhand or offhand weapon enchant
+		enchanted, remaining, count, id, offEnchanted, offRemaining, offCount, offId = GetWeaponEnchantInfo()
+		if v == 17 then enchanted = offEnchanted; remaining = offRemaining; count = offCount; id = offId end
+		if enchanted then
 			remaining = remaining / 1000 -- blizz function returned milliseconds
 			expire = remaining + GetTime()
 			duration = WeaponDuration(id, remaining)
 			icon = GetInventoryItemTexture("player", v)
+			name = GetWeaponBuffName(v)
+			-- if IsAltKeyDown() then MOD.Debug("Enchant", v, id, name, remaining, count) end
 			show = true
 		else
 			hide = true
@@ -590,6 +696,7 @@ function MOD:Button_OnAttributeChanged(k, v)
 		SkinTime(button, duration, expire)
 		SkinBar(button, duration, expire, barColor)
 		SkinCount(button, count)
+		SkinLabel(button, name)
 		SkinBarBorder(button, barColor, barBorderColor)
 	elseif hide then
 		button.iconTexture:Hide()
@@ -759,17 +866,30 @@ MOD.DefaultProfile = {
 		timeSpaces = false, -- if true include spaces in time text
 		timeCase = false, -- if true use upper case in time text
 		timeLimit = 0, -- if timeLimit > 0 then only show time when < timeLimit
-		timeFont = 0, -- use system font
+		timeFont = 0, -- default to system font
+		timeFontPath = 0, -- actual font path
 		timeFontSize = 14,
-		timeFontFlags = "OUTLINE",
+		timeFontFlags = { outline = true, thick = false, mono = false },
+		timeShadow = true,
 		timeColor = { r = 1, g = 1, b = 1, a = 1 },
 		showCount = true,
 		countX = 0,
 		countY = 0,
-		countFont = 0, -- use system font
+		countFont = 0, -- default to system font
+		countFontPath = 0, -- actual font path
 		countFontSize = 14,
-		countFontFlags = "OUTLINE",
+		countFontFlags = { outline = true, thick = false, mono = false },
+		countShadow = true,
 		countColor = { r = 1, g = 1, b = 1, a = 1 },
+		showLabel = true,
+		labelX = 0,
+		labelY = 0,
+		labelFont = 0, -- default to system font
+		labelFontPath = 0, -- actual font path
+		labelFontSize = 14,
+		labelFontFlags = { outline = true, thick = false, mono = false },
+		labelShadow = true,
+		labelColor = { r = 1, g = 1, b = 1, a = 1 },
 		showClock = true, -- show clock overlay to indicate remaining time
 		showBar = true,
 		barBuffColor = { r = 0, g = 0.75, b = 0, a = 1 },

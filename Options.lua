@@ -28,39 +28,6 @@ local function IsOn(value) return value ~= nil and value ~= Off end -- return tr
 local function UpdateAll()
 end
 
--- Convert color codes from hex number to array with r, pp, b, a fields (alpha set to 1.0)
-function MOD.HexColor(hex)
-	local n = tonumber(hex, 16)
-	local red = math.floor(n / (256 * 256))
-	local green = math.floor(n / 256) % 256
-	local blue = n % 256
-
-	return { r = red/255, pp = green/255, b = blue/255, a = 1.0 }
-	-- return CreateColor(red/255, green/255, blue/255, 1)
-end
-
--- Return a copy of a color, if c is nil then return nil
-function MOD.CopyColor(c)
-	if not c then return nil end
-	-- return CreateColor(c.r, c.pp, c.b, c.a)
-	return { r = c.r, g = c.g, b = c.b, a = c.a }
-end
-
--- Return a copy of the contents of a table, assumes contents are at most one table deep
-function MOD.CopyTable(a)
-	local b = {}
-  for k, v in pairs(a) do
-		if type(v) == "table" then
-			local t = {}
-			for k1, v1 in pairs(v) do t[k1] = v1 end
-			b[k] = t
-		else
-			b[k] = v
-		end
-	end
-	return b
-end
-
 -- Update options in case anything changes
 local function UpdateOptions()
 	if initialized and acedia.OpenFrames["Buffle"] then
@@ -244,19 +211,11 @@ MOD.OptionsTable = {
 							get = function(info) return pp.showBar  end,
 							set = function(info, value) pp.showBar = value; UpdateAll() end,
 						},
-						spacer = { type = "description", name = "", order = 100 },
-						TimeColor = {
-							type = "color", order = 110, name = "Time Color", hasAlpha = true,
-							desc = "Set color for time text.",
-							get = function(info) local t = pp.timeColor return t.r, t.g, t.b, t.a end,
-							set = function(info, r, g, b, a) local t = pp.timeColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
-						},
-						CountColor = {
-							type = "color", order = 120, name = "Count Color", hasAlpha = true,
-							desc = "Set color for count text.",
-							get = function(info) local t = pp.countColor return t.r, t.g, t.b, t.a end,
-							set = function(info, r, g, b, a) local t = pp.countColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
-						},
+					},
+				},
+				ColorsGroup = {
+					type = "group", order = 40, name = "Colors", inline = true,
+					args = {
 						BuffColor = {
 							type = "color", order = 130, name = "Buffs", hasAlpha = true,
 							desc = "Set color for buff bars.",
@@ -280,6 +239,219 @@ MOD.OptionsTable = {
 							desc = "Set background opacity for bars.",
 							get = function(info) return pp.barBackgroundOpacity end,
 							set = function(info, value) pp.barBackgroundOpacity = value; UpdateAll() end,
+						},
+					},
+				},
+				TimeTextGroup = {
+					type = "group", order = 40, name = "Time Text", inline = true,
+					args = {
+						EnableGroup = {
+							type = "toggle", order = 10, name = "Enable",
+							desc = "Enable showing formatted time text with each icon.",
+							get = function(info) return pp.showTime end,
+							set = function(info, value) pp.showTime = value; UpdateAll() end,
+						},
+						AppearanceGroup = {
+							type = "group", order = 20, name = "Appearance", inline = true,
+							args = {
+								Font = {
+									type = "select", order = 10, name = "Font",
+									desc = "Select font.",
+									dialogControl = "LSM30_Font",
+									values = AceGUIWidgetLSMlists.font,
+									get = function(info) return pp.timeFont end,
+									set = function(info, value)
+										pp.timeFont = value
+										pp.timeFontPath = MOD.LSM:Fetch("font", value)
+										UpdateAll()
+									end,
+								},
+								FontSize = {
+									type = "range", order = 20, name = "Font Size", min = 5, max = 50, step = 1,
+									desc = "Set font size.",
+									get = function(info) return pp.timeFontSize end,
+									set = function(info, value) pp.timeFontSize = value; UpdateAll() end,
+								},
+								Color = {
+									type = "color", order = 30, name = "Color", hasAlpha = true, width = "half",
+									get = function(info)
+										local t = pp.timeColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a)
+										local t = pp.timeColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
+								},
+								Space = { type = "description", name = "", order = 100 },
+								Outline = {
+									type = "toggle", order = 110, name = "Outline", width = "half",
+									desc = "Add black outline.",
+									get = function(info) return pp.timeFontFlags.outline end,
+									set = function(info, value) pp.timeFontFlags.outline = value; UpdateAll() end,
+								},
+								Thick = {
+									type = "toggle", order = 120, name = "Thick", width = "half",
+									desc = "Add thick black outline.",
+									get = function(info) return pp.timeFontFlags.thick end,
+									set = function(info, value) pp.timeFontFlags.thick = value; UpdateAll() end,
+								},
+								Mono = {
+									type = "toggle", order = 130, name = "Mono", width = "half",
+									desc = "Render font without antialiasing.",
+									get = function(info) return pp.timeFontFlags.mono end,
+									set = function(info, value) pp.timeFontFlags.mono = value; UpdateAll() end,
+								},
+								Shadow = {
+									type = "toggle", order = 140, name = "Shadow", width = "half",
+									desc = "Render font with shadow.",
+									get = function(info) return pp.timeShadow end,
+									set = function(info, value) pp.timeShadow = value; UpdateAll() end,
+								},
+							},
+						},
+					},
+				},
+				CountTextGroup = {
+					type = "group", order = 50, name = "Count Text", inline = true,
+					args = {
+						EnableGroup = {
+							type = "toggle", order = 10, name = "Enable",
+							desc = "Enable showing count, if greater than one, with each icon.",
+							get = function(info) return pp.showCount end,
+							set = function(info, value) pp.showCount = value; UpdateAll() end,
+						},
+						AppearanceGroup = {
+							type = "group", order = 20, name = "Appearance", inline = true,
+							args = {
+								Font = {
+									type = "select", order = 10, name = "Font",
+									desc = "Select font.",
+									dialogControl = "LSM30_Font",
+									values = AceGUIWidgetLSMlists.font,
+									get = function(info) return pp.countFont end,
+									set = function(info, value)
+										pp.countFont = value
+										pp.countFontPath = MOD.LSM:Fetch("font", value)
+										UpdateAll()
+									end,
+								},
+								FontSize = {
+									type = "range", order = 20, name = "Font Size", min = 5, max = 50, step = 1,
+									desc = "Set font size.",
+									get = function(info) return pp.countFontSize end,
+									set = function(info, value) pp.countFontSize = value; UpdateAll() end,
+								},
+								Color = {
+									type = "color", order = 30, name = "Color", hasAlpha = true, width = "half",
+									get = function(info)
+										local t = pp.countColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a)
+										local t = pp.countColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
+								},
+								Space = { type = "description", name = "", order = 100 },
+								Outline = {
+									type = "toggle", order = 110, name = "Outline", width = "half",
+									desc = "Add black outline.",
+									get = function(info) return pp.countFontFlags.outline end,
+									set = function(info, value) pp.countFontFlags.outline = value; UpdateAll() end,
+								},
+								Thick = {
+									type = "toggle", order = 120, name = "Thick", width = "half",
+									desc = "Add thick black outline.",
+									get = function(info) return pp.countFontFlags.thick end,
+									set = function(info, value) pp.countFontFlags.thick = value; UpdateAll() end,
+								},
+								Mono = {
+									type = "toggle", order = 130, name = "Mono", width = "half",
+									desc = "Render font without antialiasing.",
+									get = function(info) return pp.countFontFlags.mono end,
+									set = function(info, value) pp.countFontFlags.mono = value; UpdateAll() end,
+								},
+								Shadow = {
+									type = "toggle", order = 140, name = "Shadow", width = "half",
+									desc = "Render font with shadow.",
+									get = function(info) return pp.countShadow end,
+									set = function(info, value) pp.countShadow = value; UpdateAll() end,
+								},
+							},
+						},
+					},
+				},
+				LabelTextGroup = {
+					type = "group", order = 60, name = "Label Text", inline = true,
+					args = {
+						EnableGroup = {
+							type = "toggle", order = 10, name = "Enable",
+							desc = "Enable showing count, if greater than one, with each icon.",
+							get = function(info) return pp.showLabel end,
+							set = function(info, value) pp.showLabel = value; UpdateAll() end,
+						},
+						AppearanceGroup = {
+							type = "group", order = 20, name = "Appearance", inline = true,
+							args = {
+								Font = {
+									type = "select", order = 10, name = "Font",
+									desc = "Select font.",
+									dialogControl = "LSM30_Font",
+									values = AceGUIWidgetLSMlists.font,
+									get = function(info) return pp.labelFont end,
+									set = function(info, value)
+										pp.labelFont = value
+										pp.labelFontPath = MOD.LSM:Fetch("font", value)
+										UpdateAll()
+									end,
+								},
+								FontSize = {
+									type = "range", order = 20, name = "Font Size", min = 5, max = 50, step = 1,
+									desc = "Set font size.",
+									get = function(info) return pp.labelFontSize end,
+									set = function(info, value) pp.labelFontSize = value; UpdateAll() end,
+								},
+								Color = {
+									type = "color", order = 30, name = "Color", hasAlpha = true, width = "half",
+									get = function(info)
+										local t = pp.labelColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a)
+										local t = pp.labelColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
+								},
+								Space = { type = "description", name = "", order = 100 },
+								Outline = {
+									type = "toggle", order = 110, name = "Outline", width = "half",
+									desc = "Add black outline.",
+									get = function(info) return pp.labelFontFlags.outline end,
+									set = function(info, value) pp.labelFontFlags.outline = value; UpdateAll() end,
+								},
+								Thick = {
+									type = "toggle", order = 120, name = "Thick", width = "half",
+									desc = "Add thick black outline.",
+									get = function(info) return pp.labelFontFlags.thick end,
+									set = function(info, value) pp.labelFontFlags.thick = value; UpdateAll() end,
+								},
+								Mono = {
+									type = "toggle", order = 130, name = "Mono", width = "half",
+									desc = "Render font without antialiasing.",
+									get = function(info) return pp.labelFontFlags.mono end,
+									set = function(info, value) pp.labelFontFlags.mono = value; UpdateAll() end,
+								},
+								Shadow = {
+									type = "toggle", order = 140, name = "Shadow", width = "half",
+									desc = "Render font with shadow.",
+									get = function(info) return pp.labelShadow end,
+									set = function(info, value) pp.labelShadow = value; UpdateAll() end,
+								},
+							},
 						},
 					},
 				},
