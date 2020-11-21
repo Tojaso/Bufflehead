@@ -140,7 +140,7 @@ local function GetWeaponBuffName(weaponSlot)
 		local name = C_Item.GetItemNameByID(id)
 		if name then return name end -- fall back to returning name of the weapon
 	end
-	return "Unknown Enchant [" .. v .. "]"
+	return "Unknown Enchant [" .. weaponSlot .. "]"
 end
 
 -- Event called when addon is loaded, good time to load libraries
@@ -350,7 +350,6 @@ function MOD:Button_OnLoad(button)
 	button.clock:SetHideCountdownNumbers(true)
 	button.clock:SetFrameLevel(level + 2) -- in front of icon but behind bar
 	button.clock:SetDrawBling(false)
-	button.clock:SetDrawEdge(true)
 	button.timeText = button:CreateFontString(nil, "OVERLAY")
 	button.timeText:SetFontObject(ChatFontNormal)
 	button.countText = button:CreateFontString(nil, "OVERLAY")
@@ -437,6 +436,11 @@ local function SkinClock(button, duration, expire)
 
 	if pp.showClock and duration and duration > 0 and expire and expire > 0 then
 		local w, h = button.iconTexture:GetSize()
+		bc:SetDrawEdge(pp.clockEdge)
+		bc:SetReverse(pp.clockReverse)
+		local c = pp.clockColor
+		bc:SetSwipeTexture(0)
+		bc:SetSwipeColor(c.r, c.g, c.b, c.a or 1)
 		bc:SetSize(w, h) -- icon texture was already sized and scaled
 		bc:SetPoint("CENTER", button, "CENTER")
 		bc:SetCooldown(expire - duration, duration)
@@ -498,16 +502,12 @@ local function SkinTime(button, duration, expire)
 			local flags = GetFontFlags(pp.timeFontFlags)
 			bt:SetFont(font, pp.timeFontSize, flags)
 		elseif ValidFont(pp.timeFont) then
-			pp.timeFontPath = MOD.LSM:Fetch("font", pp.timeFont)	
+			pp.timeFontPath = MOD.LSM:Fetch("font", pp.timeFont)
 		end
 		local c = pp.timeColor
 		bt:SetTextColor(c.r, c.g, c.b, c.a)
 		bt:SetShadowColor(0, 0, 0, pp.timeShadow and 1 or 0)
-		-- bt:SetText("0:00:00") -- set to widest time string, note this is overwritten later with correct string!
-		-- local timeMaxWidth = bt:GetStringWidth() -- get maximum text width using current font
-		-- PSetSize(bt, timeMaxWidth, pp.timeFontSize + 2)
 		PSetPoint(bt, "TOP", button, "BOTTOM", pp.timeX, pp.timeY)
-		-- if IsAltKeyDown() then MOD.Debug("skinTime", remaining) end
 		button._expire = expire
 		button._update = 0
 		UpdateButtonTime(button)
@@ -860,6 +860,7 @@ MOD.DefaultProfile = {
 		wrapAfter = 20,
 		maxWraps = 2,
 		showTime = true,
+		showTimeDetails = false,
 		timeX = 0,
 		timeY = -14,
 		timeFormat = 24, -- use simple time format
@@ -873,6 +874,7 @@ MOD.DefaultProfile = {
 		timeShadow = true,
 		timeColor = { r = 1, g = 1, b = 1, a = 1 },
 		showCount = true,
+		showCountDetails = false,
 		countX = 0,
 		countY = 0,
 		countFont = 0, -- default to system font
@@ -882,6 +884,7 @@ MOD.DefaultProfile = {
 		countShadow = true,
 		countColor = { r = 1, g = 1, b = 1, a = 1 },
 		showLabel = true,
+		showLabelDetails = false,
 		labelX = 0,
 		labelY = 0,
 		labelFont = 0, -- default to system font
@@ -891,10 +894,15 @@ MOD.DefaultProfile = {
 		labelShadow = true,
 		labelColor = { r = 1, g = 1, b = 1, a = 1 },
 		showClock = true, -- show clock overlay to indicate remaining time
+		showClockDetails = false,
+		clockEdge = true,
+		clockReverse = false,
+		clockColor = { r = 0, g = 0, b = 0, a = 0.75 },
 		showBar = true,
+		showBarDetails = false,
 		barBuffColor = { r = 0, g = 0.75, b = 0, a = 1 },
 		barDebuffColor = { r = 0.75, g = 0, b = 0, a = 1 },
-		barBackgroundOpacity = 0.6,
+		barBackgroundOpacity = 0.25,
 		barWidth = 0, -- defaults to same as icon width
 		barHeight = 10,
 		barOrientation = "HORIZONTAL", -- "HORIZONTAL" or "VERTICAL"

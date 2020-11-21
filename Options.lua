@@ -190,129 +190,6 @@ MOD.OptionsTable = {
 						},
 					},
 				},
-				TimeLeftGroup = {
-					type = "group", order = 30, name = "Time Left", inline = true,
-					args = {
-						TextTimeLeft = {
-							type = "toggle", order = 10, name = "Formatted Text",
-							desc = "Show time left as formatted text for icons with duration.",
-							get = function(info) return pp.showTime end,
-							set = function(info, value) pp.showTime = value; UpdateAll() end,
-						},
-						ClockTimeLeft = {
-							type = "toggle", order = 20, name = "Clock Overlay",
-							desc = "Show time left with animated clock overlay for icons with duration.",
-							get = function(info) return pp.showClock  end,
-							set = function(info, value) pp.showClock = value; UpdateAll() end,
-						},
-						BarTimeLeft = {
-							type = "toggle", order = 30, name = "Timer Bar",
-							desc = "Show time left as animated timer bar for icons with duration.",
-							get = function(info) return pp.showBar  end,
-							set = function(info, value) pp.showBar = value; UpdateAll() end,
-						},
-					},
-				},
-				ColorsGroup = {
-					type = "group", order = 40, name = "Colors", inline = true,
-					args = {
-						BuffColor = {
-							type = "color", order = 130, name = "Buffs", hasAlpha = true,
-							desc = "Set color for buff bars.",
-							get = function(info) local t = pp.barBuffColor return t.r, t.g, t.b, t.a end,
-							set = function(info, r, g, b, a) local t = pp.barBuffColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
-						},
-						DebuffColor = {
-							type = "color", order = 140, name = "Debuffs", hasAlpha = true,
-							desc = "Set color for debuff bars.",
-							get = function(info) local t = pp.barDebuffColor return t.r, t.g, t.b, t.a end,
-							set = function(info, r, g, b, a) local t = pp.barDebuffColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
-						},
-						BarBorderColor = {
-							type = "color", order = 150, name = "Bar Border Color", hasAlpha = true,
-							desc = "Set color for bar border.",
-							get = function(info) local t = pp.barBorderColor return t.r, t.g, t.b, t.a end,
-							set = function(info, r, g, b, a) local t = pp.barBorderColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
-						},
-						BackgroundOpacity = {
-							type = "range", order = 160, name = "Background Opacity", min = 0, max = 1, step = 0.05,
-							desc = "Set background opacity for bars.",
-							get = function(info) return pp.barBackgroundOpacity end,
-							set = function(info, value) pp.barBackgroundOpacity = value; UpdateAll() end,
-						},
-					},
-				},
-				TimeTextGroup = {
-					type = "group", order = 40, name = "Time Text", inline = true,
-					args = {
-						EnableGroup = {
-							type = "toggle", order = 10, name = "Enable",
-							desc = "Enable showing formatted time text with each icon.",
-							get = function(info) return pp.showTime end,
-							set = function(info, value) pp.showTime = value; UpdateAll() end,
-						},
-						AppearanceGroup = {
-							type = "group", order = 20, name = "Appearance", inline = true,
-							args = {
-								Font = {
-									type = "select", order = 10, name = "Font",
-									desc = "Select font.",
-									dialogControl = "LSM30_Font",
-									values = AceGUIWidgetLSMlists.font,
-									get = function(info) return pp.timeFont end,
-									set = function(info, value)
-										pp.timeFont = value
-										pp.timeFontPath = MOD.LSM:Fetch("font", value)
-										UpdateAll()
-									end,
-								},
-								FontSize = {
-									type = "range", order = 20, name = "Font Size", min = 5, max = 50, step = 1,
-									desc = "Set font size.",
-									get = function(info) return pp.timeFontSize end,
-									set = function(info, value) pp.timeFontSize = value; UpdateAll() end,
-								},
-								Color = {
-									type = "color", order = 30, name = "Color", hasAlpha = true, width = "half",
-									get = function(info)
-										local t = pp.timeColor
-										return t.r, t.g, t.b, t.a
-									end,
-									set = function(info, r, g, b, a)
-										local t = pp.timeColor
-										t.r = r; t.g = g; t.b = b; t.a = a
-										UpdateAll()
-									end,
-								},
-								Space = { type = "description", name = "", order = 100 },
-								Outline = {
-									type = "toggle", order = 110, name = "Outline", width = "half",
-									desc = "Add black outline.",
-									get = function(info) return pp.timeFontFlags.outline end,
-									set = function(info, value) pp.timeFontFlags.outline = value; UpdateAll() end,
-								},
-								Thick = {
-									type = "toggle", order = 120, name = "Thick", width = "half",
-									desc = "Add thick black outline.",
-									get = function(info) return pp.timeFontFlags.thick end,
-									set = function(info, value) pp.timeFontFlags.thick = value; UpdateAll() end,
-								},
-								Mono = {
-									type = "toggle", order = 130, name = "Mono", width = "half",
-									desc = "Render font without antialiasing.",
-									get = function(info) return pp.timeFontFlags.mono end,
-									set = function(info, value) pp.timeFontFlags.mono = value; UpdateAll() end,
-								},
-								Shadow = {
-									type = "toggle", order = 140, name = "Shadow", width = "half",
-									desc = "Render font with shadow.",
-									get = function(info) return pp.timeShadow end,
-									set = function(info, value) pp.timeShadow = value; UpdateAll() end,
-								},
-							},
-						},
-					},
-				},
 				CountTextGroup = {
 					type = "group", order = 50, name = "Count Text", inline = true,
 					args = {
@@ -322,8 +199,16 @@ MOD.OptionsTable = {
 							get = function(info) return pp.showCount end,
 							set = function(info, value) pp.showCount = value; UpdateAll() end,
 						},
+						DetailsGroup = {
+							type = "toggle", order = 20, name = "More ...",
+							descStyle = "inline",
+							hidden = function(info) return not pp.showCount end,
+							get = function(info) return pp.showCountDetails end,
+							set = function(info, value) pp.showCountDetails = value; UpdateAll() end,
+						},
 						AppearanceGroup = {
-							type = "group", order = 20, name = "Appearance", inline = true,
+							type = "group", order = 30, name = "Appearance", inline = true,
+							hidden = function(info) return not pp.showCount or not pp.showCountDetails end,
 							args = {
 								Font = {
 									type = "select", order = 10, name = "Font",
@@ -389,12 +274,21 @@ MOD.OptionsTable = {
 					args = {
 						EnableGroup = {
 							type = "toggle", order = 10, name = "Enable",
-							desc = "Enable showing count, if greater than one, with each icon.",
+							desc = "Enable showing a label with the spell name for each icon. Be sure to allow " ..
+								"room for long labels and set maximum width as needed to prevent overlaps.",
 							get = function(info) return pp.showLabel end,
 							set = function(info, value) pp.showLabel = value; UpdateAll() end,
 						},
+						DetailsGroup = {
+							type = "toggle", order = 20, name = "More ...",
+							descStyle = "inline",
+							hidden = function(info) return not pp.showLabel end,
+							get = function(info) return pp.showLabelDetails end,
+							set = function(info, value) pp.showLabelDetails = value; UpdateAll() end,
+						},
 						AppearanceGroup = {
-							type = "group", order = 20, name = "Appearance", inline = true,
+							type = "group", order = 30, name = "Appearance", inline = true,
+							hidden = function(info) return not pp.showLabel or not pp.showLabelDetails end,
 							args = {
 								Font = {
 									type = "select", order = 10, name = "Font",
@@ -450,6 +344,187 @@ MOD.OptionsTable = {
 									desc = "Render font with shadow.",
 									get = function(info) return pp.labelShadow end,
 									set = function(info, value) pp.labelShadow = value; UpdateAll() end,
+								},
+							},
+						},
+					},
+				},
+				TimeTextGroup = {
+					type = "group", order = 70, name = "Time Text", inline = true,
+					args = {
+						EnableGroup = {
+							type = "toggle", order = 10, name = "Enable",
+							desc = "Enable showing formatted time text with each icon.",
+							get = function(info) return pp.showTime end,
+							set = function(info, value) pp.showTime = value; UpdateAll() end,
+						},
+						DetailsGroup = {
+							type = "toggle", order = 20, name = "More ...",
+							descStyle = "inline",
+							hidden = function(info) return not pp.showTime end,
+							get = function(info) return pp.showTimeDetails end,
+							set = function(info, value) pp.showTimeDetails = value; UpdateAll() end,
+						},
+						AppearanceGroup = {
+							type = "group", order = 30, name = "Appearance", inline = true,
+							hidden = function(info) return not pp.showTime or not pp.showTimeDetails end,
+							args = {
+								Font = {
+									type = "select", order = 10, name = "Font",
+									desc = "Select font.",
+									dialogControl = "LSM30_Font",
+									values = AceGUIWidgetLSMlists.font,
+									get = function(info) return pp.timeFont end,
+									set = function(info, value)
+										pp.timeFont = value
+										pp.timeFontPath = MOD.LSM:Fetch("font", value)
+										UpdateAll()
+									end,
+								},
+								FontSize = {
+									type = "range", order = 20, name = "Font Size", min = 5, max = 50, step = 1,
+									desc = "Set font size.",
+									get = function(info) return pp.timeFontSize end,
+									set = function(info, value) pp.timeFontSize = value; UpdateAll() end,
+								},
+								Color = {
+									type = "color", order = 30, name = "Color", hasAlpha = true, width = "half",
+									get = function(info)
+										local t = pp.timeColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a)
+										local t = pp.timeColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
+								},
+								Space = { type = "description", name = "", order = 100 },
+								Outline = {
+									type = "toggle", order = 110, name = "Outline", width = "half",
+									desc = "Add black outline.",
+									get = function(info) return pp.timeFontFlags.outline end,
+									set = function(info, value) pp.timeFontFlags.outline = value; UpdateAll() end,
+								},
+								Thick = {
+									type = "toggle", order = 120, name = "Thick", width = "half",
+									desc = "Add thick black outline.",
+									get = function(info) return pp.timeFontFlags.thick end,
+									set = function(info, value) pp.timeFontFlags.thick = value; UpdateAll() end,
+								},
+								Mono = {
+									type = "toggle", order = 130, name = "Mono", width = "half",
+									desc = "Render font without antialiasing.",
+									get = function(info) return pp.timeFontFlags.mono end,
+									set = function(info, value) pp.timeFontFlags.mono = value; UpdateAll() end,
+								},
+								Shadow = {
+									type = "toggle", order = 140, name = "Shadow", width = "half",
+									desc = "Render font with shadow.",
+									get = function(info) return pp.timeShadow end,
+									set = function(info, value) pp.timeShadow = value; UpdateAll() end,
+								},
+							},
+						},
+					},
+				},
+				ClockOverlayGroup = {
+					type = "group", order = 80, name = "Clock Overlay", inline = true,
+					args = {
+						EnableGroup = {
+							type = "toggle", order = 10, name = "Enable",
+							desc = "Enable showing time left with a clock overlay on each icon.",
+							get = function(info) return pp.showClock end,
+							set = function(info, value) pp.showClock = value; UpdateAll() end,
+						},
+						DetailsGroup = {
+							type = "toggle", order = 20, name = "More ...",
+							descStyle = "inline",
+							hidden = function(info) return not pp.showClock end,
+							get = function(info) return pp.showClockDetails end,
+							set = function(info, value) pp.showClockDetails = value; UpdateAll() end,
+						},
+						AppearanceGroup = {
+							type = "group", order = 30, name = "Appearance", inline = true,
+							hidden = function(info) return not pp.showClock or not pp.showClockDetails end,
+							args = {
+								Color = {
+									type = "color", order = 10, name = "Color", hasAlpha = true, width = "half",
+									desc = "Set the clock overlay color. Be sure to adjust the color's transparency as desired to see through the overlay.",
+									get = function(info)
+										local t = pp.clockColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a)
+										local t = pp.clockColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
+								},
+								Edge = {
+									type = "toggle", order = 20, name = "Edge", width = "half",
+									desc = "Set the clock overlay to have a bright moving edge.",
+									get = function(info) return pp.clockEdge end,
+									set = function(info, value) pp.clockEdge = value; UpdateAll() end,
+								},
+								Reverse = {
+									type = "toggle", order = 30, name = "Reverse", width = "half",
+									desc = "Set the clock overlay to display reversed.",
+									get = function(info) return pp.clockReverse end,
+									set = function(info, value) pp.clockReverse = value; UpdateAll() end,
+								},
+							},
+						},
+					},
+				},
+				TimerBarGroup = {
+					type = "group", order = 90, name = "Timer Bar", inline = true,
+					args = {
+						EnableGroup = {
+							type = "toggle", order = 10, name = "Enable",
+							desc = "Enable showing a timer bar with each icon.",
+							get = function(info) return pp.showBar end,
+							set = function(info, value) pp.showBar = value; UpdateAll() end,
+						},
+						DetailsGroup = {
+							type = "toggle", order = 20, name = "More ...",
+							descStyle = "inline",
+							hidden = function(info) return not pp.showBar end,
+							get = function(info) return pp.showBarDetails end,
+							set = function(info, value) pp.showBarDetails = value; UpdateAll() end,
+						},
+						AppearanceGroup = {
+							type = "group", order = 30, name = "Appearance", inline = true,
+							hidden = function(info) return not pp.showBar or not pp.showBarDetails end,
+							args = {
+								ColorsGroup = {
+									type = "group", order = 40, name = "Colors", inline = true,
+									args = {
+										BuffColor = {
+											type = "color", order = 10, name = "Buffs", hasAlpha = true,
+											desc = "Set color for buff bars.",
+											get = function(info) local t = pp.barBuffColor return t.r, t.g, t.b, t.a end,
+											set = function(info, r, g, b, a) local t = pp.barBuffColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
+										},
+										DebuffColor = {
+											type = "color", order = 20, name = "Debuffs", hasAlpha = true,
+											desc = "Set color for debuff bars.",
+											get = function(info) local t = pp.barDebuffColor return t.r, t.g, t.b, t.a end,
+											set = function(info, r, g, b, a) local t = pp.barDebuffColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
+										},
+										BarBorderColor = {
+											type = "color", order = 30, name = "Bar Border Color", hasAlpha = true,
+											desc = "Set color for bar border.",
+											get = function(info) local t = pp.barBorderColor return t.r, t.g, t.b, t.a end,
+											set = function(info, r, g, b, a) local t = pp.barBorderColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
+										},
+										BackgroundOpacity = {
+											type = "range", order = 40, name = "Background Opacity", min = 0, max = 1, step = 0.05,
+											desc = "Set background opacity for bars.",
+											get = function(info) return pp.barBackgroundOpacity end,
+											set = function(info, value) pp.barBackgroundOpacity = value; UpdateAll() end,
+										},
+									},
 								},
 							},
 						},
