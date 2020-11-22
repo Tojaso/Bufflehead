@@ -392,7 +392,6 @@ local function IconTextureTrim(tex, icon, trim, iconSize)
 	if trim then left = 0.08; right = 0.92; top = 0.08; bottom = 0.92 end -- trim removes 7% of edges
 	tex:SetTexCoord(left, right, top, bottom) -- set the corner coordinates
 	PSetSize(tex, iconSize, iconSize)
-	PSetPoint(tex, "CENTER", icon, "CENTER") -- texture is always positioned in center of icon's frame
 end
 
 -- Skin the icon's border
@@ -722,7 +721,6 @@ function MOD:Button_OnAttributeChanged(k, v)
 			duration = WeaponDuration(id, remaining)
 			icon = GetInventoryItemTexture("player", v)
 			name = GetWeaponBuffName(v)
-			-- if IsAltKeyDown() then MOD.Debug("Enchant", v, id, name, remaining, count) end
 			show = true
 		else
 			hide = true
@@ -730,8 +728,11 @@ function MOD:Button_OnAttributeChanged(k, v)
 	end
 
 	if show then
-		button.iconTexture:SetTexture(icon)
-		button.iconTexture:Show()
+		local tex = button.iconTexture
+		tex:ClearAllPoints()
+		PSetPoint(tex, "CENTER", icon, "CENTER")
+		tex:SetTexture(icon)
+		tex:Show()
 		SkinBorder(button, borderColor)
 		SkinClock(button, duration, expire) -- after highlight!
 		SkinTime(button, duration, expire)
@@ -759,15 +760,6 @@ function MOD.UpdateHeader(header)
 			local filter = header:GetAttribute("filter")
 			header:ClearAllPoints() -- set position any time called
 			if group.enabled then
-				local pt = "TOPRIGHT"
-				if pp.directionX > 0 then
-					if pp.directionY > 0 then pt = "BOTTOMLEFT" else pt = "BOTTOMRIGHT" end
-				else
-					if pp.directionY > 0 then pt = "TOPLEFT" end
-				end
-				header:SetAttribute("point", pt) -- relative point on icons based on grow and wrap directions
-				-- MOD.Debug("Buffle: grow/wrap", pp.directionX, pp.directionY, "relative point", pt)
-
 				local s = BUFFS_TEMPLATE
 				local i = tonumber(pp.iconSize) -- use different template for each size, constrained by available templates
 				if i and (i >= 12) and (i <= 64) then i = 2 * math.floor(i / 2); s = s .. tostring(i) end
@@ -782,6 +774,14 @@ function MOD.UpdateHeader(header)
 				header:SetAttribute("separateOwn", pp.separateOwn)
 				header:SetAttribute("wrapAfter", pp.wrapAfter)
 				header:SetAttribute("maxWraps", pp.maxWraps)
+
+				local pt = "TOPRIGHT"
+				if pp.directionX > 0 then
+					if pp.directionY > 0 then pt = "BOTTOMLEFT" else pt = "BOTTOMRIGHT" end
+				else
+					if pp.directionY > 0 then pt = "TOPLEFT" end
+				end
+				header:SetAttribute("point", pt) -- relative point on icons based on grow and wrap directions
 
 				local dx, dy, mw, mh, wx, wy = 0, 0, 0, 0, 0, 0
 				if pp.growDirection == 1 then -- grow horizontally
@@ -805,6 +805,16 @@ function MOD.UpdateHeader(header)
 
 				PSetSize(header, 100, 100)
 				PSetPoint(header, group.attachPoint, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
+
+				local k = 1
+				local button = select(1, header:GetChildren())
+				while button do
+					button:SetSize(pp.iconSize, pp.iconSize)
+					if k > (pp.wrapAfter * pp.maxWraps) and button:IsShown() then button:Hide() end
+					k = k + 1
+					button = select(k, header:GetChildren())
+				end
+
 				header:Show()
 
 				PSetSize(header.anchorBackdrop, mw - 2, mh - 2)
