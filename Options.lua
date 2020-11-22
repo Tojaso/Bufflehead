@@ -10,19 +10,8 @@ local acedia = LibStub("AceConfigDialog-3.0")
 
 local weaponBuffs = { ["Mainhand Weapon"] = true, ["Offhand Weapon"] = true }
 
-local anchorTips = { BOTTOMLEFT = "BOTTOMLEFT", CURSOR = "CURSOR", DEFAULT = "DEFAULT", LEFT = "LEFT", RIGHT = "RIGHT",
-	TOPLEFT = "TOPLEFT", TOPRIGHT = "TOPRIGHT" }
-
 local anchorPoints = { BOTTOM = "BOTTOM", BOTTOMLEFT = "BOTTOMLEFT", BOTTOMRIGHT = "BOTTOMRIGHT", CENTER = "CENTER", LEFT = "LEFT",
 	RIGHT = "RIGHT", TOP = "TOP", TOPLEFT = "TOPLEFT", TOPRIGHT = "TOPRIGHT" }
-
-local unitList = { player = "Player", pet = "Pet", target = "Target", focus = "Focus",
-	mouseover = "Mouseover", pettarget = "Pet's Target", targettarget = "Target's Target", focustarget = "Focus's Target" }
-
--- Saved variables don't handle being set to nil properly so need to use alternate value to indicate an option has been turned off
-local Off = 0 -- value used to designate an option is turned off
-local function IsOff(value) return value == nil or value == Off end -- return true if option is turned off
-local function IsOn(value) return value ~= nil and value ~= Off end -- return true if option is turned on
 
 -- Update all settings. If in combat then this is deferred until combat ends.
 local function UpdateAll()
@@ -286,8 +275,56 @@ MOD.OptionsTable = {
 							get = function(info) return pp.showLabelDetails end,
 							set = function(info, value) pp.showLabelDetails = value; UpdateAll() end,
 						},
+						PositionGroup = {
+							type = "group", order = 30, name = "Position", inline = true,
+							hidden = function(info) return not pp.showLabel or not pp.showLabelDetails end,
+							args = {
+								AnchorIcon = {
+									type = "toggle", order = 10, name = "Icon Relative",
+									desc = "Set position relative to icon.",
+									get = function(info) return not pp.showBar or (pp.labelPosition.anchor ~= "bar") end,
+									set = function(info, value) pp.labelPosition.anchor = "icon"; UpdateAll() end,
+								},
+								AnchorBar = {
+									type = "toggle", order = 20, name = "Timer Bar Relative",
+									desc = "Set position relative to timer bar.",
+									disabled = function(info) return not pp.showBar end,
+									get = function(info) return pp.labelPosition.anchor == "bar" end,
+									set = function(info, value) pp.labelPosition.anchor = "bar"; UpdateAll() end,
+								},
+								Space = { type = "description", name = "", order = 100 },
+								RelativePoint = {
+									type = "select", order = 110, name = "Relative Point",
+									desc = function(info) return "Select relative point on " .. ((pp.showBar and (pp.labelPosition.anchor == "bar")) and "bar." or "icon.") end,
+									get = function(info) return pp.labelPosition.relativePoint end,
+									set = function(info, value) pp.labelPosition.relativePoint = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								AnchorPoint = {
+									type = "select", order = 120, name = "Anchor Point",
+									desc = "Select anchor point on label, aligning text as needed.",
+									get = function(info) return pp.labelPosition.point end,
+									set = function(info, value) pp.labelPosition.point = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								Horizontal = {
+									type = "range", order = 130, name = "Offset X", min = -100, max = 100, step = 1,
+									desc = "Set horizontal offset from the anchor.",
+									get = function(info) return pp.labelPosition.offsetX end,
+									set = function(info, value) pp.labelPosition.offsetX = value; UpdateAll() end,
+								},
+								Vertical = {
+									type = "range", order = 140, name = "Offset Y", min = -100, max = 100, step = 1,
+									desc = "Set vertical offset from the anchor.",
+									get = function(info) return pp.labelPosition.offsetY end,
+									set = function(info, value) pp.labelPosition.offsetY = value; UpdateAll() end,
+								},
+							},
+						},
 						AppearanceGroup = {
-							type = "group", order = 30, name = "Appearance", inline = true,
+							type = "group", order = 40, name = "Appearance", inline = true,
 							hidden = function(info) return not pp.showLabel or not pp.showLabelDetails end,
 							args = {
 								Font = {

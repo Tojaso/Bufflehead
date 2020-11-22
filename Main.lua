@@ -42,6 +42,12 @@ local twoPixelBackdrop = { -- backdrop initialization for icons when using optio
 	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
 
+local justifyH = { BOTTOM = "CENTER", BOTTOMLEFT = "LEFT", BOTTOMRIGHT = "RIGHT", CENTER = "CENTER", LEFT = "LEFT",
+	RIGHT = "RIGHT", TOP = "CENTER", TOPLEFT = "LEFT", TOPRIGHT = "RIGHT" }
+
+local justifyV = { BOTTOM = "BOTTOM", BOTTOMLEFT = "BOTTOM", BOTTOMRIGHT = "BOTTOM", CENTER = "CENTER", LEFT = "CENTER",
+	RIGHT = "CENTER", TOP = "TOP", TOPLEFT = "TOP", TOPRIGHT = "TOP" }
+
 local addonInitialized = false -- set when the addon is initialized
 local addonEnabled = false -- set when the addon is enabled
 local blizzHidden = false -- set when blizzard buffs and debuffs are hidden
@@ -521,6 +527,7 @@ end
 -- Configure the button's count text for given value
 local function SkinCount(button, count)
 	local ct = button.countText
+	ct:ClearAllPoints()
 
 	if pp.showCount and count and count > 1 then -- check if valid parameters
 		ct:SetFontObject(ChatFontNormal)
@@ -545,6 +552,7 @@ end
 -- Configure the button's count text for given value
 local function SkinLabel(button, name)
 	local lt = button.labelText
+	lt:ClearAllPoints()
 
 	if pp.showLabel and name and name ~= "" then -- check if valid parameters
 		lt:SetFontObject(ChatFontNormal)
@@ -560,7 +568,16 @@ local function SkinLabel(button, name)
 		lt:SetTextColor(c.r, c.g, c.b, c.a)
 		lt:SetShadowColor(0, 0, 0, pp.labelShadow and 1 or 0)
 		lt:SetText(name)
-		PSetPoint(lt, "BOTTOM", button, "TOP")
+		if pp.labelMaxWidth > 0 then PSetWidth(lt, pp.labelMaxWidth) end
+		lt:SetWordWrap(pp.labelWrap)
+		lt:SetNonSpaceWrap(pp.labelWrap)
+
+		local pos = pp.labelPosition
+		local pt = pos.point
+		lt:SetJustifyV(justifyV[pt]); lt:SetJustifyH(justifyH[pt]) -- anchor point adjusts alignment too
+		local frame = button
+		if pp.showBar and (pos.anchor == "bar") then frame = button.bar end
+		PSetPoint(lt, pt, frame, pos.relativePoint, pos.offsetX, pos.offsetY)
 		lt:Show()
 	else
 		lt:Hide()
@@ -885,8 +902,9 @@ MOD.DefaultProfile = {
 		countColor = { r = 1, g = 1, b = 1, a = 1 },
 		showLabel = true,
 		showLabelDetails = false,
-		labelX = 0,
-		labelY = 0,
+		labelPosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = 0 },
+		labelMaxWidth = 40, -- set if want to truncate or wrap
+		labelWrap = false,
 		labelFont = 0, -- default to system font
 		labelFontPath = 0, -- actual font path
 		labelFontSize = 14,
