@@ -356,10 +356,12 @@ function MOD:Button_OnLoad(button)
 	button.clock:SetHideCountdownNumbers(true)
 	button.clock:SetFrameLevel(level + 2) -- in front of icon but behind bar
 	button.clock:SetDrawBling(false)
-	button.timeText = button:CreateFontString(nil, "OVERLAY")
+	button.texts = CreateFrame("Frame", nil, button) -- all texts are in this frame
+	button.texts:SetFrameLevel(level + 6) -- texts are on top of everything else
+	button.timeText = button.texts:CreateFontString(nil, "OVERLAY")
 	button.timeText:SetFontObject(ChatFontNormal)
-	button.countText = button:CreateFontString(nil, "OVERLAY")
-	button.labelText = button:CreateFontString(nil, "OVERLAY")
+	button.countText = button.texts:CreateFontString(nil, "OVERLAY")
+	button.labelText = button.texts:CreateFontString(nil, "OVERLAY")
 	button.bar = CreateFrame("StatusBar", nil, button, BackdropTemplateMixin and "BackdropTemplate")
 	button.bar:SetFrameLevel(level + 4) -- in front of icon
 	button.barBackdrop = CreateFrame("Frame", nil, button.bar, BackdropTemplateMixin and "BackdropTemplate")
