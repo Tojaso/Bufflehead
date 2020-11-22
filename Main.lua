@@ -51,7 +51,7 @@ local justifyV = { BOTTOM = "BOTTOM", BOTTOMLEFT = "BOTTOM", BOTTOMRIGHT = "BOTT
 local addonInitialized = false -- set when the addon is initialized
 local addonEnabled = false -- set when the addon is enabled
 local blizzHidden = false -- set when blizzard buffs and debuffs are hidden
-local uiScaleChanged = false -- set in combat to defer running event handler
+local updateAll = false -- set in combat to defer running event handler
 local MSQ_ButtonData = nil
 local weaponDurations = {} -- best guess for weapon buff durations, indexed by enchant id
 local buffTooltip = {} -- temporary table for getting weapon enchant names
@@ -165,29 +165,39 @@ local function SetInsets(backdrop, x)
 	t.left = x; t.right = x; t.top = x; t.bottom = x
 end
 
+-- Calculate pixel perfect scale factor
+local function SetPixelScale()
+	local pixelWidth, pixelHeight = GetPhysicalScreenSize() -- size in pixels of display in full screen, otherwise window size in pixels
+	pixelScale = GetScreenHeight() / pixelHeight -- figure out how big virtual pixels are versus screen pixels
+	SetInsets(onePixelBackdrop, PS(1)) -- update one pixel border size
+	SetInsets(twoPixelBackdrop, PS(2)) -- update two pixel border size
+	-- MOD.Debug("Buffle: pixel w/h/scale", pixelWidth, pixelHeight, pixelScale)
+	-- MOD.Debug("Buffle: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
+end
+
 -- Adjust pixel perfect scale factor when the UIScale is changed
 local function UIScaleChanged()
 	if not enteredWorld then return end
 	if InCombatLockdown() then
-		uiScaleChanged = true
+		updateAll = true
 	else
-		local pixelWidth, pixelHeight = GetPhysicalScreenSize() -- size in pixels of display in full screen, otherwise window size in pixels
-		pixelScale = GetScreenHeight() / pixelHeight -- figure out how big virtual pixels are versus screen pixels
-		SetInsets(onePixelBackdrop, PS(1)) -- update one pixel border size
-		SetInsets(twoPixelBackdrop, PS(2)) -- update two pixel border size
-		uiScaleChanged = false
-		-- MOD.Debug("Buffle: pixel w/h/scale", pixelWidth, pixelHeight, pixelScale)
-		-- MOD.Debug("Buffle: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
-		MOD.UpdateAll()
+		SetPixelScale()
+		MOD.UpdateAll() -- redraw everything
 	end
 end
 
 -- Completely redraw everything that can be redrawn without /reload
 -- Only execute this when not in combat, defer to when leave combat if necessary
 function MOD.UpdateAll()
-	for k, header in pairs(MOD.headers) do
-		-- MOD.Debug("Buffle: updating", k)
-		MOD.UpdateHeader(header)
+	if not enteredWorld then return end
+	if InCombatLockdown() then
+		updateAll = true
+	else
+		updateAll = false
+		for k, header in pairs(MOD.headers) do
+			-- MOD.Debug("Buffle: updating", k)
+			MOD.UpdateHeader(header)
+		end
 	end
 end
 
@@ -217,7 +227,7 @@ end
 function MOD:PLAYER_ENTERING_WORLD()
 	if enteredWorld then return end -- only run this code once
 	enteredWorld = true
-	UIScaleChanged() -- initialize scale factor for pixel perfect size and alignment
+	SetPixelScale() -- initialize scale factor for pixel perfect size and alignment
 
 	if pg.enabled then -- make sure addon is enabled
 		MOD.CheckBlizzFrames() -- check blizz frames and hide the ones selected on the Defaults tab
@@ -255,7 +265,7 @@ end
 
 -- Event called when leaving combat
 function MOD:PLAYER_REGEN_ENABLED(e)
-	if uiScaleChanged then UIScaleChanged() end
+	if updateAll then MOD.UpdateAll() end
 end
 
 -- Create a data broker and minimap icon for the addon
@@ -489,7 +499,7 @@ local function UpdateButtonTime(button)
 			if (button._update == 0) or ((now - button._update) > 0.05) then -- about 20/second
 				-- if IsAltKeyDown() then MOD.Debug("updateTime", remaining, now - button._update) end
 				button._update = now
-				button.timeText:SetText(MOD.FormatTime(remaining))
+				button.timeText:SetText(MOD.FormatTime(remaining, pp.timeFormat, pp.timeSpaces, pp.timeCase))
 			end
 		else
 			StopButtonTime(button)
@@ -811,7 +821,7 @@ function MOD.UpdateHeader(header)
 end
 
 -- Convert a time value into a compact text string using a selected display format
-local TimeFormatOptions = {
+MOD.TimeFormatOptions = {
 	{ 1, 1, 1, 1, 1 }, { 1, 1, 1, 3, 5 }, { 1, 1, 1, 3, 4 }, { 2, 3, 1, 2, 3 }, -- 4
 	{ 2, 3, 1, 2, 2 }, { 2, 3, 1, 3, 4 }, { 2, 3, 1, 3, 5 }, { 2, 2, 2, 2, 3 }, -- 8
 	{ 2, 2, 2, 2, 2 }, { 2, 2, 2, 2, 4 }, { 2, 2, 2, 3, 4 }, { 2, 2, 2, 3, 5 }, -- 12
@@ -824,10 +834,10 @@ local TimeFormatOptions = {
 }
 
 function MOD.FormatTime(t, timeFormat, timeSpaces, timeCase)
-	if not timeFormat or (timeFormat > #MOD.Nest_TimeFormatOptions) then timeFormat = 24 end -- default to most compact
+	if not timeFormat or (timeFormat > #MOD.TimeFormatOptions) then timeFormat = 24 end -- default to most compact
 	timeFormat = math.floor(timeFormat)
 	if timeFormat < 1 then timeFormat = 1 end
-	local opt = TimeFormatOptions[timeFormat]
+	local opt = MOD.TimeFormatOptions[timeFormat]
 	local d, h, m, hplus, mplus, s, ts, f
 	local o1, o2, o3, o4, o5 = opt[1], opt[2], opt[3], opt[4], opt[5]
 	if t >= 86400 then -- special case for more than one day which applies regardless of selected format

@@ -13,9 +13,8 @@ local weaponBuffs = { ["Mainhand Weapon"] = true, ["Offhand Weapon"] = true }
 local anchorPoints = { BOTTOM = "BOTTOM", BOTTOMLEFT = "BOTTOMLEFT", BOTTOMRIGHT = "BOTTOMRIGHT", CENTER = "CENTER", LEFT = "LEFT",
 	RIGHT = "RIGHT", TOP = "TOP", TOPLEFT = "TOPLEFT", TOPRIGHT = "TOPRIGHT" }
 
--- Update all settings. If in combat then this is deferred until combat ends.
-local function UpdateAll()
-end
+-- Call main function to update all settings.
+local function UpdateAll() MOD.UpdateAll() end
 
 -- Update options in case anything changes
 local function UpdateOptions()
@@ -53,6 +52,18 @@ function MOD.OptionsPanel()
 		acedia:Open("Buffle")
 	end
 	if not InCombatLockdown() then collectgarbage("collect") end -- don't do in combat because could cause freezes/script too long error
+end
+
+-- Prepare a table of time format options showing examples to choose from with select dropdown menu
+local function GetTimeFormatList(s, c)
+	local i, menu = 1, {}
+	while i <= #MOD.TimeFormatOptions do
+		local f = MOD.FormatTime
+		local t1, t2, t3, t4, t5 = f(8125.8, i, s, c), f(343.8, i, s, c), f(75.3, i, s, c), f(42.7, i, s, c), f(3.6, i, s, c)
+		menu[i] = t1 .. ", " .. t2 .. ", " .. t3 .. ", " .. t4 .. ", " .. t5
+		i = i + 1
+	end
+	return menu
 end
 
 -- Create the options table to be used by the configuration GUI
@@ -580,6 +591,30 @@ MOD.OptionsTable = {
 									desc = "Render font with shadow.",
 									get = function(info) return pp.timeShadow end,
 									set = function(info, value) pp.timeShadow = value; UpdateAll() end,
+								},
+								Space1 = { type = "description", name = "", order = 200 },
+								TimeFormat = {
+									type = "select", order = 210, name = "Time Format", width = "double",
+									desc = "Select format for time text.",
+									get = function(info) return pp.timeFormat end,
+									set = function(info, value) pp.timeFormat = value; UpdateAll() end,
+									values = function(info)
+										local s, c = pp.timeSpaces, pp.timeCase
+										return GetTimeFormatList(s, c)
+									end,
+									style = "dropdown",
+								},
+								Spaces = {
+									type = "toggle", order = 220, name = "Spaces", width = "half",
+									desc = "Include spaces between values in time format.",
+									get = function(info) return pp.timeSpaces end,
+									set = function(info, value) pp.timeSpaces = value; UpdateAll() end,
+								},
+								Capitals = {
+									type = "toggle", order = 230, name = "H,M,S", width = "half",
+									desc = "If checked, use uppercase H, M and S in time format, otherwise use lowercase.",
+									get = function(info) return pp.timeCase end,
+									set = function(info, value) pp.timeCase = value; UpdateAll() end,
 								},
 							},
 						},
