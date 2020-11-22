@@ -195,8 +195,56 @@ MOD.OptionsTable = {
 							get = function(info) return pp.showCountDetails end,
 							set = function(info, value) pp.showCountDetails = value; UpdateAll() end,
 						},
+						PositionGroup = {
+							type = "group", order = 30, name = "Position", inline = true,
+							hidden = function(info) return not pp.showCount or not pp.showCountDetails end,
+							args = {
+								AnchorIcon = {
+									type = "toggle", order = 10, name = "Icon Relative",
+									desc = "Set position relative to icon.",
+									get = function(info) return not pp.showBar or (pp.countPosition.anchor ~= "bar") end,
+									set = function(info, value) pp.countPosition.anchor = "icon"; UpdateAll() end,
+								},
+								AnchorBar = {
+									type = "toggle", order = 20, name = "Timer Bar Relative",
+									desc = "Set position relative to timer bar.",
+									disabled = function(info) return not pp.showBar end,
+									get = function(info) return pp.countPosition.anchor == "bar" end,
+									set = function(info, value) pp.countPosition.anchor = "bar"; UpdateAll() end,
+								},
+								Space = { type = "description", name = "", order = 100 },
+								RelativePoint = {
+									type = "select", order = 110, name = "Relative Point",
+									desc = function(info) return "Select relative point on " .. ((pp.showBar and (pp.countPosition.anchor == "bar")) and "bar." or "icon.") end,
+									get = function(info) return pp.countPosition.relativePoint end,
+									set = function(info, value) pp.countPosition.relativePoint = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								AnchorPoint = {
+									type = "select", order = 120, name = "Anchor Point",
+									desc = "Select anchor point on count text, aligning as needed.",
+									get = function(info) return pp.countPosition.point end,
+									set = function(info, value) pp.countPosition.point = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								Horizontal = {
+									type = "range", order = 130, name = "Offset X", min = -100, max = 100, step = 1,
+									desc = "Set horizontal offset from the anchor.",
+									get = function(info) return pp.countPosition.offsetX end,
+									set = function(info, value) pp.countPosition.offsetX = value; UpdateAll() end,
+								},
+								Vertical = {
+									type = "range", order = 140, name = "Offset Y", min = -100, max = 100, step = 1,
+									desc = "Set vertical offset from the anchor.",
+									get = function(info) return pp.countPosition.offsetY end,
+									set = function(info, value) pp.countPosition.offsetY = value; UpdateAll() end,
+								},
+							},
+						},
 						AppearanceGroup = {
-							type = "group", order = 30, name = "Appearance", inline = true,
+							type = "group", order = 40, name = "Appearance", inline = true,
 							hidden = function(info) return not pp.showCount or not pp.showCountDetails end,
 							args = {
 								Font = {
@@ -303,7 +351,7 @@ MOD.OptionsTable = {
 								},
 								AnchorPoint = {
 									type = "select", order = 120, name = "Anchor Point",
-									desc = "Select anchor point on label, aligning text as needed.",
+									desc = "Select anchor point on label text, aligning as needed.",
 									get = function(info) return pp.labelPosition.point end,
 									set = function(info, value) pp.labelPosition.point = value end,
 									values = function(info) return anchorPoints end,
@@ -384,6 +432,30 @@ MOD.OptionsTable = {
 								},
 							},
 						},
+						WrapGroup = {
+							type = "group", order = 50, name = "Wrapping", inline = true,
+							hidden = function(info) return not pp.showLabel or not pp.showLabelDetails end,
+							args = {
+								TextWrap = {
+									type = "toggle", order = 10, name = "Text Wrap",
+									desc = "If checked, text can wrap to more than one line. Otherwise, long text is truncated.",
+									get = function(info) return pp.labelWrap end,
+									set = function(info, value) pp.labelWrap = value; UpdateAll() end,
+								},
+								WordWrap = {
+									type = "toggle", order = 20, name = "Word Wrap",
+									desc = "If checked, longer words can wrap to more than one line. Otherwise, long words are truncated.",
+									get = function(info) return pp.labelWordWrap end,
+									set = function(info, value) pp.labelWordWrap = value; UpdateAll() end,
+								},
+								MaxTextWidth = {
+									type = "range", order = 30, name = "Maximum Text Width", min = 0, max = 500, step = 1,
+									desc = "Set maximum width for text before wrapping or truncating. Set to 0 for unlimited width.",
+									get = function(info) return pp.labelMaxWidth end,
+									set = function(info, value) pp.labelMaxWidth = value; UpdateAll() end,
+								},
+							},
+						},
 					},
 				},
 				TimeTextGroup = {
@@ -402,8 +474,56 @@ MOD.OptionsTable = {
 							get = function(info) return pp.showTimeDetails end,
 							set = function(info, value) pp.showTimeDetails = value; UpdateAll() end,
 						},
+						PositionGroup = {
+							type = "group", order = 30, name = "Position", inline = true,
+							hidden = function(info) return not pp.showTime or not pp.showTimeDetails end,
+							args = {
+								AnchorIcon = {
+									type = "toggle", order = 10, name = "Icon Relative",
+									desc = "Set position relative to icon.",
+									get = function(info) return not pp.showBar or (pp.timePosition.anchor ~= "bar") end,
+									set = function(info, value) pp.timePosition.anchor = "icon"; UpdateAll() end,
+								},
+								AnchorBar = {
+									type = "toggle", order = 20, name = "Timer Bar Relative",
+									desc = "Set position relative to timer bar.",
+									disabled = function(info) return not pp.showBar end,
+									get = function(info) return pp.timePosition.anchor == "bar" end,
+									set = function(info, value) pp.timePosition.anchor = "bar"; UpdateAll() end,
+								},
+								Space = { type = "description", name = "", order = 100 },
+								RelativePoint = {
+									type = "select", order = 110, name = "Relative Point",
+									desc = function(info) return "Select relative point on " .. ((pp.showBar and (pp.timePosition.anchor == "bar")) and "bar." or "icon.") end,
+									get = function(info) return pp.timePosition.relativePoint end,
+									set = function(info, value) pp.timePosition.relativePoint = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								AnchorPoint = {
+									type = "select", order = 120, name = "Anchor Point",
+									desc = "Select anchor point on time text, aligning as needed.",
+									get = function(info) return pp.timePosition.point end,
+									set = function(info, value) pp.timePosition.point = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								Horizontal = {
+									type = "range", order = 130, name = "Offset X", min = -100, max = 100, step = 1,
+									desc = "Set horizontal offset from the anchor.",
+									get = function(info) return pp.timePosition.offsetX end,
+									set = function(info, value) pp.timePosition.offsetX = value; UpdateAll() end,
+								},
+								Vertical = {
+									type = "range", order = 140, name = "Offset Y", min = -100, max = 100, step = 1,
+									desc = "Set vertical offset from the anchor.",
+									get = function(info) return pp.timePosition.offsetY end,
+									set = function(info, value) pp.timePosition.offsetY = value; UpdateAll() end,
+								},
+							},
+						},
 						AppearanceGroup = {
-							type = "group", order = 30, name = "Appearance", inline = true,
+							type = "group", order = 40, name = "Appearance", inline = true,
 							hidden = function(info) return not pp.showTime or not pp.showTimeDetails end,
 							args = {
 								Font = {
@@ -530,8 +650,42 @@ MOD.OptionsTable = {
 							get = function(info) return pp.showBarDetails end,
 							set = function(info, value) pp.showBarDetails = value; UpdateAll() end,
 						},
+						PositionGroup = {
+							type = "group", order = 30, name = "Position", inline = true,
+							hidden = function(info) return not pp.showBar or not pp.showBarDetails end,
+							args = {
+								RelativePoint = {
+									type = "select", order = 110, name = "Relative Point",
+									desc = function(info) return "Select relative point on icon." end,
+									get = function(info) return pp.barPosition.relativePoint end,
+									set = function(info, value) pp.barPosition.relativePoint = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								AnchorPoint = {
+									type = "select", order = 120, name = "Anchor Point",
+									desc = "Select anchor point on timer bar.",
+									get = function(info) return pp.barPosition.point end,
+									set = function(info, value) pp.barPosition.point = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								Horizontal = {
+									type = "range", order = 130, name = "Offset X", min = -100, max = 100, step = 1,
+									desc = "Set horizontal offset from the anchor.",
+									get = function(info) return pp.barPosition.offsetX end,
+									set = function(info, value) pp.barPosition.offsetX = value; UpdateAll() end,
+								},
+								Vertical = {
+									type = "range", order = 140, name = "Offset Y", min = -100, max = 100, step = 1,
+									desc = "Set vertical offset from the anchor.",
+									get = function(info) return pp.barPosition.offsetY end,
+									set = function(info, value) pp.barPosition.offsetY = value; UpdateAll() end,
+								},
+							},
+						},
 						AppearanceGroup = {
-							type = "group", order = 30, name = "Appearance", inline = true,
+							type = "group", order = 40, name = "Appearance", inline = true,
 							hidden = function(info) return not pp.showBar or not pp.showBarDetails end,
 							args = {
 								ColorsGroup = {

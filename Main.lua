@@ -45,8 +45,8 @@ local twoPixelBackdrop = { -- backdrop initialization for icons when using optio
 local justifyH = { BOTTOM = "CENTER", BOTTOMLEFT = "LEFT", BOTTOMRIGHT = "RIGHT", CENTER = "CENTER", LEFT = "LEFT",
 	RIGHT = "RIGHT", TOP = "CENTER", TOPLEFT = "LEFT", TOPRIGHT = "RIGHT" }
 
-local justifyV = { BOTTOM = "BOTTOM", BOTTOMLEFT = "BOTTOM", BOTTOMRIGHT = "BOTTOM", CENTER = "CENTER", LEFT = "CENTER",
-	RIGHT = "CENTER", TOP = "TOP", TOPLEFT = "TOP", TOPRIGHT = "TOP" }
+local justifyV = { BOTTOM = "BOTTOM", BOTTOMLEFT = "BOTTOM", BOTTOMRIGHT = "BOTTOM", CENTER = "MIDDLE", LEFT = "MIDDLE",
+	RIGHT = "MIDDLE", TOP = "TOP", TOPLEFT = "TOP", TOPRIGHT = "TOP" }
 
 local addonInitialized = false -- set when the addon is initialized
 local addonEnabled = false -- set when the addon is enabled
@@ -438,9 +438,9 @@ end
 -- Skin the icon's clock overlay, must be done after skinning the border
 local function SkinClock(button, duration, expire)
 	local bc = button.clock
-	bc:ClearAllPoints()
 
 	if pp.showClock and duration and duration > 0 and expire and expire > 0 then
+		bc:ClearAllPoints()
 		local w, h = button.iconTexture:GetSize()
 		bc:SetDrawEdge(pp.clockEdge)
 		bc:SetReverse(pp.clockReverse)
@@ -513,7 +513,12 @@ local function SkinTime(button, duration, expire)
 		local c = pp.timeColor
 		bt:SetTextColor(c.r, c.g, c.b, c.a)
 		bt:SetShadowColor(0, 0, 0, pp.timeShadow and 1 or 0)
-		PSetPoint(bt, "TOP", button, "BOTTOM", pp.timeX, pp.timeY)
+		local pos = pp.timePosition
+		local pt = pos.point
+		bt:SetJustifyV(justifyV[pt]); bt:SetJustifyH(justifyH[pt]) -- anchor point adjusts alignment too
+		local frame = button
+		if pp.showBar and (pos.anchor == "bar") then frame = button.bar end
+		PSetPoint(bt, pos.point, frame, pos.relativePoint, pos.offsetX, pos.offsetY)
 		button._expire = expire
 		button._update = 0
 		UpdateButtonTime(button)
@@ -527,9 +532,9 @@ end
 -- Configure the button's count text for given value
 local function SkinCount(button, count)
 	local ct = button.countText
-	ct:ClearAllPoints()
 
 	if pp.showCount and count and count > 1 then -- check if valid parameters
+		ct:ClearAllPoints()
 		ct:SetFontObject(ChatFontNormal)
 		local font = pp.countFontPath
 		if ValidFont(font) then
@@ -542,7 +547,12 @@ local function SkinCount(button, count)
 		ct:SetTextColor(c.r, c.g, c.b, c.a)
 		ct:SetShadowColor(0, 0, 0, pp.countShadow and 1 or 0)
 		ct:SetText(count)
-		PSetPoint(ct, "CENTER", button, "CENTER")
+		local pos = pp.countPosition
+		local pt = pos.point
+		ct:SetJustifyV(justifyV[pt]); ct:SetJustifyH(justifyH[pt]) -- anchor point adjusts alignment too
+		local frame = button
+		if pp.showBar and (pos.anchor == "bar") then frame = button.bar end
+		PSetPoint(ct, pt, frame, pos.relativePoint, pos.offsetX, pos.offsetY)
 		ct:Show()
 	else
 		ct:Hide()
@@ -552,9 +562,9 @@ end
 -- Configure the button's count text for given value
 local function SkinLabel(button, name)
 	local lt = button.labelText
-	lt:ClearAllPoints()
 
 	if pp.showLabel and name and name ~= "" then -- check if valid parameters
+		lt:ClearAllPoints()
 		lt:SetFontObject(ChatFontNormal)
 		local font = pp.labelFontPath
 		if ValidFont(font) then
@@ -570,7 +580,7 @@ local function SkinLabel(button, name)
 		lt:SetText(name)
 		if pp.labelMaxWidth > 0 then PSetWidth(lt, pp.labelMaxWidth) end
 		lt:SetWordWrap(pp.labelWrap)
-		lt:SetNonSpaceWrap(pp.labelWrap)
+		lt:SetNonSpaceWrap(pp.labelWordWrap)
 
 		local pos = pp.labelPosition
 		local pt = pos.point
@@ -617,7 +627,9 @@ local function SkinBar(button, duration, expire, barColor)
 	local remaining = (expire or 0) - GetTime()
 
 	if pp.showBar and duration and duration > 0.1 and remaining > 0.05 then
-		PSetPoint(bb, pp.barAttachPoint, button, pp.barAnchorPoint, pp.barAnchorX, pp.barAnchorY)
+		bb:ClearAllPoints()
+		local pos = pp.barPosition
+		PSetPoint(bb, pos.point, button, pos.relativePoint, pos.offsetX, pos.offsetY)
 		PSetSize(bb, (pp.barWidth > 0) and pp.barWidth or pp.iconSize, (pp.barHeight > 0) and pp.barHeight or pp.iconSize)
 		bb:SetOrientation(pp.barOrientation)
 		bb:SetFillStyle(pp.barFillStyle)
@@ -878,8 +890,7 @@ MOD.DefaultProfile = {
 		maxWraps = 2,
 		showTime = true,
 		showTimeDetails = false,
-		timeX = 0,
-		timeY = -14,
+		timePosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = 0 },
 		timeFormat = 24, -- use simple time format
 		timeSpaces = false, -- if true include spaces in time text
 		timeCase = false, -- if true use upper case in time text
@@ -892,32 +903,33 @@ MOD.DefaultProfile = {
 		timeColor = { r = 1, g = 1, b = 1, a = 1 },
 		showCount = true,
 		showCountDetails = false,
-		countX = 0,
-		countY = 0,
+		countPosition = { point = "CENTER", relativePoint = "CENTER", anchor = "icon", offsetX = 0, offsetY = 0 },
 		countFont = 0, -- default to system font
 		countFontPath = 0, -- actual font path
 		countFontSize = 14,
 		countFontFlags = { outline = true, thick = false, mono = false },
 		countShadow = true,
 		countColor = { r = 1, g = 1, b = 1, a = 1 },
-		showLabel = true,
+		showLabel = false,
 		showLabelDetails = false,
-		labelPosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = 0 },
+		labelPosition = { point = "BOTTOM", relativePoint = "TOP", anchor = "icon", offsetX = 0, offsetY = 0 },
 		labelMaxWidth = 40, -- set if want to truncate or wrap
 		labelWrap = false,
+		labelWordWrap = false,
 		labelFont = 0, -- default to system font
 		labelFontPath = 0, -- actual font path
 		labelFontSize = 14,
 		labelFontFlags = { outline = true, thick = false, mono = false },
 		labelShadow = true,
 		labelColor = { r = 1, g = 1, b = 1, a = 1 },
-		showClock = true, -- show clock overlay to indicate remaining time
+		showClock = false, -- show clock overlay to indicate remaining time
 		showClockDetails = false,
 		clockEdge = true,
 		clockReverse = false,
 		clockColor = { r = 0, g = 0, b = 0, a = 0.75 },
-		showBar = true,
+		showBar = false,
 		showBarDetails = false,
+		barPosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = 0 },
 		barBuffColor = { r = 0, g = 0.75, b = 0, a = 1 },
 		barDebuffColor = { r = 0.75, g = 0, b = 0, a = 1 },
 		barBackgroundOpacity = 0.25,
@@ -928,10 +940,6 @@ MOD.DefaultProfile = {
 		barReverseFill = false, -- true = right-to-left, false = left-to-right
 		barBorder = "two", -- "none", "one", "two"
 		barBorderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 },
-		barAttachPoint = "TOP",
-		barAnchorPoint = "BOTTOM",
-		barAnchorX = 0,
-		barAnchorY = -4,
 		groups = {
 			[HEADER_PLAYER_BUFFS] = {
 				enabled = true,
