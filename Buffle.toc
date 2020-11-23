@@ -1,5 +1,5 @@
 ## Interface: 90002
-## Title: Buffle: Simply Ducky Player Buffs and Debuffs
+## Title: Buffle: Player Buffs and Debuffs
 ## Notes: Skins player buffs and debuffs
 ## Author: Tojaso/Tomber
 ## Version: 9.0.2

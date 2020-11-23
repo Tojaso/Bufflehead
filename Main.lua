@@ -641,10 +641,11 @@ local function SkinBar(button, duration, expire, barColor)
 		bb:ClearAllPoints()
 		local pos = pp.barPosition
 		PSetPoint(bb, pos.point, button, pos.relativePoint, pos.offsetX, pos.offsetY)
-		PSetSize(bb, (pp.barWidth > 0) and pp.barWidth or pp.iconSize, (pp.barHeight > 0) and pp.barHeight or pp.iconSize)
-		bb:SetOrientation(pp.barOrientation)
-		bb:SetFillStyle(pp.barFillStyle)
-		bb:SetReverseFill(pp.barReverseFill)
+		local bw = (pp.barWidth > 0) and pp.barWidth or pp.iconSize
+		local bh = (pp.barHeight > 0) and pp.barHeight or pp.iconSize
+		PSetSize(bb, bw, bh)
+		bb:SetOrientation(pp.barOrientation and "HORIZONTAL" or "VERTICAL")
+		bb:SetFillStyle(pp.barDirection and "STANDARD" or "REVERSE")
 		bb:SetStatusBarTexture("Interface\\AddOns\\Buffle\\Media\\WhiteBar")
 		local c = barColor
 		bb:SetStatusBarColor(c.r, c.g, c.b, c.a)
@@ -664,14 +665,15 @@ end
 local function SkinBarBorder(button, barColor, barBorderColor)
 	local bbk = button.barBackdrop
 	local opt = pp.barBorder -- option for type of border
+	local bw = (pp.barWidth > 0) and pp.barWidth or pp.iconSize
+	local bh = (pp.barHeight > 0) and pp.barHeight or pp.iconSize
 
-	if (opt == "one") or (opt == "two") then -- skin bar with single pixel border
+	if (bw > 4) and (bh > 4) and ((opt == "one") or (opt == "two")) then -- skin bar with single pixel border
 		local delta, drop = 4, twoPixelBackdrop
 		if opt == "one" then delta = 2; drop = onePixelBackdrop end
 		PSetPoint(bbk, "CENTER", button.bar, "CENTER")
-		local bw, bh = (pp.barWidth > 0) and pp.barWidth or pp.iconSize, pp.barHeight
 		PSetSize(bbk, bw, bh)
-		PSetSize(button.bar, bw - delta, bh - delta)
+		PSetSize(button.bar, bw - PS(delta), bh - PS(delta))
 		bbk:SetBackdrop(drop)
 
 		local c = barColor
@@ -911,7 +913,6 @@ MOD.DefaultProfile = {
 		wrapAfter = 20,
 		maxWraps = 2,
 		showTime = true,
-		showTimeDetails = false,
 		timePosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = 0 },
 		timeFormat = 24, -- use simple time format
 		timeSpaces = false, -- if true include spaces in time text
@@ -924,7 +925,6 @@ MOD.DefaultProfile = {
 		timeShadow = true,
 		timeColor = { r = 1, g = 1, b = 1, a = 1 },
 		showCount = true,
-		showCountDetails = false,
 		countPosition = { point = "CENTER", relativePoint = "CENTER", anchor = "icon", offsetX = 0, offsetY = 0 },
 		countFont = 0, -- default to system font
 		countFontPath = 0, -- actual font path
@@ -933,7 +933,6 @@ MOD.DefaultProfile = {
 		countShadow = true,
 		countColor = { r = 1, g = 1, b = 1, a = 1 },
 		showLabel = false,
-		showLabelDetails = false,
 		labelPosition = { point = "BOTTOM", relativePoint = "TOP", anchor = "icon", offsetX = 0, offsetY = 0 },
 		labelMaxWidth = 40, -- set if want to truncate or wrap
 		labelWrap = false,
@@ -945,21 +944,18 @@ MOD.DefaultProfile = {
 		labelShadow = true,
 		labelColor = { r = 1, g = 1, b = 1, a = 1 },
 		showClock = false, -- show clock overlay to indicate remaining time
-		showClockDetails = false,
 		clockEdge = true,
 		clockReverse = false,
 		clockColor = { r = 0, g = 0, b = 0, a = 0.75 },
 		showBar = false,
-		showBarDetails = false,
 		barPosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = 0 },
 		barBuffColor = { r = 0, g = 0.75, b = 0, a = 1 },
 		barDebuffColor = { r = 0.75, g = 0, b = 0, a = 1 },
 		barBackgroundOpacity = 0.25,
-		barWidth = 0, -- defaults to same as icon width
-		barHeight = 10,
-		barOrientation = "HORIZONTAL", -- "HORIZONTAL" or "VERTICAL"
-		barFillStyle = "STANDARD", -- "STANDARD", "STANDARD_NO_RANGE_FILL", "CENTER", "REVERSE"
-		barReverseFill = false, -- true = right-to-left, false = left-to-right
+		barWidth = 0, --  0 = same as icon width
+		barHeight = 10, --  0 = same as icon height
+		barOrientation = true, -- true = "HORIZONTAL", false = "VERTICAL"
+		barDirection = true, -- true = "STANDARD", false = "REVERSE"
 		barBorder = "two", -- "none", "one", "two"
 		barBorderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 },
 		groups = {
