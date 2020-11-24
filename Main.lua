@@ -21,6 +21,7 @@ MOD.db = nil
 MOD.LibLDB = nil -- LibDataBroker support
 MOD.ldb = nil -- set to addon's data broker object
 MOD.ldbi = nil -- set for addon's minimap icon
+MOD.uiOpen = false -- true when options panel is open
 
 local FILTER_BUFFS = "HELPFUL"
 local FILTER_DEBUFFS = "HARMFUL"
@@ -496,7 +497,6 @@ local function UpdateButtonTime(button)
 		local remaining = button._expire - now
 		if remaining > 0.05 then
 			if (button._update == 0) or ((now - button._update) > 0.05) then -- about 20/second
-				-- if IsAltKeyDown() then MOD.Debug("updateTime", remaining, now - button._update) end
 				button._update = now
 				button.timeText:SetText(MOD.FormatTime(remaining, pp.timeFormat, pp.timeSpaces, pp.timeCase))
 			end
@@ -530,7 +530,6 @@ local function SkinTime(button, duration, expire)
 		local frame = button
 		if pp.showBar and (pos.anchor == "bar") then frame = button.bar end
 		PSetPoint(bt, pos.point, frame, pos.relativePoint, pos.offsetX, pos.offsetY)
-		button._expire = expire
 		button._update = 0
 		UpdateButtonTime(button)
 		bt:Show()
@@ -623,7 +622,6 @@ local function UpdateBar(bb)
 		local remaining = bb._expire - now
 
 		if duration and (remaining > 0) then
-			-- if IsAltKeyDown() then MOD.Debug("updateBar", duration, remaining) end
 			if remaining > duration then remaining = duration end -- range check
 			bb:SetValue(remaining)
 		else
@@ -639,6 +637,8 @@ local function SkinBar(button, duration, expire, barColor)
 
 	if pp.showBar and duration and duration > 0.1 and remaining > 0.05 then
 		bb:ClearAllPoints()
+		bb._duration = duration
+		bb._expire = expire
 		local pos = pp.barPosition
 		PSetPoint(bb, pos.point, button, pos.relativePoint, pos.offsetX, pos.offsetY)
 		local bw = (pp.barWidth > 0) and pp.barWidth or pp.iconSize
@@ -650,8 +650,6 @@ local function SkinBar(button, duration, expire, barColor)
 		local c = barColor
 		bb:SetStatusBarColor(c.r, c.g, c.b, c.a)
 		bb:SetMinMaxValues(0, duration)
-		bb._duration = duration
-		bb._expire = expire
 		UpdateBar(bb)
 		bb:Show()
 		bb:SetScript("OnUpdate", UpdateBar) -- start updating bar fill
@@ -662,7 +660,7 @@ local function SkinBar(button, duration, expire, barColor)
 end
 
 -- Skin the bar's border
-local function SkinBarBorder(button, barColor, barBorderColor)
+local function SkinBarBorder(button, barColor)
 	local bbk = button.barBackdrop
 	local opt = pp.barBorder -- option for type of border
 	local bw = (pp.barWidth > 0) and pp.barWidth or pp.iconSize
@@ -678,7 +676,7 @@ local function SkinBarBorder(button, barColor, barBorderColor)
 
 		local c = barColor
 		bbk:SetBackdropColor(c.r, c.g, c.b, pp.barBackgroundOpacity)
-		c = barBorderColor -- bar backdrop color
+		c = pp.barBorderColor -- bar backdrop color
 		bbk:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
 		bbk:Show()
 	else -- default is to not show a bar border
@@ -697,7 +695,6 @@ function MOD:Button_OnAttributeChanged(k, v)
 	local enchant, remaining, id, offEnchant, offRemaining, offCount, offId
 	local borderColor = pp.iconBorderColor
 	local barColor = pp.barBuffColor
-	local barBorderColor = pp.barBorderColor
 
 	if k == "index" then -- update a buff or debuff
 		name, icon, count, btype, duration, expire = UnitAura(unit, v, filter)
@@ -720,9 +717,11 @@ function MOD:Button_OnAttributeChanged(k, v)
 		if enchanted then
 			remaining = remaining / 1000 -- blizz function returned milliseconds
 			expire = remaining + GetTime()
+			expire = 0.01 * math.floor(expire * 100 + 0.5) -- round to nearest 1/100
 			duration = WeaponDuration(id, remaining)
 			icon = GetInventoryItemTexture("player", v)
 			name = GetWeaponBuffName(v)
+			btype = "none"
 			show = true
 		else
 			hide = true
@@ -730,19 +729,32 @@ function MOD:Button_OnAttributeChanged(k, v)
 	end
 
 	if show then
-		local tex = button.iconTexture
-		tex:ClearAllPoints()
-		PSetPoint(tex, "CENTER", icon, "CENTER")
-		tex:SetTexture(icon)
-		tex:Show()
-		SkinBorder(button, borderColor)
-		SkinClock(button, duration, expire) -- after highlight!
-		SkinTime(button, duration, expire)
-		SkinBar(button, duration, expire, barColor)
-		SkinCount(button, count)
-		SkinLabel(button, name)
-		SkinBarBorder(button, barColor, barBorderColor)
+		if ((duration ~= 0) and (expire ~= button._expire)) or (duration ~= button._duration) or (icon ~= button._icon) or
+			(count ~= button._count) or (name ~=button._name) or (btype ~= button._btype) or MOD.uiOpen then
+
+			-- MOD.Debug("att", name, duration, GetTime(), (expire ~= button._expire), (duration ~= button._duration), (icon ~= button._icon),
+			--	(count ~= button._count), (name ~=button._name), (btype ~= button._btype), MOD.uiOpen)
+
+			button._expire = expire; button._duration = duration; button._icon = icon
+			button._count = count; button._name = name; button._btype = btype
+
+			local tex = button.iconTexture
+			tex:ClearAllPoints()
+			PSetPoint(tex, "CENTER", icon, "CENTER")
+			tex:SetTexture(icon)
+			tex:Show()
+			SkinBorder(button, borderColor)
+			SkinClock(button, duration, expire) -- after highlight!
+			SkinTime(button, duration, expire)
+			SkinBar(button, duration, expire, barColor)
+			SkinCount(button, count)
+			SkinLabel(button, name)
+			SkinBarBorder(button, barColor)
+		end
 	elseif hide then
+		button._expire = nil; button._duration = nil; button._icon = nil
+		button._count = nil; button._name = nil; button._btype = nil
+
 		button.iconTexture:Hide()
 		button.iconHighlight:Hide()
 		button.iconBorder:Hide()

@@ -48,8 +48,10 @@ function MOD.OptionsPanel()
 	if not initialized then InitializeOptions() end
 	if acedia.OpenFrames["Buffle"] then
 		acedia:Close("Buffle")
+		MOD.uiOpen = false
 	else
 		acedia:Open("Buffle")
+		MOD.uiOpen = true
 	end
 	if not InCombatLockdown() then collectgarbage("collect") end -- don't do in combat because could cause freezes/script too long error
 end
