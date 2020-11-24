@@ -930,7 +930,7 @@ MOD.DefaultProfile = {
 		timeSpaces = false, -- if true include spaces in time text
 		timeCase = false, -- if true use upper case in time text
 		timeLimit = 0, -- if timeLimit > 0 then only show time when < timeLimit
-		timeFont = 0, -- default to system font
+		timeFont = "Arial Narrow", -- default font
 		timeFontPath = 0, -- actual font path
 		timeFontSize = 14,
 		timeFontFlags = { outline = true, thick = false, mono = false },
@@ -938,7 +938,7 @@ MOD.DefaultProfile = {
 		timeColor = { r = 1, g = 1, b = 1, a = 1 },
 		showCount = true,
 		countPosition = { point = "CENTER", relativePoint = "CENTER", anchor = "icon", offsetX = 0, offsetY = 0 },
-		countFont = 0, -- default to system font
+		countFont = "Arial Narrow", -- default font
 		countFontPath = 0, -- actual font path
 		countFontSize = 14,
 		countFontFlags = { outline = true, thick = false, mono = false },
@@ -949,7 +949,7 @@ MOD.DefaultProfile = {
 		labelMaxWidth = 40, -- set if want to truncate or wrap
 		labelWrap = false,
 		labelWordWrap = false,
-		labelFont = 0, -- default to system font
+		labelFont = "Arial Narrow", -- default font
 		labelFontPath = 0, -- actual font path
 		labelFontSize = 14,
 		labelFontFlags = { outline = true, thick = false, mono = false },
