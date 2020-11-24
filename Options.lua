@@ -5,6 +5,12 @@ local _
 local initialized = false -- set when options are first accessed
 local pg, pp -- global and character-specific profiles
 
+local HEADER_NAME = "BuffleSecureHeader"
+local PLAYER_BUFFS = "PlayerBuffs"
+local PLAYER_DEBUFFS = "PlayerDebuffs"
+local HEADER_PLAYER_BUFFS = HEADER_NAME .. PLAYER_BUFFS
+local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. PLAYER_DEBUFFS
+
 local acereg = LibStub("AceConfigRegistry-3.0")
 local acedia = LibStub("AceConfigDialog-3.0")
 
@@ -107,6 +113,19 @@ MOD.OptionsTable = {
 							get = function(info) return pg.hideOmniCC  end,
 							set = function(info, value) pg.hideOmniCC = value; UpdateAll() end,
 						},
+						Spacer = { type = "description", name = "", order = 100 },
+						EnableBuffs = {
+							type = "toggle", order = 110, name = "Show Player Buffs",
+							desc = "If checked, Buffle will display player buffs (requires /reload).",
+							get = function(info) return pp.groups[HEADER_PLAYER_BUFFS].enabled end,
+							set = function(info, value) pp.groups[HEADER_PLAYER_BUFFS].enabled = value; UpdateAll() end,
+						},
+						EnableDebuffs = {
+							type = "toggle", order = 120, name = "Show Player Debuffs",
+							desc = "If checked, Buffle will display player debuffs (requires /reload).",
+							get = function(info) return pp.groups[HEADER_PLAYER_DEBUFFS].enabled end,
+							set = function(info, value) pp.groups[HEADER_PLAYER_DEBUFFS].enabled = value; UpdateAll() end,
+						},
 					},
 				},
 				LayoutGroup = {
@@ -177,7 +196,7 @@ MOD.OptionsTable = {
 							get = function(info) return pp.iconBorder == "two" end,
 							set = function(info, value) pp.iconBorder = "two"; UpdateAll() end,
 						},
-						spacer = { type = "description", name = "", order = 100 },
+						Spacer = { type = "description", name = "", order = 100 },
 						BorderColor = {
 							type = "color", order = 110, name = "Border Color", hasAlpha = true,
 							desc = "Set color for icon borders.",

@@ -25,9 +25,9 @@ MOD.uiOpen = false -- true when options panel is open
 
 local FILTER_BUFFS = "HELPFUL"
 local FILTER_DEBUFFS = "HARMFUL"
+local BUFFS_TEMPLATE = "BuffleAuraTemplate"
 
 local HEADER_NAME = "BuffleSecureHeader"
-local BUFFS_TEMPLATE = "BuffleAuraTemplate"
 local PLAYER_BUFFS = "PlayerBuffs"
 local PLAYER_DEBUFFS = "PlayerDebuffs"
 local HEADER_PLAYER_BUFFS = HEADER_NAME .. PLAYER_BUFFS
@@ -915,10 +915,10 @@ MOD.DefaultProfile = {
 		iconBorderColor = { r = 0.5, g = 1, b = 0.5, a = 1 },
 		debuffColoring = true, -- use debuff color for border if applicable
 		growDirection = 1, -- horizontal = 1, otherwise vertical
-		directionX = -1,
-		directionY = -1,
-		spaceX = 2,
-		spaceY = 12, -- include separation for time text and bar height
+		directionX = -1, -- 1 = right, -1 = left
+		directionY = -1, -- 1 = up, -1 = down
+		spaceX = 2, -- horizontal distance between icons (allow space for elements positioned between icons)
+		spaceY = 12, -- vertical distance between icons (allow space for elements positioned between icons)
 		sortMethod = "TIME",
 		sortDirection = "-",
 		separateOwn = true,
@@ -991,7 +991,7 @@ MOD.DefaultProfile = {
 				anchorFrame = _G.MMHolder or _G.Minimap,
 				anchorPoint = "TOPLEFT",
 				anchorX = -44,
-				anchorY = -100, -- set to roughly maxWraps * (iconSize + spaceY)
+				anchorY = -140, -- set to roughly maxWraps * (iconSize + spaceY)
 			},
 		},
 	},
