@@ -128,6 +128,16 @@ MOD.OptionsTable = {
 						},
 					},
 				},
+				PresetsGroup = {
+					type = "group", order = 10, name = "Presets", inline = true,
+					args = {
+					},
+				},
+			},
+		},
+		IconGroup = {
+			type = "group", order = 20, name = "Icon",
+			args = {
 				LayoutGroup = {
 					type = "group", order = 10, name = "Layout", inline = true,
 					args = {
@@ -214,7 +224,7 @@ MOD.OptionsTable = {
 			},
 		},
 		CountTextGroup = {
-			type = "group", order = 20, name = "Count Text",
+			type = "group", order = 30, name = "Count Text",
 			args = {
 				EnableGroup = {
 					type = "toggle", order = 10, name = "Enable",
@@ -332,7 +342,7 @@ MOD.OptionsTable = {
 			},
 		},
 		LabelTextGroup = {
-			type = "group", order = 30, name = "Label Text",
+			type = "group", order = 40, name = "Label Text",
 			args = {
 				EnableGroup = {
 					type = "toggle", order = 10, name = "Enable",
@@ -474,7 +484,7 @@ MOD.OptionsTable = {
 			},
 		},
 		TimeTextGroup = {
-			type = "group", order = 40, name = "Time Text",
+			type = "group", order = 50, name = "Time Text",
 			args = {
 				EnableGroup = {
 					type = "toggle", order = 10, name = "Enable",
@@ -616,7 +626,7 @@ MOD.OptionsTable = {
 			},
 		},
 		ClockOverlayGroup = {
-			type = "group", order = 50, name = "Clock Overlay",
+			type = "group", order = 60, name = "Clock Overlay",
 			args = {
 				EnableGroup = {
 					type = "toggle", order = 10, name = "Enable",
@@ -657,7 +667,7 @@ MOD.OptionsTable = {
 			},
 		},
 		TimerBarGroup = {
-			type = "group", order = 60, name = "Timer Bar",
+			type = "group", order =70, name = "Timer Bar",
 			args = {
 				EnableGroup = {
 					type = "toggle", order = 10, name = "Enable",

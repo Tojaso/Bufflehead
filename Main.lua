@@ -521,6 +521,9 @@ local function SkinTime(button, duration, expire)
 		elseif ValidFont(pp.timeFont) then
 			pp.timeFontPath = MOD.LSM:Fetch("font", pp.timeFont)
 		end
+		bt:SetText("0:00:00") -- set to widest time string, note this is overwritten later with correct string!
+		local timeMaxWidth = bt:GetStringWidth() -- get maximum text width using current font
+		PSetWidth(bt, timeMaxWidth) -- helps with jitter since keeps size static
 		local c = pp.timeColor
 		bt:SetTextColor(c.r, c.g, c.b, c.a)
 		bt:SetShadowColor(0, 0, 0, pp.timeShadow and 1 or 0)
