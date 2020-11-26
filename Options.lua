@@ -114,24 +114,29 @@ MOD.OptionsTable = {
 							set = function(info, value) pg.hideOmniCC = value; UpdateAll() end,
 						},
 						Spacer = { type = "description", name = "", order = 100 },
-						EnableBuffs = {
-							type = "toggle", order = 110, name = "Show Player Buffs",
-							desc = "If checked, Buffle will display player buffs (requires /reload).",
-							get = function(info) return pp.groups[HEADER_PLAYER_BUFFS].enabled end,
-							set = function(info, value) pp.groups[HEADER_PLAYER_BUFFS].enabled = value; UpdateAll() end,
+						EnableWeaponEnchants = {
+							type = "toggle", order = 110, name = "Show Weapon Enchants",
+							desc = "If checked, include weapon enchants in player buffs (requires /reload).",
+							get = function(info) return pp.weaponEnchants end,
+							set = function(info, value) pp.weaponEnchants = value; UpdateAll() end,
 						},
 						EnableDebuffs = {
 							type = "toggle", order = 120, name = "Show Player Debuffs",
-							desc = "If checked, Buffle will display player debuffs (requires /reload).",
+							desc = "If checked, also display player debuffs (requires /reload).",
 							get = function(info) return pp.groups[HEADER_PLAYER_DEBUFFS].enabled end,
 							set = function(info, value) pp.groups[HEADER_PLAYER_DEBUFFS].enabled = value; UpdateAll() end,
 						},
 					},
 				},
 				PresetsGroup = {
-					type = "group", order = 10, name = "Presets", inline = true,
+					type = "group", order = 20, name = "Presets", inline = true,
 					args = {
 					},
+				},
+				TestToggle = {
+					type = "execute", order = 30, name = "Toggle Preview Mode",
+					desc = "Toggle display of player buffs preview.",
+					func = function(info) MOD.PreviewMode(); UpdateAll() end,
 				},
 			},
 		},

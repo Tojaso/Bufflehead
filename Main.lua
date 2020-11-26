@@ -26,12 +26,12 @@ MOD.uiOpen = false -- true when options panel is open
 local FILTER_BUFFS = "HELPFUL"
 local FILTER_DEBUFFS = "HARMFUL"
 local BUFFS_TEMPLATE = "BuffleAuraTemplate"
-
 local HEADER_NAME = "BuffleSecureHeader"
 local PLAYER_BUFFS = "PlayerBuffs"
 local PLAYER_DEBUFFS = "PlayerDebuffs"
 local HEADER_PLAYER_BUFFS = HEADER_NAME .. PLAYER_BUFFS
 local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. PLAYER_DEBUFFS
+local BUFFLE_ICON = "Interface\\AddOns\\Buffle\\Media\\BuffleIcon"
 
 local onePixelBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
 	bgFile = "Interface\\AddOns\\Buffle\\Media\\WhiteBar",
@@ -53,9 +53,12 @@ local addonInitialized = false -- set when the addon is initialized
 local addonEnabled = false -- set when the addon is enabled
 local blizzHidden = false -- set when blizzard buffs and debuffs are hidden
 local updateAll = false -- set in combat to defer running event handler
-local MSQ_ButtonData = nil
+local MSQ_Group = nil -- create a single group for masque
+local MSQ_ButtonData = nil -- template for masque button data structure
 local weaponDurations = {} -- best guess for weapon buff durations, indexed by enchant id
 local buffTooltip = {} -- temporary table for getting weapon enchant names
+local previewMode = false -- toggle for preview mode extra icons
+local previewButtons = {} -- preview mode icons allocated on demand
 local pg, pp -- global and character-specific profiles
 
 local UnitAura = UnitAura
@@ -214,6 +217,8 @@ function MOD:OnEnable()
 	MOD.InitializeLDB() -- initialize the data broker and minimap icon
 	MOD.LSM = LibStub("LibSharedMedia-3.0")
 	MOD.MSQ = LibStub("Masque", true)
+	if MOD.MSQ then MSQ_Group = MOD.MSQ:Group("Buffle", "Buffs and Debuffs") end
+
 	MSQ_ButtonData = { AutoCast = false, AutoCastable = false, Border = false, Checked = false, Cooldown = false, Count = false, Duration = false,
 		Disabled = false, Flash = false, Highlight = false, HotKey = false, Icon = false, Name = false, Normal = false, Pushed = false }
 
@@ -247,14 +252,8 @@ function MOD:PLAYER_ENTERING_WORLD()
 					RegisterAttributeDriver(header, "unit", "[vehicleui] vehicle; player")
 					if filter == FILTER_BUFFS then
 						header:SetAttribute("consolidateDuration", -1) -- no consolidation
-						header:SetAttribute("includeWeapons", 1)
+						header:SetAttribute("includeWeapons", pp.weaponEnchants and 1 or 0)
 					end
-				end
-
-				if MOD.MSQ then --  create MSQ group if the Masque addon is loaded
-					header._MSQ = MOD.MSQ:Group("Buffle", group.name)
-				else
-					header._MSQ = nil
 				end
 
 				header.anchorBackdrop = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate")
@@ -276,7 +275,7 @@ function MOD.InitializeLDB()
 	MOD.ldb = MOD.LibLDB:NewDataObject("Buffle", {
 		type = "launcher",
 		text = "Buffle",
-		icon = "Interface\\AddOns\\Buffle\\Media\\BuffleIcon",
+		icon = BUFFLE_ICON,
 		OnClick = function(_, msg)
 			if msg == "RightButton" then
 				if IsShiftKeyDown() then
@@ -350,11 +349,7 @@ end
 
 -- Function called when a new aura button is created
 function MOD:Button_OnLoad(button)
-	local header = button:GetParent()
-	local name = header:GetName()
-	local filter = header:GetAttribute("filter")
 	local level = button:GetFrameLevel()
-	-- MOD.Debug("Buffle: new button", name, filter)
 
 	button.iconTexture = button:CreateTexture(nil, "ARTWORK")
 	button.iconBorder = button:CreateTexture(nil, "BACKGROUND", nil, 3)
@@ -379,7 +374,6 @@ function MOD:Button_OnLoad(button)
 	button.barBackdrop:SetFrameLevel(level + 3) -- behind bar but in front of icon
 
 	if MOD.MSQ then -- if MSQ is loaded then initialize its required data table
-		button.buttonMSQ = header._MSQ
 		button.buttonData = {}
 		for k, v in pairs(MSQ_ButtonData) do button.buttonData[k] = v end
 	end
@@ -401,11 +395,11 @@ local function SkinBorder(button, c)
 	local bik = button.iconBackdrop
 	local bih = button.iconHighlight
 	local tex = button.iconTexture
-	local masqueLoaded = MOD.MSQ and button.buttonMSQ and button.buttonData
+	local masqueLoaded = MOD.MSQ and MSQ_Group and button.buttonData
 	local opt = pp.iconBorder -- option for type of border
 	bib:ClearAllPoints()
 	bik:ClearAllPoints()
-	if masqueLoaded then button.buttonMSQ:RemoveButton(button, true) end
+	if masqueLoaded then MSQ_Group:RemoveButton(button, true) end
 	if not c then c = { r = 0.5, g = 0.5, b = 0.5, a = 1 } end
 
 	if opt == "raven" then -- skin with raven's border
@@ -437,7 +431,7 @@ local function SkinBorder(button, c)
 		bdata.Cooldown = button.clock
 		bdata.Border = bib
 		bdata.Highlight = button.iconHighlight
-		button.buttonMSQ:AddButton(button, bdata)
+		MSQ_Group:AddButton(button, bdata)
 		bik:Hide()
 	else -- default is to just show blizzard's standard border
 		IconTextureTrim(tex, button, false, pp.iconSize)
@@ -687,6 +681,44 @@ local function SkinBarBorder(button, barColor)
 	end
 end
 
+-- Show a button and skin all its enabled elements
+local function ShowButton(button, name, icon, duration, expire, count, btype, barColor, borderColor)
+	if ((duration ~= 0) and (expire ~= button._expire)) or (duration ~= button._duration) or (icon ~= button._icon) or
+		(count ~= button._count) or (name ~=button._name) or (btype ~= button._btype) or MOD.uiOpen then
+
+		-- MOD.Debug("att", name, duration, GetTime(), (expire ~= button._expire), (duration ~= button._duration), (icon ~= button._icon),
+		--	(count ~= button._count), (name ~=button._name), (btype ~= button._btype), MOD.uiOpen)
+
+		button._expire = expire; button._duration = duration; button._icon = icon
+		button._count = count; button._name = name; button._btype = btype
+
+		local tex = button.iconTexture
+		tex:ClearAllPoints()
+		PSetPoint(tex, "CENTER", icon, "CENTER")
+		tex:SetTexture(icon)
+		tex:Show()
+		SkinBorder(button, borderColor)
+		SkinClock(button, duration, expire) -- after highlight!
+		SkinTime(button, duration, expire)
+		SkinBar(button, duration, expire, barColor)
+		SkinCount(button, count)
+		SkinLabel(button, name)
+		SkinBarBorder(button, barColor)
+	end
+end
+
+-- Hide a button and all its elements
+local function HideButton(button)
+	button._expire = nil; button._duration = nil; button._icon = nil
+	button._count = nil; button._name = nil; button._btype = nil
+
+	button.iconTexture:Hide()
+	button.iconHighlight:Hide()
+	button.iconBorder:Hide()
+	button.iconBackdrop:Hide()
+	button.barBackdrop:Hide()
+end
+
 -- Function called when an attribute for a button changes
 function MOD:Button_OnAttributeChanged(k, v)
 	local button = self
@@ -731,38 +763,10 @@ function MOD:Button_OnAttributeChanged(k, v)
 		end
 	end
 
-	if show then
-		if ((duration ~= 0) and (expire ~= button._expire)) or (duration ~= button._duration) or (icon ~= button._icon) or
-			(count ~= button._count) or (name ~=button._name) or (btype ~= button._btype) or MOD.uiOpen then
-
-			-- MOD.Debug("att", name, duration, GetTime(), (expire ~= button._expire), (duration ~= button._duration), (icon ~= button._icon),
-			--	(count ~= button._count), (name ~=button._name), (btype ~= button._btype), MOD.uiOpen)
-
-			button._expire = expire; button._duration = duration; button._icon = icon
-			button._count = count; button._name = name; button._btype = btype
-
-			local tex = button.iconTexture
-			tex:ClearAllPoints()
-			PSetPoint(tex, "CENTER", icon, "CENTER")
-			tex:SetTexture(icon)
-			tex:Show()
-			SkinBorder(button, borderColor)
-			SkinClock(button, duration, expire) -- after highlight!
-			SkinTime(button, duration, expire)
-			SkinBar(button, duration, expire, barColor)
-			SkinCount(button, count)
-			SkinLabel(button, name)
-			SkinBarBorder(button, barColor)
-		end
-	elseif hide then
-		button._expire = nil; button._duration = nil; button._icon = nil
-		button._count = nil; button._name = nil; button._btype = nil
-
-		button.iconTexture:Hide()
-		button.iconHighlight:Hide()
-		button.iconBorder:Hide()
-		button.iconBackdrop:Hide()
-		button.barBackdrop:Hide()
+	if show then -- show the button after skinning all its elements
+		ShowButton(button, name, icon, duration, expire, count, btype, barColor, borderColor)
+	elseif hide then -- hide the button and all its elements
+		HideButton(button)
 	end
 end
 
@@ -783,7 +787,7 @@ function MOD.UpdateHeader(header)
 				if filter == FILTER_BUFFS then
 					red = 0; green = 1
 					header:SetAttribute("consolidateTo", 0) -- no consolidation
-					header:SetAttribute("weaponTemplate", s)
+					if pp.weaponEnchants then header:SetAttribute("weaponTemplate", s) end
 				end
 				header:SetAttribute("template", s)
 				header:SetAttribute("sortMethod", pp.sortMethod)
@@ -804,13 +808,13 @@ function MOD.UpdateHeader(header)
 				if pp.growDirection == 1 then -- grow horizontally
 					dx = pp.directionX * (pp.spaceX + pp.iconSize)
 					wy = pp.directionY * (pp.spaceY + pp.iconSize)
-					mw = (((pp.wrapAfter == 1) and 0 or pp.spaceX) + pp.iconSize) * pp.wrapAfter
-					mh = (pp.spaceY + pp.iconSize) * pp.maxWraps
+					mw = (pp.spaceX * (pp.wrapAfter - 1)) + (pp.iconSize * pp.wrapAfter)
+					mh = (pp.spaceY * (pp.maxWraps - 1)) + (pp.iconSize * pp.maxWraps)
 				else -- otherwise grow vertically
 					dy = pp.directionY * (pp.spaceY + pp.iconSize)
 					wx = pp.directionX * (pp.spaceX + pp.iconSize)
-					mw = (pp.spaceX + pp.iconSize) * pp.maxWraps
-					mh = (((pp.wrapAfter == 1) and 0 or pp.spaceY) + pp.iconSize) * pp.wrapAfter
+					mw = (pp.spaceX * (pp.maxWraps - 1)) + (pp.iconSize * pp.maxWraps)
+					mh = (pp.spaceY * (pp.wrapAfter - 1)) + (pp.iconSize * pp.wrapAfter)
 				end
 				header:SetAttribute("xOffset", PS(dx))
 				header:SetAttribute("yOffset", PS(dy))
@@ -834,7 +838,7 @@ function MOD.UpdateHeader(header)
 
 				header:Show()
 
-				PSetSize(header.anchorBackdrop, mw - 2, mh - 2)
+				PSetSize(header.anchorBackdrop, mw, mh)
 				PSetPoint(header.anchorBackdrop, group.attachPoint, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
 				header.anchorBackdrop:SetBackdrop(twoPixelBackdrop)
 				header.anchorBackdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
@@ -844,6 +848,63 @@ function MOD.UpdateHeader(header)
 				header:Hide()
 			end
 		end
+	end
+end
+
+-- Scan through all the buff locations and show/hide previews as needed
+local function UpdatePreviews()
+	if not previewMode then MOD.frame:SetScript("OnUpdate", nil) end
+
+	local header = MOD.headers[HEADER_PLAYER_BUFFS]
+	local pt = header:GetAttribute("point") -- relative point on icons based on grow and wrap directions
+	local dx = header:GetAttribute("xOffset")
+	local dy = header:GetAttribute("yOffset")
+	local wx = header:GetAttribute("wrapXOffset")
+	local wy = header:GetAttribute("wrapYOffset")
+	local columns, rows = pp.wrapAfter, pp.maxWraps
+	local num = rows * columns -- number of icons needed for previewing
+
+	for i = 1, #previewButtons do -- check if any icon displayed in each location and show/hide previews
+		local button = previewButtons[i]
+		local hide = true
+		local column = (i - 1) % columns -- which column the button is in, numbered from 0
+		local row = math.floor((i - 1) / columns) -- which row the button is in, numbered from 0
+
+		if previewMode and i <= num then
+			local real = header:GetAttribute("child" .. i)
+
+			if not real or not real:IsShown() then -- check if real button is currently shown
+				button:ClearAllPoints()
+				PSetPoint(button, pt, header.anchorBackdrop, pt, (dx * column) + (wx * column), (dy * row) + (wy * row))
+				button:SetSize(pp.iconSize, pp.iconSize)
+				if IsAltKeyDown() then MOD.Debug("Buffle: show preview for", i, pp.iconSize, pt, column, row) end
+
+				local duration = i * 10
+				local expire = button._expire or (GetTime() + duration)
+				local name = "#" .. i
+				local icon = GetFileIDFromPath(BUFFLE_ICON)
+				ShowButton(button, name, icon, duration, expire, i, "preview", pp.barBuffColor, pp.iconBorderColor)
+				button:Show()
+				hide = false
+			end
+		end
+
+		if hide and button:IsShown() then button:Hide(); HideButton(button) end
+	end
+end
+
+-- Toggle preview mode and allocate preview buttons as needed
+function MOD.PreviewMode()
+	previewMode = not previewMode
+	if previewMode then -- turn on preview mode
+		local num = pp.maxWraps * pp.wrapAfter -- number of icons needed for previewing
+		local currentIcons = #previewButtons -- current number of preview icons
+		for i = currentIcons + 1, num do
+			local button = CreateFrame("Button", "BufflePreviewButton" .. i, UIParent, BackdropTemplateMixin and "BackdropTemplate")
+			MOD:Button_OnLoad(button)
+			previewButtons[i] = button
+		end
+		MOD.frame:SetScript("OnUpdate", UpdatePreviews)
 	end
 end
 
@@ -912,7 +973,7 @@ MOD.DefaultProfile = {
 		hideOmniCC = true, -- only valid if OmniCC addon is available
 	},
 	profile = { -- settings specific to a profile
-		locked = false, -- hide the anchors when locked
+		locked = true, -- hide the anchors when locked
 		iconSize = 36,
 		iconBorder = "raven", -- "default", "one", "two", "raven", "masque"
 		iconBorderColor = { r = 0.5, g = 1, b = 0.5, a = 1 },
@@ -921,12 +982,13 @@ MOD.DefaultProfile = {
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down
 		spaceX = 2, -- horizontal distance between icons (allow space for elements positioned between icons)
-		spaceY = 12, -- vertical distance between icons (allow space for elements positioned between icons)
+		spaceY = 20, -- vertical distance between icons (allow space for elements positioned between icons)
 		sortMethod = "TIME",
 		sortDirection = "-",
 		separateOwn = true,
 		wrapAfter = 20,
 		maxWraps = 2,
+		weaponEnchants = true, -- include weapon enchants in the buffs group
 		showTime = true,
 		timePosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = 0 },
 		timeFormat = 24, -- use simple time format
@@ -994,7 +1056,7 @@ MOD.DefaultProfile = {
 				anchorFrame = _G.MMHolder or _G.Minimap,
 				anchorPoint = "TOPLEFT",
 				anchorX = -44,
-				anchorY = -140, -- set to roughly maxWraps * (iconSize + spaceY)
+				anchorY = -160, -- set to roughly maxWraps * (iconSize + spaceY)
 			},
 		},
 	},
