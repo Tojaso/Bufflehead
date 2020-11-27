@@ -74,6 +74,12 @@ local function GetTimeFormatList(s, c)
 	return menu
 end
 
+-- Some changes require reload of the UI, ask for confirmation before making the change
+local function ConfirmChange() return "Changing this setting requires that you reload your user interface. Continue?" end
+
+-- Reload the UI
+local function ReloadUI() C_UI.Reload() end
+
 -- Create the options table to be used by the configuration GUI
 MOD.OptionsTable = {
 	type = "group", childGroups = "tab",
@@ -87,8 +93,9 @@ MOD.OptionsTable = {
 						EnableGroup = {
 							type = "toggle", order = 10, name = "Enable Addon",
 							desc = "If checked, this addon is enabled, otherwise all features are disabled.",
+							confirm = ConfirmChange,
 							get = function(info) return pg.enabled end,
-							set = function(info, value) pg.enabled = value; UpdateAll() end,
+							set = function(info, value) pg.enabled = value; ReloadUI() end,
 						},
 						EnableMinimapIcon = {
 							type = "toggle", order = 20, name = "Minimap Icon",
@@ -102,29 +109,35 @@ MOD.OptionsTable = {
 						},
 						EnableHideBlizz = {
 							type = "toggle", order = 30, name = "Hide Blizzard",
-							desc = "If checked, hide the default Blizzard buffs and debuffs (requires /reload).",
+							desc = "If checked, hide the default Blizzard buffs and debuffs.",
 							get = function(info) return pg.hideBlizz end,
-							set = function(info, value) pg.hideBlizz = value; UpdateAll() end,
+							set = function(info, value) pg.hideBlizz = value; ReloadUI() end,
 						},
 						EnableHideOmniCC = {
 							type = "toggle", order = 40, name = "Hide OmniCC",
-							desc = "If checked, the OmniCC addon can show time left on icons (requires /reload).",
+							desc = "If checked, the OmniCC addon can show time left on icons.",
 							hidden = function(info) return not OmniCC end, -- only show if OmniCC is loaded
 							get = function(info) return pg.hideOmniCC  end,
-							set = function(info, value) pg.hideOmniCC = value; UpdateAll() end,
+							set = function(info, value) pg.hideOmniCC = value; ReloadUI() end,
 						},
 						Spacer = { type = "description", name = "", order = 100 },
+						EnableBuffs = {
+							type = "toggle", order = 110, name = "Show Player Buffs",
+							desc = "If checked, display player buffs.",
+							get = function(info) return pp.groups[HEADER_PLAYER_BUFFS].enabled end,
+							set = function(info, value) pp.groups[HEADER_PLAYER_BUFFS].enabled = value; ReloadUI() end,
+						},
 						EnableWeaponEnchants = {
-							type = "toggle", order = 110, name = "Show Weapon Enchants",
-							desc = "If checked, include weapon enchants in player buffs (requires /reload).",
+							type = "toggle", order = 120, name = "Include Weapon Enchants",
+							desc = "If checked, include weapon enchants in player buffs.",
 							get = function(info) return pp.weaponEnchants end,
-							set = function(info, value) pp.weaponEnchants = value; UpdateAll() end,
+							set = function(info, value) pp.weaponEnchants = value; ReloadUI() end,
 						},
 						EnableDebuffs = {
-							type = "toggle", order = 120, name = "Show Player Debuffs",
-							desc = "If checked, also display player debuffs (requires /reload).",
+							type = "toggle", order = 130, name = "Show Player Debuffs",
+							desc = "If checked, also display player debuffs.",
 							get = function(info) return pp.groups[HEADER_PLAYER_DEBUFFS].enabled end,
-							set = function(info, value) pp.groups[HEADER_PLAYER_DEBUFFS].enabled = value; UpdateAll() end,
+							set = function(info, value) pp.groups[HEADER_PLAYER_DEBUFFS].enabled = value; ReloadUI() end,
 						},
 					},
 				},
@@ -133,10 +146,15 @@ MOD.OptionsTable = {
 					args = {
 					},
 				},
-				TestToggle = {
-					type = "execute", order = 30, name = "Toggle Preview Mode",
-					desc = "Toggle display of player buffs preview.",
-					func = function(info) MOD.PreviewMode(); UpdateAll() end,
+				AnchorToggle = {
+					type = "execute", order = 30, name = "Toggle Anchors",
+					desc = "Toggle display of anchors for enabled player buffs and debuffs.",
+					func = function(info) MOD.ToggleAnchors(); UpdateAll() end,
+				},
+				PreviewToggle = {
+					type = "execute", order = 30, name = "Toggle Previews",
+					desc = "Toggle display of previews for enabled player buffs and debuffs.",
+					func = function(info) MOD.TogglePreviews(); UpdateAll() end,
 				},
 			},
 		},
@@ -152,11 +170,17 @@ MOD.OptionsTable = {
 							get = function(info) return pp.iconSize end,
 							set = function(info, value) pp.iconSize = value; UpdateAll() end,
 						},
-						Spacing = {
-							type = "range", order = 20, name = "Spacing", min = 0, max = 100, step = 1,
-							desc = "Adjust spacing between icons.",
+						SpacingX = {
+							type = "range", order = 20, name = "Horizontal Spacing", min = 0, max = 100, step = 1,
+							desc = "Adjust horizontal spacing between icons.",
 							get = function(info) return pp.spaceX end,
 							set = function(info, value) pp.spaceX = value; UpdateAll() end,
+						},
+						SpacingY = {
+							type = "range", order = 30, name = "Vertical Spacing", min = 0, max = 100, step = 1,
+							desc = "Adjust vertical spacing between icons.",
+							get = function(info) return pp.spaceY end,
+							set = function(info, value) pp.spaceY = value; UpdateAll() end,
 						},
 					},
 				},

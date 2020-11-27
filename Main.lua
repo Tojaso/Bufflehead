@@ -17,6 +17,7 @@ local _
 MOD.isClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
 MOD.frame = nil
 MOD.headers = {}
+MOD.previews = {}
 MOD.db = nil
 MOD.LibLDB = nil -- LibDataBroker support
 MOD.ldb = nil -- set to addon's data broker object
@@ -32,6 +33,7 @@ local PLAYER_DEBUFFS = "PlayerDebuffs"
 local HEADER_PLAYER_BUFFS = HEADER_NAME .. PLAYER_BUFFS
 local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. PLAYER_DEBUFFS
 local BUFFLE_ICON = "Interface\\AddOns\\Buffle\\Media\\BuffleIcon"
+local HEADER_FRAME_LEVEL = 100
 
 local onePixelBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
 	bgFile = "Interface\\AddOns\\Buffle\\Media\\WhiteBar",
@@ -58,7 +60,6 @@ local MSQ_ButtonData = nil -- template for masque button data structure
 local weaponDurations = {} -- best guess for weapon buff durations, indexed by enchant id
 local buffTooltip = {} -- temporary table for getting weapon enchant names
 local previewMode = false -- toggle for preview mode extra icons
-local previewButtons = {} -- preview mode icons allocated on demand
 local pg, pp -- global and character-specific profiles
 
 local UnitAura = UnitAura
@@ -198,10 +199,7 @@ function MOD.UpdateAll()
 		updateAll = true
 	else
 		updateAll = false
-		for k, header in pairs(MOD.headers) do
-			-- MOD.Debug("Buffle: updating", k)
-			MOD.UpdateHeader(header)
-		end
+		for k, header in pairs(MOD.headers) do MOD.UpdateHeader(header) end
 	end
 end
 
@@ -241,12 +239,12 @@ function MOD:PLAYER_ENTERING_WORLD()
 			if group.enabled then -- create header for enabled group, must do /reload if change header-related options
 				local unit, filter = group.unit, group.filter
 				local header = CreateFrame("Frame", name, UIParent, "SecureAuraHeaderTemplate")
-				MOD.headers[name] = header
-				-- MOD.Debug("Buffle: header created", name, unit, filter)
+				header:SetFrameLevel(HEADER_FRAME_LEVEL)
 				header:SetClampedToScreen(true)
 				header:SetAttribute("unit", unit)
 				header:SetAttribute("filter", filter)
 				RegisterAttributeDriver(header, "state-visibility", "[petbattle] hide; show")
+				MOD.headers[name] = header
 
 				if (unit == "player") then
 					RegisterAttributeDriver(header, "unit", "[vehicleui] vehicle; player")
@@ -256,7 +254,9 @@ function MOD:PLAYER_ENTERING_WORLD()
 					end
 				end
 
+				local level = header:GetFrameLevel()
 				header.anchorBackdrop = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate")
+				header.anchorBackdrop:SetFrameLevel(level - 10) -- show it behind the buttons
 				MOD.UpdateHeader(header)
 			end
 		end
@@ -809,12 +809,12 @@ function MOD.UpdateHeader(header)
 					dx = pp.directionX * (pp.spaceX + pp.iconSize)
 					wy = pp.directionY * (pp.spaceY + pp.iconSize)
 					mw = (pp.spaceX * (pp.wrapAfter - 1)) + (pp.iconSize * pp.wrapAfter)
-					mh = (pp.spaceY * (pp.maxWraps - 1)) + (pp.iconSize * pp.maxWraps)
+					mh = (pp.spaceY + pp.iconSize) * pp.maxWraps
 				else -- otherwise grow vertically
 					dy = pp.directionY * (pp.spaceY + pp.iconSize)
 					wx = pp.directionX * (pp.spaceX + pp.iconSize)
 					mw = (pp.spaceX * (pp.maxWraps - 1)) + (pp.iconSize * pp.maxWraps)
-					mh = (pp.spaceY * (pp.wrapAfter - 1)) + (pp.iconSize * pp.wrapAfter)
+					mh = (pp.spaceY + pp.iconSize) * pp.wrapAfter
 				end
 				header:SetAttribute("xOffset", PS(dx))
 				header:SetAttribute("yOffset", PS(dy))
@@ -842,7 +842,7 @@ function MOD.UpdateHeader(header)
 				PSetPoint(header.anchorBackdrop, group.attachPoint, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
 				header.anchorBackdrop:SetBackdrop(twoPixelBackdrop)
 				header.anchorBackdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
-				header.anchorBackdrop:SetBackdropBorderColor(red, green, 0, 0.6) -- buffs have green border and debuffs have red border
+				header.anchorBackdrop:SetBackdropBorderColor(red, green, 0, 0.5) -- buffs have green border and debuffs have red border
 				if pp.locked then header.anchorBackdrop:Hide() else header.anchorBackdrop:Show() end
 			else
 				header:Hide()
@@ -855,57 +855,68 @@ end
 local function UpdatePreviews()
 	if not previewMode then MOD.frame:SetScript("OnUpdate", nil) end
 
-	local header = MOD.headers[HEADER_PLAYER_BUFFS]
-	local pt = header:GetAttribute("point") -- relative point on icons based on grow and wrap directions
-	local dx = header:GetAttribute("xOffset")
-	local dy = header:GetAttribute("yOffset")
-	local wx = header:GetAttribute("wrapXOffset")
-	local wy = header:GetAttribute("wrapYOffset")
-	local columns, rows = pp.wrapAfter, pp.maxWraps
-	local num = rows * columns -- number of icons needed for previewing
+	for k, header in pairs(MOD.headers) do
+		local pt = header:GetAttribute("point") -- relative point on icons based on grow and wrap directions
+		local dx = header:GetAttribute("xOffset")
+		local dy = header:GetAttribute("yOffset")
+		local wx = header:GetAttribute("wrapXOffset")
+		local wy = header:GetAttribute("wrapYOffset")
+		local columns, rows = pp.wrapAfter, pp.maxWraps
+		local num = rows * columns -- number of icons needed for previewing
+		local previewButtons = MOD.previews[k]
 
-	for i = 1, #previewButtons do -- check if any icon displayed in each location and show/hide previews
-		local button = previewButtons[i]
-		local hide = true
-		local column = (i - 1) % columns -- which column the button is in, numbered from 0
-		local row = math.floor((i - 1) / columns) -- which row the button is in, numbered from 0
+		for i = 1, #previewButtons do -- check if any icon displayed in each location and show/hide previews
+			local button = previewButtons[i]
+			local hide = true
+			local column = (i - 1) % columns -- which column the button is in, numbered from 0
+			local row = math.floor((i - 1) / columns) -- which row the button is in, numbered from 0
 
-		if previewMode and i <= num then
-			local real = header:GetAttribute("child" .. i)
+			if previewMode and i <= num then
+				local real = header:GetAttribute("child" .. i)
 
-			if not real or not real:IsShown() then -- check if real button is currently shown
-				button:ClearAllPoints()
-				PSetPoint(button, pt, header.anchorBackdrop, pt, (dx * column) + (wx * column), (dy * row) + (wy * row))
-				button:SetSize(pp.iconSize, pp.iconSize)
-				if IsAltKeyDown() then MOD.Debug("Buffle: show preview for", i, pp.iconSize, pt, column, row) end
+				if not real or not real:IsShown() then -- check if real button is currently shown
+					button:ClearAllPoints()
+					PSetPoint(button, pt, header.anchorBackdrop, pt, (dx * column) + (wx * column), (dy * row) + (wy * row))
+					button:SetSize(pp.iconSize, pp.iconSize)
+					if IsAltKeyDown() then MOD.Debug("Buffle: show preview for", i, pp.iconSize, pt, column, row) end
 
-				local duration = i * 10
-				local expire = button._expire or (GetTime() + duration)
-				local name = "#" .. i
-				local icon = GetFileIDFromPath(BUFFLE_ICON)
-				ShowButton(button, name, icon, duration, expire, i, "preview", pp.barBuffColor, pp.iconBorderColor)
-				button:Show()
-				hide = false
+					local duration = i * 10
+					local expire = button._expire or (GetTime() + duration)
+					local name = "#" .. i
+					local icon = GetFileIDFromPath(BUFFLE_ICON)
+					ShowButton(button, name, icon, duration, expire, i, "preview", pp.barBuffColor, pp.iconBorderColor)
+					button:Show()
+					hide = false
+				end
 			end
+			if hide and button:IsShown() then button:Hide(); HideButton(button) end
 		end
-
-		if hide and button:IsShown() then button:Hide(); HideButton(button) end
 	end
 end
 
 -- Toggle preview mode and allocate preview buttons as needed
-function MOD.PreviewMode()
-	previewMode = not previewMode
-	if previewMode then -- turn on preview mode
+function MOD.TogglePreviews()
+	previewMode = not previewMode -- toggle on/off preview mode
+	if previewMode then
 		local num = pp.maxWraps * pp.wrapAfter -- number of icons needed for previewing
-		local currentIcons = #previewButtons -- current number of preview icons
-		for i = currentIcons + 1, num do
-			local button = CreateFrame("Button", "BufflePreviewButton" .. i, UIParent, BackdropTemplateMixin and "BackdropTemplate")
-			MOD:Button_OnLoad(button)
-			previewButtons[i] = button
+		for k, header in pairs(MOD.headers) do
+			if not MOD.previews[k] then MOD.previews[k] = {} end -- allocate preview buttons on demand
+			local previewButtons = MOD.previews[k]
+			local currentIcons = #previewButtons -- current number of preview icons
+			for i = currentIcons + 1, num do
+				local button = CreateFrame("Button", "BufflePreviewButton" .. i, UIParent, BackdropTemplateMixin and "BackdropTemplate")
+				MOD:Button_OnLoad(button)
+				previewButtons[i] = button
+			end
 		end
 		MOD.frame:SetScript("OnUpdate", UpdatePreviews)
 	end
+end
+
+-- Toggle display of anchors
+function MOD.ToggleAnchors()
+	pp.locked = not pp.locked
+	MOD.UpdateAll()
 end
 
 -- Convert a time value into a compact text string using a selected display format
@@ -973,7 +984,7 @@ MOD.DefaultProfile = {
 		hideOmniCC = true, -- only valid if OmniCC addon is available
 	},
 	profile = { -- settings specific to a profile
-		locked = true, -- hide the anchors when locked
+		locked = false, -- hide the anchors when locked
 		iconSize = 36,
 		iconBorder = "raven", -- "default", "one", "two", "raven", "masque"
 		iconBorderColor = { r = 0.5, g = 1, b = 0.5, a = 1 },
