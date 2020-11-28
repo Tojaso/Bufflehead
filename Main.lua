@@ -970,10 +970,16 @@ function MOD.FormatTime(t, timeFormat, timeSpaces, timeCase)
 	return f
 end
 
+-- Helper functions for positioning anchors in the options panel
 function MOD.GetBuffsPercentX() return 20 end
 function MOD.SetBuffsPercentX(value) end
 function MOD.GetBuffsPercentY() return 10 end
 function MOD.SetBuffsPercentY(value) end
+
+-- Apply the selected preset to the settings, overwriting current settings
+function MOD.ApplyPreset(preset)
+	return
+end
 
 -- Default profile description used to initialize the SavedVariables persistent database
 MOD.DefaultProfile = {
@@ -984,7 +990,7 @@ MOD.DefaultProfile = {
 		hideOmniCC = true, -- only valid if OmniCC addon is available
 	},
 	profile = { -- settings specific to a profile
-		locked = false, -- hide the anchors when locked
+		locked = true, -- hide the anchors when locked
 		iconSize = 36,
 		iconBorder = "raven", -- "default", "one", "two", "raven", "masque"
 		iconBorderColor = { r = 0.5, g = 1, b = 0.5, a = 1 },

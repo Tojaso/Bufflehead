@@ -4,6 +4,7 @@ local MOD = Buffle
 local _
 local initialized = false -- set when options are first accessed
 local pg, pp -- global and character-specific profiles
+local selectPreset = 1
 
 local HEADER_NAME = "BuffleSecureHeader"
 local PLAYER_BUFFS = "PlayerBuffs"
@@ -77,6 +78,9 @@ end
 -- Some changes require reload of the UI, ask for confirmation before making the change
 local function ConfirmChange() return "Changing this setting requires that you reload your user interface. Continue?" end
 
+-- Applying a preset will overwrite most current settings so ask for confirmation
+local function ConfirmPreset() return "Applying a preset will overwrite current settings. Continue?" end
+
 -- Reload the UI
 local function ReloadUI() C_UI.Reload() end
 
@@ -144,6 +148,73 @@ MOD.OptionsTable = {
 				PresetsGroup = {
 					type = "group", order = 20, name = "Presets", inline = true,
 					args = {
+						Description = {
+							type = "description", order = 1, name = "Presets provide a convenient starting point for configuring Buffle. " ..
+							"Each preset offers a different style with settings that work on most displays. " ..
+							"Customization can be done on other tabs of the options panel. " ..
+							"Please note that presets overwrite all settings so be sure to use profiles to save/restore."
+						},
+						IconTextGroup = {
+							type = "toggle", order = 10, name = "Icon + Time",
+							get = function(info) return selectPreset == 1 end,
+							set = function(info, value) selectPreset = 1 end,
+						},
+						Spacer1 = { type = "description", order = 11, width = "double",
+							name = function() return "Icons laid out horizontally with time text below each icon." end,
+						},
+						Spacer1A = { type = "description", name = "", order = 12 },
+						IconClockGroup = {
+							type = "toggle", order = 20, name = "Icon + Clock",
+							get = function(info) return selectPreset == 2 end,
+							set = function(info, value) selectPreset = 2 end,
+						},
+						Spacer2 = { type = "description", order = 21, width = "double",
+							name = function() return "Icons with clock overlay and laid out horizontally." end,
+						},
+						Spacer2A = { type = "description", name = "", order = 22 },
+						HorizontalIconBarGroup = {
+							type = "toggle", order = 30, name = "Icon + Mini-Bar (H)",
+							get = function(info) return selectPreset == 3 end,
+							set = function(info, value) selectPreset = 3 end,
+						},
+						Spacer3 = { type = "description", order = 31, width = "double",
+							name = function() return "Icons laid out horizontally that show a timer bar below each icon." end,
+						},
+						Spacer3A = { type = "description", name = "", order = 32 },
+						VerticalIconBarGroup = {
+							type = "toggle", order = 40, name = "Icons + Mini-bar (V)",
+							get = function(info) return selectPreset == 4 end,
+							set = function(info, value) selectPreset = 4 end,
+						},
+						Spacer4 = { type = "description", order = 41, width = "double",
+							name = function() return "Icons laid out vertically that show a timer bar on left side of each icon." end,
+						},
+						Spacer4A = { type = "description", name = "", order = 42 },
+						HorizontalBarGroup = {
+							type = "toggle", order = 50, name = "Full-Size Bar (H)",
+							get = function(info) return selectPreset == 5 end,
+							set = function(info, value) selectPreset = 5 end,
+						},
+						Spacer5 = { type = "description", order = 51, width = "double",
+							name = function() return "Full-size horizontal timer bars with labels." end,
+						},
+						Spacer5A = { type = "description", name = "", order = 52 },
+						VerticalBarGroup = {
+							type = "toggle", order = 60, name = "Full-Size Bar (V)",
+							get = function(info) return selectPreset == 6 end,
+							set = function(info, value) selectPreset = 6 end,
+						},
+						Spacer6 = { type = "description", order = 61, width = "double",
+							name = function() return "Full-size verical timer bars" end,
+						},
+						Spacer6A = { type = "description", name = "", order = 62 },
+						ExtraSpacer = { type = "description", name = "", order = 100, width = "double" },
+						ApplyPreset = {
+							type = "execute", order = 100, name = "Apply Preset",
+							desc = "Apply the selected preset.",
+							confirm = ConfirmPreset,
+							func = function(info) MOD.ApplyPreset() end,
+						},
 					},
 				},
 				AnchorToggle = {
@@ -158,9 +229,12 @@ MOD.OptionsTable = {
 				},
 			},
 		},
-		IconGroup = {
-			type = "group", order = 20, name = "Icon",
+		LayoutGroup = {
+			type = "group", order = 20, name = "Layout",
 			args = {
+				Description = {
+					type = "description", order = 1, name = "How the layout group works...",
+				},
 				LayoutGroup = {
 					type = "group", order = 10, name = "Layout", inline = true,
 					args = {
@@ -252,8 +326,138 @@ MOD.OptionsTable = {
 				},
 			},
 		},
+		IconGroup = {
+			type = "group", order = 30, name = "Icon",
+			args = {
+				LayoutGroup = {
+					type = "group", order = 10, name = "Size and Spacing", inline = true,
+					args = {
+						IconSize = {
+							type = "range", order = 10, name = "Icon Size", min = 12, max = 64, step = 2,
+							desc = "Set icon's width and height.",
+							get = function(info) return pp.iconSize end,
+							set = function(info, value) pp.iconSize = value; UpdateAll() end,
+						},
+						SpacingX = {
+							type = "range", order = 20, name = "Horizontal Spacing", min = 0, max = 100, step = 1,
+							desc = "Adjust horizontal spacing between icons.",
+							get = function(info) return pp.spaceX end,
+							set = function(info, value) pp.spaceX = value; UpdateAll() end,
+						},
+						SpacingY = {
+							type = "range", order = 30, name = "Vertical Spacing", min = 0, max = 100, step = 1,
+							desc = "Adjust vertical spacing between icons.",
+							get = function(info) return pp.spaceY end,
+							set = function(info, value) pp.spaceY = value; UpdateAll() end,
+						},
+					},
+				},
+				PositionGroup = {
+					type = "group", order = 20, name = "Position", inline = true,
+					args = {
+						Horizontal = {
+							type = "range", order = 10, name = "Horizontal", min = 0, max = 100, step = 0.1,
+							desc = "Set horizontal position for player buffs as percentage of overall width (cannot move beyond edge of display).",
+							get = function(info) return MOD.GetBuffsPercentX() end,
+							set = function(info, value) MOD.SetBuffsPercentX(value); UpdateAll() end,
+						},
+						Vertical = {
+							type = "range", order = 20, name = "Vertical", min = 0, max = 100, step = 0.1,
+							desc = "Set vertical position for player buffs as percentage of overall height (cannot move beyond edge of display).",
+							get = function(info) return MOD.GetBuffsPercentY() end,
+							set = function(info, value) MOD.SetBuffsPercentY(value); UpdateAll() end,
+						},
+					},
+				},
+				IconBorderGroup = {
+					type = "group", order = 30, name = "Icon Border", inline = true,
+					args = {
+						DefaultBorder = {
+							type = "toggle", order = 10, name = "Default", width = "half",
+							desc = "Use default icon borders.",
+							get = function(info) return pp.iconBorder == "none" or ((pp.iconBorder == "masque") and not MOD.MSQ) end,
+							set = function(info, value) pp.iconBorder = "none"; UpdateAll() end,
+						},
+						MasqueBorder = {
+							type = "toggle", order = 20, name = "Masque", width = "half",
+							desc = "Use the Masque addon to show icon borders.",
+							hidden = function(info) return not MOD.MSQ end, -- only show if Masque is loaded
+							get = function(info) return pp.iconBorder == "masque" end,
+							set = function(info, value) pp.iconBorder = "masque"; UpdateAll() end,
+						},
+						RavenBorder = {
+							type = "toggle", order = 30, name = "Raven", width = "half",
+							desc = "Use the custom icon border included in Raven.",
+							get = function(info) return pp.iconBorder == "raven" end,
+							set = function(info, value) pp.iconBorder = "raven"; UpdateAll() end,
+						},
+						OnePixelBorder = {
+							type = "toggle", order = 40, name = "Pixel", width = "half",
+							desc = "Use single pixel icon borders.",
+							get = function(info) return pp.iconBorder == "one" end,
+							set = function(info, value) pp.iconBorder = "one"; UpdateAll() end,
+						},
+						TwoPixelBorder = {
+							type = "toggle", order = 50, name = "Two Pixel",
+							desc = "Use two pixel icon borders.",
+							get = function(info) return pp.iconBorder == "two" end,
+							set = function(info, value) pp.iconBorder = "two"; UpdateAll() end,
+						},
+						Spacer = { type = "description", name = "", order = 100 },
+						BorderColor = {
+							type = "color", order = 110, name = "Border Color", hasAlpha = true,
+							desc = "Set color for icon borders.",
+							get = function(info) local t = pp.iconBorderColor return t.r, t.g, t.b, t.a end,
+							set = function(info, r, g, b, a) local t = pp.iconBorderColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
+						},
+						DebuffTypeColor = {
+							type = "toggle", order = 130, name = "Debuff Type Color",
+							desc = "Use debuff type colors for icon borders when appropriate.",
+							get = function(info) return pp.debuffColoring end,
+							set = function(info, value) pp.debuffColoring = value; UpdateAll() end,
+						},
+					},
+				},
+				ClockOverlayGroup = {
+					type = "group", order = 40, name = "Clock Overlay", inline = true,
+					args = {
+						EnableGroup = {
+							type = "toggle", order = 10, name = "Enable",
+							desc = "Enable showing time left with a clock overlay on each icon.",
+							get = function(info) return pp.showClock end,
+							set = function(info, value) pp.showClock = value; UpdateAll() end,
+						},
+						Color = {
+							type = "color", order = 20, name = "Color", hasAlpha = true, width = "half",
+							desc = "Set the clock overlay color. Be sure to adjust the color's transparency as desired to see through the overlay.",
+							get = function(info)
+								local t = pp.clockColor
+								return t.r, t.g, t.b, t.a
+							end,
+							set = function(info, r, g, b, a)
+								local t = pp.clockColor
+								t.r = r; t.g = g; t.b = b; t.a = a
+								UpdateAll()
+							end,
+						},
+						Edge = {
+							type = "toggle", order = 30, name = "Edge", width = "half",
+							desc = "Set the clock overlay to have a bright moving edge.",
+							get = function(info) return pp.clockEdge end,
+							set = function(info, value) pp.clockEdge = value; UpdateAll() end,
+						},
+						Reverse = {
+							type = "toggle", order = 40, name = "Reverse", width = "half",
+							desc = "Set the clock overlay to display reversed.",
+							get = function(info) return pp.clockReverse end,
+							set = function(info, value) pp.clockReverse = value; UpdateAll() end,
+						},
+					},
+				},
+			},
+		},
 		CountTextGroup = {
-			type = "group", order = 30, name = "Count Text",
+			type = "group", order = 40, name = "Count Text",
 			args = {
 				EnableGroup = {
 					type = "toggle", order = 10, name = "Enable",
@@ -371,7 +575,7 @@ MOD.OptionsTable = {
 			},
 		},
 		LabelTextGroup = {
-			type = "group", order = 40, name = "Label Text",
+			type = "group", order = 50, name = "Label Text",
 			args = {
 				EnableGroup = {
 					type = "toggle", order = 10, name = "Enable",
@@ -513,7 +717,7 @@ MOD.OptionsTable = {
 			},
 		},
 		TimeTextGroup = {
-			type = "group", order = 50, name = "Time Text",
+			type = "group", order = 60, name = "Time Text",
 			args = {
 				EnableGroup = {
 					type = "toggle", order = 10, name = "Enable",
@@ -654,49 +858,8 @@ MOD.OptionsTable = {
 				},
 			},
 		},
-		ClockOverlayGroup = {
-			type = "group", order = 60, name = "Clock Overlay",
-			args = {
-				EnableGroup = {
-					type = "toggle", order = 10, name = "Enable",
-					desc = "Enable showing time left with a clock overlay on each icon.",
-					get = function(info) return pp.showClock end,
-					set = function(info, value) pp.showClock = value; UpdateAll() end,
-				},
-				AppearanceGroup = {
-					type = "group", order = 20, name = "Appearance", inline = true,
-					args = {
-						Color = {
-							type = "color", order = 10, name = "Color", hasAlpha = true, width = "half",
-							desc = "Set the clock overlay color. Be sure to adjust the color's transparency as desired to see through the overlay.",
-							get = function(info)
-								local t = pp.clockColor
-								return t.r, t.g, t.b, t.a
-							end,
-							set = function(info, r, g, b, a)
-								local t = pp.clockColor
-								t.r = r; t.g = g; t.b = b; t.a = a
-								UpdateAll()
-							end,
-						},
-						Edge = {
-							type = "toggle", order = 20, name = "Edge", width = "half",
-							desc = "Set the clock overlay to have a bright moving edge.",
-							get = function(info) return pp.clockEdge end,
-							set = function(info, value) pp.clockEdge = value; UpdateAll() end,
-						},
-						Reverse = {
-							type = "toggle", order = 30, name = "Reverse", width = "half",
-							desc = "Set the clock overlay to display reversed.",
-							get = function(info) return pp.clockReverse end,
-							set = function(info, value) pp.clockReverse = value; UpdateAll() end,
-						},
-					},
-				},
-			},
-		},
 		TimerBarGroup = {
-			type = "group", order =70, name = "Timer Bar",
+			type = "group", order =80, name = "Timer Bar",
 			args = {
 				EnableGroup = {
 					type = "toggle", order = 10, name = "Enable",
