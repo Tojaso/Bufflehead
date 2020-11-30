@@ -824,11 +824,11 @@ function MOD.UpdateHeader(header)
 				header:SetAttribute("wrapYOffset", PS(wy))
 				header:SetAttribute("minWidth", PS(mw))
 				header:SetAttribute("minHeight", PS(mh))
-				-- MOD.Debug("Buffle: dx/dy", dx, dy, "wx/wy", wx, wy, "mw/mh", mw, mh)
+				-- if IsAltKeyDown() then MOD.Debug("Buffle: dx/dy", dx, dy, "wx/wy", wx, wy, "mw/mh", mw, mh) end
 
-				-- PSetPoint(header, group.attachPoint, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
 				header:ClearAllPoints()
-				PSetPoint(header, pt, UIParent, "CENTER") -- test in center of display
+				PSetPoint(header, pt, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
+				-- PSetPoint(header, pt, UIParent, "CENTER") -- test in center of display
 				PSetSize(header, 100, 100)
 
 				local k = 1
@@ -842,9 +842,9 @@ function MOD.UpdateHeader(header)
 
 				header:Show()
 
-				-- PSetPoint(header.anchorBackdrop, group.attachPoint, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
 				header.anchorBackdrop:ClearAllPoints()
-				PSetPoint(header.anchorBackdrop, pt, UIParent, "CENTER") -- test location
+				PSetPoint(header.anchorBackdrop, pt, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
+				-- PSetPoint(header.anchorBackdrop, pt, UIParent, "CENTER") -- test in center of display
 				PSetSize(header.anchorBackdrop, mw, mh)
 				header.anchorBackdrop:SetBackdrop(twoPixelBackdrop)
 				header.anchorBackdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
@@ -883,8 +883,10 @@ local function UpdatePreviews()
 
 				if not real or not real:IsShown() then -- check if real button is currently shown
 					button:ClearAllPoints()
-					PSetPoint(button, pt, header.anchorBackdrop, pt, (dx * column) + (wx * column), (dy * row) + (wy * row))
+					PSetPoint(button, pt, header.anchorBackdrop, pt, (dx * column) + (wx * row), (dy * column) + (wy * row))
 					button:SetSize(pp.iconSize, pp.iconSize)
+					-- if IsAltKeyDown() then MOD.Debug("Preview: x/y", math.floor((dx * column) + (wx * row)), math.floor((dy * column) + (wy * row)), i, column, row,
+					--	math.floor(dx), math.floor(dy), math.floor(wx), math.floor(wy)) end
 
 					local duration = i * 10
 					local expire = button._expire or (GetTime() + duration)
@@ -1065,7 +1067,6 @@ MOD.DefaultProfile = {
 				unit = "player",
 				filter = FILTER_BUFFS,
 				name = PLAYER_BUFFS,
-				attachPoint = "TOPRIGHT",
 				anchorFrame = _G.MMHolder or _G.Minimap,
 				anchorPoint = "TOPLEFT",
 				anchorX = -44,
@@ -1076,7 +1077,6 @@ MOD.DefaultProfile = {
 				unit = "player",
 				filter = FILTER_DEBUFFS,
 				name = PLAYER_DEBUFFS,
-				attachPoint = "TOPRIGHT",
 				anchorFrame = _G.MMHolder or _G.Minimap,
 				anchorPoint = "TOPLEFT",
 				anchorX = -44,
