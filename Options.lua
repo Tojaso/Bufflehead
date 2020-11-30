@@ -20,6 +20,10 @@ local weaponBuffs = { ["Mainhand Weapon"] = true, ["Offhand Weapon"] = true }
 local anchorPoints = { BOTTOM = "BOTTOM", BOTTOMLEFT = "BOTTOMLEFT", BOTTOMRIGHT = "BOTTOMRIGHT", CENTER = "CENTER", LEFT = "LEFT",
 	RIGHT = "RIGHT", TOP = "TOP", TOPLEFT = "TOPLEFT", TOPRIGHT = "TOPRIGHT" }
 
+local sortMethods = { INDEX = "Sort by index", NAME = "Sort by name", TIME = "Sort by time left" }
+local sortDirections = { ["+"] = "Ascending", ["-"] = "Descending" }
+local separateOwnOptions = { [0] = "Don't separate", [1] = "Sort before others", [-1] = "Sort after others"}
+
 -- Call main function to update all settings.
 local function UpdateAll() MOD.UpdateAll() end
 
@@ -114,6 +118,7 @@ MOD.OptionsTable = {
 						EnableHideBlizz = {
 							type = "toggle", order = 30, name = "Hide Blizzard",
 							desc = "If checked, hide the default Blizzard buffs and debuffs.",
+							confirm = ConfirmChange,
 							get = function(info) return pg.hideBlizz end,
 							set = function(info, value) pg.hideBlizz = value; ReloadUI() end,
 						},
@@ -121,6 +126,7 @@ MOD.OptionsTable = {
 							type = "toggle", order = 40, name = "Hide OmniCC",
 							desc = "If checked, the OmniCC addon can show time left on icons.",
 							hidden = function(info) return not OmniCC end, -- only show if OmniCC is loaded
+							confirm = ConfirmChange,
 							get = function(info) return pg.hideOmniCC  end,
 							set = function(info, value) pg.hideOmniCC = value; ReloadUI() end,
 						},
@@ -128,18 +134,21 @@ MOD.OptionsTable = {
 						EnableBuffs = {
 							type = "toggle", order = 110, name = "Show Player Buffs",
 							desc = "If checked, display player buffs.",
+							confirm = ConfirmChange,
 							get = function(info) return pp.groups[HEADER_PLAYER_BUFFS].enabled end,
 							set = function(info, value) pp.groups[HEADER_PLAYER_BUFFS].enabled = value; ReloadUI() end,
 						},
 						EnableWeaponEnchants = {
 							type = "toggle", order = 120, name = "Include Weapon Enchants",
 							desc = "If checked, include weapon enchants in player buffs.",
+							confirm = ConfirmChange,
 							get = function(info) return pp.weaponEnchants end,
 							set = function(info, value) pp.weaponEnchants = value; ReloadUI() end,
 						},
 						EnableDebuffs = {
 							type = "toggle", order = 130, name = "Show Player Debuffs",
 							desc = "If checked, also display player debuffs.",
+							confirm = ConfirmChange,
 							get = function(info) return pp.groups[HEADER_PLAYER_DEBUFFS].enabled end,
 							set = function(info, value) pp.groups[HEADER_PLAYER_DEBUFFS].enabled = value; ReloadUI() end,
 						},
@@ -149,65 +158,47 @@ MOD.OptionsTable = {
 					type = "group", order = 20, name = "Presets", inline = true,
 					args = {
 						Description = {
-							type = "description", order = 1, name = "Presets provide a convenient starting point for configuring Buffle. " ..
-							"Each preset offers a different style with settings that work on most displays. " ..
-							"Customization can be done on other tabs of the options panel. " ..
-							"Please note that presets overwrite all settings so be sure to use profiles to save/restore."
+							type = "description", order = 1, name = "These presets demonstrate several ways Buffle can be configured " ..
+							"(use Toggle Previews to check them out). " ..
+							"Presets also provide a convenient starting point for new users. " ..
+							"Please note that presets overwrite all settings so be sure to use profiles to save/restore when necessary."
 						},
 						IconTextGroup = {
-							type = "toggle", order = 10, name = "Icon + Time",
+							type = "toggle", order = 10, name = "Icons + Time",
 							get = function(info) return selectPreset == 1 end,
 							set = function(info, value) selectPreset = 1 end,
 						},
 						Spacer1 = { type = "description", order = 11, width = "double",
-							name = function() return "Icons laid out horizontally with time text below each icon." end,
+							name = function() return "Icons laid out horizontally with time below each icon (default)." end,
 						},
 						Spacer1A = { type = "description", name = "", order = 12 },
 						IconClockGroup = {
-							type = "toggle", order = 20, name = "Icon + Clock",
+							type = "toggle", order = 20, name = "Icons + Clock",
 							get = function(info) return selectPreset == 2 end,
 							set = function(info, value) selectPreset = 2 end,
 						},
 						Spacer2 = { type = "description", order = 21, width = "double",
-							name = function() return "Icons with clock overlay and laid out horizontally." end,
+							name = function() return "Icons with clock overlays laid out vertically." end,
 						},
 						Spacer2A = { type = "description", name = "", order = 22 },
-						HorizontalIconBarGroup = {
-							type = "toggle", order = 30, name = "Icon + Mini-Bar (H)",
+						IconMiniBarGroup = {
+							type = "toggle", order = 30, name = "Icons + Mini-Bars",
 							get = function(info) return selectPreset == 3 end,
 							set = function(info, value) selectPreset = 3 end,
 						},
 						Spacer3 = { type = "description", order = 31, width = "double",
-							name = function() return "Icons laid out horizontally that show a timer bar below each icon." end,
+							name = function() return "Icons laid out horizontally with a timer mini-bar below each icon." end,
 						},
 						Spacer3A = { type = "description", name = "", order = 32 },
-						VerticalIconBarGroup = {
-							type = "toggle", order = 40, name = "Icons + Mini-bar (V)",
+						HorizontalBarGroup = {
+							type = "toggle", order = 40, name = "Full-Size Bars",
 							get = function(info) return selectPreset == 4 end,
 							set = function(info, value) selectPreset = 4 end,
 						},
 						Spacer4 = { type = "description", order = 41, width = "double",
-							name = function() return "Icons laid out vertically that show a timer bar on left side of each icon." end,
+							name = function() return "Full-size timer bars with labels." end,
 						},
 						Spacer4A = { type = "description", name = "", order = 42 },
-						HorizontalBarGroup = {
-							type = "toggle", order = 50, name = "Full-Size Bar (H)",
-							get = function(info) return selectPreset == 5 end,
-							set = function(info, value) selectPreset = 5 end,
-						},
-						Spacer5 = { type = "description", order = 51, width = "double",
-							name = function() return "Full-size horizontal timer bars with labels." end,
-						},
-						Spacer5A = { type = "description", name = "", order = 52 },
-						VerticalBarGroup = {
-							type = "toggle", order = 60, name = "Full-Size Bar (V)",
-							get = function(info) return selectPreset == 6 end,
-							set = function(info, value) selectPreset = 6 end,
-						},
-						Spacer6 = { type = "description", order = 61, width = "double",
-							name = function() return "Full-size verical timer bars" end,
-						},
-						Spacer6A = { type = "description", name = "", order = 62 },
 						ExtraSpacer = { type = "description", name = "", order = 100, width = "double" },
 						ApplyPreset = {
 							type = "execute", order = 100, name = "Apply Preset",
@@ -217,49 +208,8 @@ MOD.OptionsTable = {
 						},
 					},
 				},
-				AnchorToggle = {
-					type = "execute", order = 30, name = "Toggle Anchors",
-					desc = "Toggle display of anchors for enabled player buffs and debuffs.",
-					func = function(info) MOD.ToggleAnchors(); UpdateAll() end,
-				},
-				PreviewToggle = {
-					type = "execute", order = 30, name = "Toggle Previews",
-					desc = "Toggle display of previews for enabled player buffs and debuffs.",
-					func = function(info) MOD.TogglePreviews(); UpdateAll() end,
-				},
-			},
-		},
-		LayoutGroup = {
-			type = "group", order = 20, name = "Layout",
-			args = {
-				Description = {
-					type = "description", order = 1, name = "How the layout group works...",
-				},
-				LayoutGroup = {
-					type = "group", order = 10, name = "Layout", inline = true,
-					args = {
-						IconSize = {
-							type = "range", order = 10, name = "Icon Size", min = 12, max = 64, step = 2,
-							desc = "Set icon's width and height.",
-							get = function(info) return pp.iconSize end,
-							set = function(info, value) pp.iconSize = value; UpdateAll() end,
-						},
-						SpacingX = {
-							type = "range", order = 20, name = "Horizontal Spacing", min = 0, max = 100, step = 1,
-							desc = "Adjust horizontal spacing between icons.",
-							get = function(info) return pp.spaceX end,
-							set = function(info, value) pp.spaceX = value; UpdateAll() end,
-						},
-						SpacingY = {
-							type = "range", order = 30, name = "Vertical Spacing", min = 0, max = 100, step = 1,
-							desc = "Adjust vertical spacing between icons.",
-							get = function(info) return pp.spaceY end,
-							set = function(info, value) pp.spaceY = value; UpdateAll() end,
-						},
-					},
-				},
 				PositionGroup = {
-					type = "group", order = 20, name = "Position", inline = true,
+					type = "group", order = 30, name = "Position", inline = true,
 					args = {
 						Horizontal = {
 							type = "range", order = 10, name = "Horizontal", min = 0, max = 100, step = 0.1,
@@ -275,61 +225,22 @@ MOD.OptionsTable = {
 						},
 					},
 				},
-				IconBorderGroup = {
-					type = "group", order = 30, name = "Icon Border", inline = true,
-					args = {
-						DefaultBorder = {
-							type = "toggle", order = 10, name = "Default", width = "half",
-							desc = "Use default icon borders.",
-							get = function(info) return pp.iconBorder == "none" or ((pp.iconBorder == "masque") and not MOD.MSQ) end,
-							set = function(info, value) pp.iconBorder = "none"; UpdateAll() end,
-						},
-						MasqueBorder = {
-							type = "toggle", order = 20, name = "Masque", width = "half",
-							desc = "Use the Masque addon to show icon borders.",
-							hidden = function(info) return not MOD.MSQ end, -- only show if Masque is loaded
-							get = function(info) return pp.iconBorder == "masque" end,
-							set = function(info, value) pp.iconBorder = "masque"; UpdateAll() end,
-						},
-						RavenBorder = {
-							type = "toggle", order = 30, name = "Raven", width = "half",
-							desc = "Use the custom icon border included in Raven.",
-							get = function(info) return pp.iconBorder == "raven" end,
-							set = function(info, value) pp.iconBorder = "raven"; UpdateAll() end,
-						},
-						OnePixelBorder = {
-							type = "toggle", order = 40, name = "Pixel", width = "half",
-							desc = "Use single pixel icon borders.",
-							get = function(info) return pp.iconBorder == "one" end,
-							set = function(info, value) pp.iconBorder = "one"; UpdateAll() end,
-						},
-						TwoPixelBorder = {
-							type = "toggle", order = 50, name = "Two Pixel",
-							desc = "Use two pixel icon borders.",
-							get = function(info) return pp.iconBorder == "two" end,
-							set = function(info, value) pp.iconBorder = "two"; UpdateAll() end,
-						},
-						Spacer = { type = "description", name = "", order = 100 },
-						BorderColor = {
-							type = "color", order = 110, name = "Border Color", hasAlpha = true,
-							desc = "Set color for icon borders.",
-							get = function(info) local t = pp.iconBorderColor return t.r, t.g, t.b, t.a end,
-							set = function(info, r, g, b, a) local t = pp.iconBorderColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
-						},
-						DebuffTypeColor = {
-							type = "toggle", order = 130, name = "Debuff Type Color",
-							desc = "Use debuff type colors for icon borders when appropriate.",
-							get = function(info) return pp.debuffColoring end,
-							set = function(info, value) pp.debuffColoring = value; UpdateAll() end,
-						},
-					},
+				AnchorToggle = {
+					type = "execute", order = 30, name = "Toggle Anchors",
+					desc = "Toggle display of anchors for enabled player buffs and debuffs.",
+					func = function(info) MOD.ToggleAnchors(); UpdateAll() end,
+				},
+				PreviewToggle = {
+					type = "execute", order = 40, name = "Toggle Previews",
+					desc = "Toggle display of previews for enabled player buffs and debuffs.",
+					func = function(info) MOD.TogglePreviews(); UpdateAll() end,
 				},
 			},
 		},
 		IconGroup = {
-			type = "group", order = 30, name = "Icon",
+			type = "group", order = 20, name = "Icons",
 			args = {
-				LayoutGroup = {
+				DimensionGroup = {
 					type = "group", order = 10, name = "Size and Spacing", inline = true,
 					args = {
 						IconSize = {
@@ -352,25 +263,75 @@ MOD.OptionsTable = {
 						},
 					},
 				},
-				PositionGroup = {
-					type = "group", order = 20, name = "Position", inline = true,
+				GrowGroup = {
+					type = "group", order = 20, name = "Layout", inline = true,
 					args = {
-						Horizontal = {
-							type = "range", order = 10, name = "Horizontal", min = 0, max = 100, step = 0.1,
-							desc = "Set horizontal position for player buffs as percentage of overall width (cannot move beyond edge of display).",
-							get = function(info) return MOD.GetBuffsPercentX() end,
-							set = function(info, value) MOD.SetBuffsPercentX(value); UpdateAll() end,
+						Orientation = {
+							type = "toggle", order = 10, name = "Orientation",
+							desc = "If checked, icons are laid out horizontally in rows, otherwise vertically in columns.",
+							get = function(info) return pp.growDirection == 1 end,
+							set = function(info, value) pp.growDirection = (value and 1 or 0); UpdateAll() end,
 						},
-						Vertical = {
-							type = "range", order = 20, name = "Vertical", min = 0, max = 100, step = 0.1,
-							desc = "Set vertical position for player buffs as percentage of overall height (cannot move beyond edge of display).",
-							get = function(info) return MOD.GetBuffsPercentY() end,
-							set = function(info, value) MOD.SetBuffsPercentY(value); UpdateAll() end,
+						HorizontalDirection = {
+							type = "toggle", order = 20, name = "Horizontal Direction",
+							desc = "If checked, horizontal direction is right-to-left, otherwise left-to-right.",
+							get = function(info) return pp.directionX == -1 end,
+							set = function(info, value) pp.directionX = (value and -1 or 1); UpdateAll() end,
+						},
+						VerticalDirection = {
+							type = "toggle", order = 30, name = "Vertical Direction",
+							desc = "If checked, vertical direction is top-to-bottom, otherwise bottom-to-top.",
+							get = function(info) return pp.directionY == -1 end,
+							set = function(info, value) pp.directionY = (value and -1 or 1); UpdateAll() end,
+						},
+						Spacer = { type = "description", name = "", order = 100 },
+						WrapAfter = {
+							type = "range", order = 110, name = "Wrap After", min = 1, max = 40, step = 1,
+							desc = "Set the number of icons before wrapping to the next row or column. " ..
+							"There can be no more than 40 total icons, independent of the number of rows and columns.",
+							get = function(info) return pp.wrapAfter end,
+							set = function(info, value) pp.wrapAfter = value; UpdateAll() end,
+						},
+						MaxWraps = {
+							type = "range", order = 120, name = "Maximum Wraps", min = 1, max = 40, step = 1,
+							desc = "Set the number of times that icons can wrap to another row or column. " ..
+							"There can be no more than 40 total icons, independent of the number of rows and columns.",
+							get = function(info) return pp.maxWraps end,
+							set = function(info, value) pp.maxWraps = value; UpdateAll() end,
+						},
+					},
+				},
+				SortGroup = {
+					type = "group", order = 30, name = "Sorting", inline = true,
+					args = {
+						SortMethod = {
+							type = "select", order = 10, name = "Sort Method",
+							desc = function(info) return "Select whether to sort by time, name, or index." end,
+							get = function(info) return pp.sortMethod end,
+							set = function(info, value) pp.sortMethod = value; UpdateAll() end,
+							values = function(info) return sortMethods end,
+							style = "dropdown",
+						},
+						SortDirection = {
+							type = "select", order = 20, name = "Sort Direction",
+							desc = function(info) return "Select whether to sort by ascending or descending values." end,
+							get = function(info) return pp.sortDirection end,
+							set = function(info, value) pp.sortDirection = value; UpdateAll() end,
+							values = function(info) return sortDirections end,
+							style = "dropdown",
+						},
+						SeparateOwn = {
+							type = "select", order = 30, name = "Separate Own",
+							desc = function(info) return "Select whether to separate buffs and debuffs cast by the player and show them before or after others." end,
+							get = function(info) return pp.separateOwn end,
+							set = function(info, value) pp.separateOwn = value; UpdateAll() end,
+							values = function(info) return separateOwnOptions end,
+							style = "dropdown",
 						},
 					},
 				},
 				IconBorderGroup = {
-					type = "group", order = 30, name = "Icon Border", inline = true,
+					type = "group", order = 40, name = "Icon Border", inline = true,
 					args = {
 						DefaultBorder = {
 							type = "toggle", order = 10, name = "Default", width = "half",
@@ -419,7 +380,7 @@ MOD.OptionsTable = {
 					},
 				},
 				ClockOverlayGroup = {
-					type = "group", order = 40, name = "Clock Overlay", inline = true,
+					type = "group", order = 50, name = "Clock Overlay", inline = true,
 					args = {
 						EnableGroup = {
 							type = "toggle", order = 10, name = "Enable",
@@ -859,7 +820,7 @@ MOD.OptionsTable = {
 			},
 		},
 		TimerBarGroup = {
-			type = "group", order =80, name = "Timer Bar",
+			type = "group", order =80, name = "Timer Bars",
 			args = {
 				EnableGroup = {
 					type = "toggle", order = 10, name = "Enable",

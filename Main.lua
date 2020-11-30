@@ -804,16 +804,18 @@ function MOD.UpdateHeader(header)
 				end
 				header:SetAttribute("point", pt) -- relative point on icons based on grow and wrap directions
 
+				local wraps = pp.maxWraps -- limit anchor to include just enough rows and columns for 40 buttons
+				if (pp.maxWraps * pp.wrapAfter) > 40 then wraps = math.ceil(40 / pp.wrapAfter) end
 				local dx, dy, mw, mh, wx, wy = 0, 0, 0, 0, 0, 0
 				if pp.growDirection == 1 then -- grow horizontally
 					dx = pp.directionX * (pp.spaceX + pp.iconSize)
 					wy = pp.directionY * (pp.spaceY + pp.iconSize)
 					mw = (pp.spaceX * (pp.wrapAfter - 1)) + (pp.iconSize * pp.wrapAfter)
-					mh = (pp.spaceY + pp.iconSize) * pp.maxWraps
+					mh = (pp.spaceY + pp.iconSize) * wraps
 				else -- otherwise grow vertically
 					dy = pp.directionY * (pp.spaceY + pp.iconSize)
 					wx = pp.directionX * (pp.spaceX + pp.iconSize)
-					mw = (pp.spaceX * (pp.maxWraps - 1)) + (pp.iconSize * pp.maxWraps)
+					mw = (pp.spaceX * (wraps - 1)) + (pp.iconSize * wraps)
 					mh = (pp.spaceY + pp.iconSize) * pp.wrapAfter
 				end
 				header:SetAttribute("xOffset", PS(dx))
@@ -863,6 +865,7 @@ local function UpdatePreviews()
 		local wy = header:GetAttribute("wrapYOffset")
 		local columns, rows = pp.wrapAfter, pp.maxWraps
 		local num = rows * columns -- number of icons needed for previewing
+		if num > 40 then num = 40 end -- respect the limit on player buffs/debuffs
 		local previewButtons = MOD.previews[k]
 
 		for i = 1, #previewButtons do -- check if any icon displayed in each location and show/hide previews
@@ -899,6 +902,7 @@ function MOD.TogglePreviews()
 	previewMode = not previewMode -- toggle on/off preview mode
 	if previewMode then
 		local num = pp.maxWraps * pp.wrapAfter -- number of icons needed for previewing
+		if num > 40 then num = 40 end -- respect the limit on player buffs/debuffs
 		for k, header in pairs(MOD.headers) do
 			if not MOD.previews[k] then MOD.previews[k] = {} end -- allocate preview buttons on demand
 			local previewButtons = MOD.previews[k]
@@ -998,13 +1002,13 @@ MOD.DefaultProfile = {
 		growDirection = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down
-		spaceX = 2, -- horizontal distance between icons (allow space for elements positioned between icons)
-		spaceY = 20, -- vertical distance between icons (allow space for elements positioned between icons)
-		sortMethod = "TIME",
-		sortDirection = "-",
-		separateOwn = true,
 		wrapAfter = 20,
 		maxWraps = 2,
+		spaceX = 2, -- horizontal distance between icons (allow space for elements positioned between icons)
+		spaceY = 20, -- vertical distance between icons (allow space for elements positioned between icons)
+		sortMethod = "TIME", -- "INDEX", "NAME", "TIME"
+		sortDirection = "-", -- ASCENDING = "+", DESCENDING = "-"
+		separateOwn = 0, -- 0 = don't separate, 1 = sort before others, -1 = sort after others
 		weaponEnchants = true, -- include weapon enchants in the buffs group
 		showTime = true,
 		timePosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = 0 },
