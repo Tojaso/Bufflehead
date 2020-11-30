@@ -240,7 +240,7 @@ function MOD:PLAYER_ENTERING_WORLD()
 				local unit, filter = group.unit, group.filter
 				local header = CreateFrame("Frame", name, UIParent, "SecureAuraHeaderTemplate")
 				header:SetFrameLevel(HEADER_FRAME_LEVEL)
-				header:SetClampedToScreen(true)
+				-- header:SetClampedToScreen(true)
 				header:SetAttribute("unit", unit)
 				header:SetAttribute("filter", filter)
 				RegisterAttributeDriver(header, "state-visibility", "[petbattle] hide; show")
@@ -798,9 +798,9 @@ function MOD.UpdateHeader(header)
 
 				local pt = "TOPRIGHT"
 				if pp.directionX > 0 then
-					if pp.directionY > 0 then pt = "BOTTOMLEFT" else pt = "BOTTOMRIGHT" end
+					if pp.directionY > 0 then pt = "BOTTOMLEFT" else pt = "TOPLEFT" end
 				else
-					if pp.directionY > 0 then pt = "TOPLEFT" end
+					if pp.directionY > 0 then pt = "BOTTOMRIGHT" end
 				end
 				header:SetAttribute("point", pt) -- relative point on icons based on grow and wrap directions
 
@@ -826,8 +826,10 @@ function MOD.UpdateHeader(header)
 				header:SetAttribute("minHeight", PS(mh))
 				-- MOD.Debug("Buffle: dx/dy", dx, dy, "wx/wy", wx, wy, "mw/mh", mw, mh)
 
+				-- PSetPoint(header, group.attachPoint, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
+				header:ClearAllPoints()
+				PSetPoint(header, pt, UIParent, "CENTER") -- test in center of display
 				PSetSize(header, 100, 100)
-				PSetPoint(header, group.attachPoint, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
 
 				local k = 1
 				local button = select(1, header:GetChildren())
@@ -840,8 +842,10 @@ function MOD.UpdateHeader(header)
 
 				header:Show()
 
+				-- PSetPoint(header.anchorBackdrop, group.attachPoint, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
+				header.anchorBackdrop:ClearAllPoints()
+				PSetPoint(header.anchorBackdrop, pt, UIParent, "CENTER") -- test location
 				PSetSize(header.anchorBackdrop, mw, mh)
-				PSetPoint(header.anchorBackdrop, group.attachPoint, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
 				header.anchorBackdrop:SetBackdrop(twoPixelBackdrop)
 				header.anchorBackdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
 				header.anchorBackdrop:SetBackdropBorderColor(red, green, 0, 0.5) -- buffs have green border and debuffs have red border
@@ -881,7 +885,6 @@ local function UpdatePreviews()
 					button:ClearAllPoints()
 					PSetPoint(button, pt, header.anchorBackdrop, pt, (dx * column) + (wx * column), (dy * row) + (wy * row))
 					button:SetSize(pp.iconSize, pp.iconSize)
-					if IsAltKeyDown() then MOD.Debug("Buffle: show preview for", i, pp.iconSize, pt, column, row) end
 
 					local duration = i * 10
 					local expire = button._expire or (GetTime() + duration)
