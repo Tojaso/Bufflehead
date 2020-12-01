@@ -227,12 +227,12 @@ MOD.OptionsTable = {
 				},
 				AnchorToggle = {
 					type = "execute", order = 30, name = "Toggle Anchors",
-					desc = "Toggle display of anchors for enabled player buffs and debuffs.",
+					desc = "Toggle display of anchors. Anchors can be moved by clicking and dragging with the mouse.",
 					func = function(info) MOD.ToggleAnchors(); UpdateAll() end,
 				},
 				PreviewToggle = {
 					type = "execute", order = 40, name = "Toggle Previews",
-					desc = "Toggle display of previews for enabled player buffs and debuffs.",
+					desc = "Toggle display of previews. Previews show what a full set of player buffs/debuffs look like.",
 					func = function(info) MOD.TogglePreviews(); UpdateAll() end,
 				},
 			},

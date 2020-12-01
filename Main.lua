@@ -28,10 +28,10 @@ local FILTER_BUFFS = "HELPFUL"
 local FILTER_DEBUFFS = "HARMFUL"
 local BUFFS_TEMPLATE = "BuffleAuraTemplate"
 local HEADER_NAME = "BuffleSecureHeader"
-local PLAYER_BUFFS = "PlayerBuffs"
-local PLAYER_DEBUFFS = "PlayerDebuffs"
-local HEADER_PLAYER_BUFFS = HEADER_NAME .. PLAYER_BUFFS
-local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. PLAYER_DEBUFFS
+local PLAYER_BUFFS = "Player Buffs"
+local PLAYER_DEBUFFS = "Player Debuffs"
+local HEADER_PLAYER_BUFFS = HEADER_NAME .. "PlayerBuffs"
+local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. "PlayerDebuffs"
 local BUFFLE_ICON = "Interface\\AddOns\\Buffle\\Media\\BuffleIcon"
 local HEADER_FRAME_LEVEL = 100
 
@@ -254,9 +254,14 @@ function MOD:PLAYER_ENTERING_WORLD()
 					end
 				end
 
-				local level = header:GetFrameLevel()
-				header.anchorBackdrop = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate")
-				header.anchorBackdrop:SetFrameLevel(level - 10) -- show it behind the buttons
+				local backdrop = CreateFrame("Frame", nil, UIParent, BackdropTemplateMixin and "BackdropTemplate")
+				backdrop.caption = backdrop:CreateFontString(nil, "OVERLAY")
+				backdrop.caption:SetFontObject(ChatFontNormal)
+				PSetPoint(backdrop.caption,"CENTER", backdrop, "BOTTOM")
+				backdrop.caption:SetText(group.caption)
+				backdrop:SetFrameStrata("LOW") -- show it behind Buffle's buttons
+				backdrop:SetMovable(true)
+				header.anchorBackdrop = backdrop
 				MOD.UpdateHeader(header)
 			end
 		end
@@ -770,6 +775,32 @@ function MOD:Button_OnAttributeChanged(k, v)
 	end
 end
 
+-- Start moving the anchor when mouse down detected
+local function Backdrop_OnMouseDown(backdrop)
+	if not backdrop.moving then
+		backdrop.moving = true
+		backdrop.startX = PS(backdrop:GetLeft()); backdrop.startY = PS(backdrop:GetTop())
+		backdrop:SetFrameStrata("HIGH")
+		backdrop:StartMoving()
+		-- MOD.Debug("start moving", backdrop.headerName, startX, startY)
+	end
+end
+
+-- Stop moving the anchor when mouse up detected
+local function Backdrop_OnMouseUp(backdrop)
+	if backdrop.moving then
+		backdrop.moving = false
+		backdrop:StopMovingOrSizing()
+		backdrop:SetFrameStrata("LOW")
+		local endX = PS(backdrop:GetLeft())
+		local endY = PS(backdrop:GetTop())
+		if backdrop.startX ~= endX or backdrop.startY ~= endY then -- check if actually moved
+			-- MOD.Debug("stop moving", backdrop.headerName, "X", backdrop.startX, "->", endX, "Y", backdrop.startY, "->", endY)
+			MOD.UpdateAll() -- redraw everything after moving the anchor
+		end
+	end
+end
+
 -- Update secure header with optional attributes based on current profile settings
 function MOD.UpdateHeader(header)
 	local name = header:GetName()
@@ -842,14 +873,26 @@ function MOD.UpdateHeader(header)
 
 				header:Show()
 
-				header.anchorBackdrop:ClearAllPoints()
-				PSetPoint(header.anchorBackdrop, pt, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
-				-- PSetPoint(header.anchorBackdrop, pt, UIParent, "CENTER") -- test in center of display
-				PSetSize(header.anchorBackdrop, mw, mh)
-				header.anchorBackdrop:SetBackdrop(twoPixelBackdrop)
-				header.anchorBackdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
-				header.anchorBackdrop:SetBackdropBorderColor(red, green, 0, 0.5) -- buffs have green border and debuffs have red border
-				if pp.locked then header.anchorBackdrop:Hide() else header.anchorBackdrop:Show() end
+				local backdrop = header.anchorBackdrop
+				backdrop:ClearAllPoints()
+				PSetPoint(backdrop, pt, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
+				-- PSetPoint(backdrop, pt, UIParent, "CENTER") -- test in center of display
+				PSetSize(backdrop, mw, mh)
+				backdrop:SetBackdrop(twoPixelBackdrop)
+				backdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
+				backdrop:SetBackdropBorderColor(red, green, 0, 0.5) -- buffs have green border and debuffs have red border
+				if pp.locked then
+					backdrop:SetScript("OnMouseDown", nil)
+					backdrop:SetScript("OnMouseUp", nil)
+					backdrop:EnableMouse(false)
+					backdrop:Hide()
+				else
+					backdrop:SetScript("OnMouseDown", Backdrop_OnMouseDown)
+					backdrop:SetScript("OnMouseUp", Backdrop_OnMouseUp)
+					backdrop.headerName = name
+					backdrop:EnableMouse(true)
+					backdrop:Show()
+				end
 			else
 				header:Hide()
 			end
@@ -1066,7 +1109,7 @@ MOD.DefaultProfile = {
 				enabled = true,
 				unit = "player",
 				filter = FILTER_BUFFS,
-				name = PLAYER_BUFFS,
+				caption = PLAYER_BUFFS,
 				anchorFrame = _G.MMHolder or _G.Minimap,
 				anchorPoint = "TOPLEFT",
 				anchorX = -44,
@@ -1076,7 +1119,7 @@ MOD.DefaultProfile = {
 				enabled = true,
 				unit = "player",
 				filter = FILTER_DEBUFFS,
-				name = PLAYER_DEBUFFS,
+				caption = PLAYER_DEBUFFS,
 				anchorFrame = _G.MMHolder or _G.Minimap,
 				anchorPoint = "TOPLEFT",
 				anchorX = -44,
