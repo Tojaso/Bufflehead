@@ -76,7 +76,7 @@ local GetInventoryItemTexture = GetInventoryItemTexture
 -- Functions used for pixel pefect calculations
 local pixelScale = 1 -- scale factor used for size and alignment
 local screenWidth, screenHeight -- physical size of screen in pixels
-local displayWidth, displayHeight -- virtual size of UIParent after calculating pixelScale
+local displayWidth, displayHeight, displayScale -- virtual size and scale of UIParent
 
 local function PS(x) if type(x) == "number" then return pixelScale * math.floor(x / pixelScale + 0.5) else return x end end
 local function PSetWidth(region, w) if w then w = pixelScale * math.floor(w / pixelScale + 0.5) end region:SetWidth(w) end
@@ -175,14 +175,15 @@ end
 -- Calculate pixel perfect scale factor
 local function SetPixelScale()
 	screenWidth, screenHeight = GetPhysicalScreenSize() -- size in pixels of display in full screen, otherwise window size in pixels
+	displayWidth = UIParent:GetWidth() -- saved for calculating anchor position
+	displayHeight = UIParent:GetHeight()
+	displayScale = UIParent:GetScale() -- adjusted by ElvUI and possibly others
 	pixelScale = GetScreenHeight() / screenHeight -- figure out how big virtual pixels are versus screen pixels
 	SetInsets(onePixelBackdrop, PS(1)) -- update one pixel border size
 	SetInsets(twoPixelBackdrop, PS(2)) -- update two pixel border size
-	displayWidth = UIParent:GetWidth() -- saved for calculating anchor position
-	displayHeight = UIParent:GetHeight()
 
-	-- MOD.Debug("Buffle: pixel w/h/scale", screenWidth, screenHeight, pixelScale)
-	-- MOD.Debug("Buffle: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
+	MOD.Debug("Buffle: pixel w/h/scale", screenWidth, screenHeight, pixelScale, displayWidth, displayHeight, displayScale)
+	MOD.Debug("Buffle: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
 end
 
 -- Adjust pixel perfect scale factor when the UIScale is changed

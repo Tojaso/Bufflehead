@@ -199,24 +199,28 @@ MOD.OptionsTable = {
 							name = function() return "Full-size timer bars with labels." end,
 						},
 						Spacer4A = { type = "description", name = "", order = 42 },
-						ExtraSpacer = { type = "description", name = "", order = 100, width = "double" },
 						ApplyPreset = {
 							type = "execute", order = 100, name = "Apply Preset",
 							desc = "Apply the selected preset.",
 							confirm = ConfirmPreset,
 							func = function(info) MOD.ApplyPreset() end,
 						},
+						PreviewToggle = {
+							type = "execute", order = 110, name = "Toggle Previews",
+							desc = "Toggle display of previews. Previews show what a full set of player buffs/debuffs look like.",
+							func = function(info) MOD.TogglePreviews(); UpdateAll() end,
+						},
 					},
 				},
-				PreviewToggle = {
-					type = "execute", order = 30, name = "Toggle Previews",
-					desc = "Toggle display of previews. Previews show what a full set of player buffs/debuffs look like.",
-					func = function(info) MOD.TogglePreviews(); UpdateAll() end,
-				},
-				AnchorToggle = {
-					type = "execute", order = 40, name = "Toggle Anchors",
-					desc = "Toggle display of anchors. Anchors can be moved by clicking and dragging with the mouse.",
-					func = function(info) MOD.ToggleAnchors(); UpdateAll() end,
+				PositionGroup = {
+					type = "group", order = 30, name = "Position", inline = true,
+					args = {
+						AnchorToggle = {
+							type = "execute", order = 10, name = "Toggle Anchors",
+							desc = "Toggle display of anchors. When unlocked, anchors can be moved by clicking and dragging with the mouse.",
+							func = function(info) MOD.ToggleAnchors(); UpdateAll() end,
+						},
+					},
 				},
 			},
 		},
