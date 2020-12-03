@@ -32,7 +32,7 @@ local function UpdateOptions()
 	if initialized and acedia.OpenFrames["Buffle"] then
 		acereg:NotifyChange("Buffle")
 	end
-	MOD:ForceUpdate()
+	UpdateAll()
 end
 
 -- Register the options table and link to the Blizzard addons interface
@@ -208,32 +208,15 @@ MOD.OptionsTable = {
 						},
 					},
 				},
-				PositionGroup = {
-					type = "group", order = 30, name = "Position", inline = true,
-					args = {
-						Horizontal = {
-							type = "range", order = 10, name = "Horizontal", min = 0, max = 100, step = 0.1,
-							desc = "Set horizontal position for player buffs as percentage of overall width (cannot move beyond edge of display).",
-							get = function(info) return MOD.GetBuffsPercentX() end,
-							set = function(info, value) MOD.SetBuffsPercentX(value); UpdateAll() end,
-						},
-						Vertical = {
-							type = "range", order = 20, name = "Vertical", min = 0, max = 100, step = 0.1,
-							desc = "Set vertical position for player buffs as percentage of overall height (cannot move beyond edge of display).",
-							get = function(info) return MOD.GetBuffsPercentY() end,
-							set = function(info, value) MOD.SetBuffsPercentY(value); UpdateAll() end,
-						},
-					},
-				},
-				AnchorToggle = {
-					type = "execute", order = 30, name = "Toggle Anchors",
-					desc = "Toggle display of anchors. Anchors can be moved by clicking and dragging with the mouse.",
-					func = function(info) MOD.ToggleAnchors(); UpdateAll() end,
-				},
 				PreviewToggle = {
-					type = "execute", order = 40, name = "Toggle Previews",
+					type = "execute", order = 30, name = "Toggle Previews",
 					desc = "Toggle display of previews. Previews show what a full set of player buffs/debuffs look like.",
 					func = function(info) MOD.TogglePreviews(); UpdateAll() end,
+				},
+				AnchorToggle = {
+					type = "execute", order = 40, name = "Toggle Anchors",
+					desc = "Toggle display of anchors. Anchors can be moved by clicking and dragging with the mouse.",
+					func = function(info) MOD.ToggleAnchors(); UpdateAll() end,
 				},
 			},
 		},

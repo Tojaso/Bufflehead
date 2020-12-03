@@ -75,6 +75,8 @@ local GetInventoryItemTexture = GetInventoryItemTexture
 
 -- Functions used for pixel pefect calculations
 local pixelScale = 1 -- scale factor used for size and alignment
+local screenWidth, screenHeight -- physical size of screen in pixels
+local displayWidth, displayHeight -- virtual size of UIParent after calculating pixelScale
 
 local function PS(x) if type(x) == "number" then return pixelScale * math.floor(x / pixelScale + 0.5) else return x end end
 local function PSetWidth(region, w) if w then w = pixelScale * math.floor(w / pixelScale + 0.5) end region:SetWidth(w) end
@@ -172,11 +174,14 @@ end
 
 -- Calculate pixel perfect scale factor
 local function SetPixelScale()
-	local pixelWidth, pixelHeight = GetPhysicalScreenSize() -- size in pixels of display in full screen, otherwise window size in pixels
-	pixelScale = GetScreenHeight() / pixelHeight -- figure out how big virtual pixels are versus screen pixels
+	screenWidth, screenHeight = GetPhysicalScreenSize() -- size in pixels of display in full screen, otherwise window size in pixels
+	pixelScale = GetScreenHeight() / screenHeight -- figure out how big virtual pixels are versus screen pixels
 	SetInsets(onePixelBackdrop, PS(1)) -- update one pixel border size
 	SetInsets(twoPixelBackdrop, PS(2)) -- update two pixel border size
-	-- MOD.Debug("Buffle: pixel w/h/scale", pixelWidth, pixelHeight, pixelScale)
+	displayWidth = UIParent:GetWidth() -- saved for calculating anchor position
+	displayHeight = UIParent:GetHeight()
+
+	-- MOD.Debug("Buffle: pixel w/h/scale", screenWidth, screenHeight, pixelScale)
 	-- MOD.Debug("Buffle: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
 end
 
@@ -261,6 +266,7 @@ function MOD:PLAYER_ENTERING_WORLD()
 				backdrop.caption:SetText(group.caption)
 				backdrop:SetFrameStrata("LOW") -- show it behind Buffle's buttons
 				backdrop:SetMovable(true)
+				backdrop.headerName = name
 				header.anchorBackdrop = backdrop
 				MOD.UpdateHeader(header)
 			end
@@ -775,29 +781,87 @@ function MOD:Button_OnAttributeChanged(k, v)
 	end
 end
 
--- Start moving the anchor when mouse down detected
+-- Calculate screen position based on current settings and adjust both header and backdrop
+local function UpdatePosition(header)
+	if not header then return end -- make sure valid header
+	local backdrop = header.anchorBackdrop -- backdrop for this header
+	if not backdrop then return end -- make sure valid backdrop
+	local name = backdrop.headerName
+	local group = pp.groups[name] -- use settings specific to this header
+	local frame = group.anchorFrame
+	local pt = header.anchorPoint -- relative point for positioning
+
+	if frame == 0 then  -- default is based on UIParent using fractions of its size for offsets
+		local x = group.anchorX * displayWidth
+		local y = group.anchorY * displayHeight
+		header:ClearAllPoints()
+		PSetPoint(header, pt, UIParent, "BOTTOMLEFT", x, y)
+		backdrop:ClearAllPoints()
+		PSetPoint(backdrop, pt, UIParent, "BOTTOMLEFT", x, y)
+	else
+		MOD.Debug("Buffle: invalid position", name)
+	end
+end
+
+-- While moving an anchor, keep the header moving in sync
+local function UpdateBackdrop(backdrop)
+	if backdrop._moving then
+		local x = PS(backdrop:GetLeft())
+		local y = PS(backdrop:GetBottom())
+		if backdrop._lastX ~= x or backdrop._lastY ~= y then -- check if actually moving
+			local header = MOD.headers[backdrop.headerName]
+			local pt = header.anchorPoint -- relative point for positioning
+			local name = backdrop.headerName
+			local group = pp.groups[name] -- use settings specific to this header
+			local dx, dy
+			if pt == "TOPLEFT" then
+				dx = backdrop:GetLeft()
+				dy = backdrop:GetTop()
+			elseif pt == "TOPRIGHT" then
+				dx = backdrop:GetRight()
+				dy = backdrop:GetTop()
+			elseif pt == "BOTTOMRIGHT" then
+				dx = backdrop:GetRight()
+				dy = backdrop:GetBottom()
+			elseif pt == "BOTTOMLEFT" then
+				dx = backdrop:GetLeft()
+				dy = backdrop:GetBottom()
+			else
+				MOD.Debug("Buffle: unknown anchor point", name, pt)
+			end
+			group.anchorX = dx / displayWidth
+			group.anchorY = dy / displayHeight
+			UpdatePosition(header)
+			backdrop._lastX = x
+			backdrop._lastY = y
+		end
+	end
+end
+
+-- Start moving the anchor when mouse down detected (only out-of-combat)
 local function Backdrop_OnMouseDown(backdrop)
+	if InCombatLockdown() then return end -- don't move anchors in combat!
 	if not backdrop.moving then
-		backdrop.moving = true
-		backdrop.startX = PS(backdrop:GetLeft()); backdrop.startY = PS(backdrop:GetTop())
+		backdrop._moving = true
+		backdrop._lastX = PS(backdrop:GetLeft())
+		backdrop._lastY = PS(backdrop:GetBottom())
 		backdrop:SetFrameStrata("HIGH")
 		backdrop:StartMoving()
-		-- MOD.Debug("start moving", backdrop.headerName, startX, startY)
+		backdrop:SetScript("OnUpdate", UpdateBackdrop) -- start updating for anchor movement
+		MOD.Debug("start moving", backdrop.headerName, backdrop._lastX, backdrop._lastY)
 	end
 end
 
 -- Stop moving the anchor when mouse up detected
 local function Backdrop_OnMouseUp(backdrop)
-	if backdrop.moving then
-		backdrop.moving = false
+	if backdrop._moving then
+		backdrop:SetScript("OnUpdate", nil) -- stop updating the time text
+		UpdateBackdrop(backdrop) -- check for possible final movement
+		backdrop._moving = false
 		backdrop:StopMovingOrSizing()
 		backdrop:SetFrameStrata("LOW")
-		local endX = PS(backdrop:GetLeft())
-		local endY = PS(backdrop:GetTop())
-		if backdrop.startX ~= endX or backdrop.startY ~= endY then -- check if actually moved
-			-- MOD.Debug("stop moving", backdrop.headerName, "X", backdrop.startX, "->", endX, "Y", backdrop.startY, "->", endY)
-			MOD.UpdateAll() -- redraw everything after moving the anchor
-		end
+		backdrop._lastX = nil
+		backdrop._lastY = nil
 	end
 end
 
@@ -834,6 +898,7 @@ function MOD.UpdateHeader(header)
 					if pp.directionY > 0 then pt = "BOTTOMRIGHT" end
 				end
 				header:SetAttribute("point", pt) -- relative point on icons based on grow and wrap directions
+				header.anchorPoint = pt
 
 				local wraps = pp.maxWraps -- limit anchor to include just enough rows and columns for 40 buttons
 				if (pp.maxWraps * pp.wrapAfter) > 40 then wraps = math.ceil(40 / pp.wrapAfter) end
@@ -857,10 +922,9 @@ function MOD.UpdateHeader(header)
 				header:SetAttribute("minHeight", PS(mh))
 				-- if IsAltKeyDown() then MOD.Debug("Buffle: dx/dy", dx, dy, "wx/wy", wx, wy, "mw/mh", mw, mh) end
 
-				header:ClearAllPoints()
-				PSetPoint(header, pt, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
-				-- PSetPoint(header, pt, UIParent, "CENTER") -- test in center of display
+				UpdatePosition(header) -- update screen position based on current settings
 				PSetSize(header, 100, 100)
+				header:Show()
 
 				local k = 1
 				local button = select(1, header:GetChildren())
@@ -871,12 +935,7 @@ function MOD.UpdateHeader(header)
 					button = select(k, header:GetChildren())
 				end
 
-				header:Show()
-
 				local backdrop = header.anchorBackdrop
-				backdrop:ClearAllPoints()
-				PSetPoint(backdrop, pt, group.anchorFrame, group.anchorPoint, group.anchorX, group.anchorY)
-				-- PSetPoint(backdrop, pt, UIParent, "CENTER") -- test in center of display
 				PSetSize(backdrop, mw, mh)
 				backdrop:SetBackdrop(twoPixelBackdrop)
 				backdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
@@ -1110,20 +1169,18 @@ MOD.DefaultProfile = {
 				unit = "player",
 				filter = FILTER_BUFFS,
 				caption = PLAYER_BUFFS,
-				anchorFrame = _G.MMHolder or _G.Minimap,
-				anchorPoint = "TOPLEFT",
-				anchorX = -44,
-				anchorY = 0,
+				anchorFrame = 0, -- default is fraction of screen from bottom left corner
+				anchorX = 0.8, -- default puts it up near the mini-map
+				anchorY = 0.95,
 			},
 			[HEADER_PLAYER_DEBUFFS] = {
 				enabled = true,
 				unit = "player",
 				filter = FILTER_DEBUFFS,
 				caption = PLAYER_DEBUFFS,
-				anchorFrame = _G.MMHolder or _G.Minimap,
-				anchorPoint = "TOPLEFT",
-				anchorX = -44,
-				anchorY = -160, -- set to roughly maxWraps * (iconSize + spaceY)
+				anchorFrame = 0,
+				anchorX = 0.8,
+				anchorY = 0.8, -- set to allow roughly maxWraps * (iconSize + spaceY)
 			},
 		},
 	},
