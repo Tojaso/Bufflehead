@@ -1,12 +1,12 @@
--- Options.lua contains the tables used by the Buffle options panel as well its supporting functions
+-- Options.lua contains the tables used by the Bufflehead options panel as well its supporting functions
 
-local MOD = Buffle
+local MOD = Bufflehead
 local _
 local initialized = false -- set when options are first accessed
 local pg, pp -- global and character-specific profiles
 local selectPreset = 1
 
-local HEADER_NAME = "BuffleSecureHeader"
+local HEADER_NAME = "BuffleheadSecureHeader"
 local PLAYER_BUFFS = "PlayerBuffs"
 local PLAYER_DEBUFFS = "PlayerDebuffs"
 local HEADER_PLAYER_BUFFS = HEADER_NAME .. PLAYER_BUFFS
@@ -29,8 +29,8 @@ local function UpdateAll() MOD.UpdateAll() end
 
 -- Update options in case anything changes
 local function UpdateOptions()
-	if initialized and acedia.OpenFrames["Buffle"] then
-		acereg:NotifyChange("Buffle")
+	if initialized and acedia.OpenFrames["Bufflehead"] then
+		acereg:NotifyChange("Bufflehead")
 	end
 	UpdateAll()
 end
@@ -40,14 +40,14 @@ local function InitializeOptions()
 	initialized = true -- only do this once
 	local options = MOD.OptionsTable
 	options.args.profile = LibStub("AceDBOptions-3.0"):GetOptionsTable(MOD.db) -- fill in the profile section
-	acereg:RegisterOptionsTable("Buffle", options)
-	acereg:RegisterOptionsTable("Buffle: "..options.args.BuffleOptions.name, options.args.BuffleOptions)
-	acereg:RegisterOptionsTable("Buffle: "..options.args.profile.name, options.args.profile)
-	acedia:AddToBlizOptions("Buffle Options", "Buffle")
+	acereg:RegisterOptionsTable("Bufflehead", options)
+	acereg:RegisterOptionsTable("Bufflehead: "..options.args.BuffleheadOptions.name, options.args.BuffleheadOptions)
+	acereg:RegisterOptionsTable("Bufflehead: "..options.args.profile.name, options.args.profile)
+	acedia:AddToBlizOptions("Bufflehead Options", "Bufflehead")
 	pg = MOD.db.global; pp = MOD.db.profile
 
 	local w, h = 890, 680 -- somewhat arbitrary numbers that seem to work for the configuration dialog layout
-	acedia:SetDefaultSize("Buffle", w, h)
+	acedia:SetDefaultSize("Bufflehead", w, h)
 
 	MOD.db.RegisterCallback(MOD, "OnProfileChanged", UpdateOptions)
 	MOD.db.RegisterCallback(MOD, "OnProfileCopied", UpdateOptions)
@@ -57,11 +57,11 @@ end
 -- Toggle display of the options panel
 function MOD.OptionsPanel()
 	if not initialized then InitializeOptions() end
-	if acedia.OpenFrames["Buffle"] then
-		acedia:Close("Buffle")
+	if acedia.OpenFrames["Bufflehead"] then
+		acedia:Close("Bufflehead")
 		MOD.uiOpen = false
 	else
-		acedia:Open("Buffle")
+		acedia:Open("Bufflehead")
 		MOD.uiOpen = true
 	end
 	if not InCombatLockdown() then collectgarbage("collect") end -- don't do in combat because could cause freezes/script too long error
@@ -92,7 +92,7 @@ local function ReloadUI() C_UI.Reload() end
 MOD.OptionsTable = {
 	type = "group", childGroups = "tab",
 	args = {
-		BuffleOptions = {
+		BuffleheadOptions = {
 			type = "group", order = 10, name = "Setup",
 			args = {
 				EnableGroup = {
@@ -112,7 +112,7 @@ MOD.OptionsTable = {
 							get = function(info) return not pg.Minimap.hide end,
 							set = function(info, value)
 								pg.Minimap.hide = not value
-								if value then MOD.ldbi:Show("Buffle") else MOD.ldbi:Hide("Buffle") end
+								if value then MOD.ldbi:Show("Bufflehead") else MOD.ldbi:Hide("Bufflehead") end
 							end,
 						},
 						EnableHideBlizz = {
@@ -158,7 +158,7 @@ MOD.OptionsTable = {
 					type = "group", order = 20, name = "Presets", inline = true,
 					args = {
 						Description = {
-							type = "description", order = 1, name = "These presets demonstrate several ways Buffle can be configured " ..
+							type = "description", order = 1, name = "These presets demonstrate several ways Bufflehead can be configured " ..
 							"(use Toggle Previews to check them out). " ..
 							"Presets also provide a convenient starting point for new users. " ..
 							"Please note that presets overwrite all settings so be sure to use profiles to save/restore when necessary."

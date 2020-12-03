@@ -2,14 +2,14 @@
 ..\FrameXML\UI.xsd">
 
 <!-- Use a custom template for secure auras to handle buff cancel and tooltips -->
-<Button name="BuffleAuraTemplate" inherits="SecureActionButtonTemplate" virtual="true" framelevel="4">
+<Button name="BuffleheadAuraTemplate" inherits="SecureActionButtonTemplate" virtual="true" framelevel="4">
   <Size x="32" y="32"/>
   <Attributes>
       <Attribute name="type2" value="cancelaura"/>
   </Attributes>
   <Scripts>
     <OnLoad>
-      Buffle:Button_OnLoad(self)
+      Bufflehead:Button_OnLoad(self)
       self:RegisterForClicks("RightButtonUp")
     </OnLoad>
     <OnEnter>
@@ -25,32 +25,32 @@
 </Button>
 
 <!-- What a messy way to support multiple icon sizes (thanks to ElvUI team for figuring this one out!) -->
-<Button name="BuffleAuraTemplate12" inherits="BuffleAuraTemplate" virtual="true"> <Size x="12" y="12"/> </Button>
-<Button name="BuffleAuraTemplate14" inherits="BuffleAuraTemplate" virtual="true"> <Size x="14" y="14"/> </Button>
-<Button name="BuffleAuraTemplate16" inherits="BuffleAuraTemplate" virtual="true"> <Size x="16" y="16"/> </Button>
-<Button name="BuffleAuraTemplate18" inherits="BuffleAuraTemplate" virtual="true"> <Size x="18" y="18"/> </Button>
-<Button name="BuffleAuraTemplate20" inherits="BuffleAuraTemplate" virtual="true"> <Size x="20" y="20"/> </Button>
-<Button name="BuffleAuraTemplate22" inherits="BuffleAuraTemplate" virtual="true"> <Size x="22" y="22"/> </Button>
-<Button name="BuffleAuraTemplate24" inherits="BuffleAuraTemplate" virtual="true"> <Size x="24" y="24"/> </Button>
-<Button name="BuffleAuraTemplate26" inherits="BuffleAuraTemplate" virtual="true"> <Size x="26" y="26"/> </Button>
-<Button name="BuffleAuraTemplate28" inherits="BuffleAuraTemplate" virtual="true"> <Size x="28" y="28"/> </Button>
-<Button name="BuffleAuraTemplate30" inherits="BuffleAuraTemplate" virtual="true"> <Size x="30" y="30"/> </Button>
-<Button name="BuffleAuraTemplate32" inherits="BuffleAuraTemplate" virtual="true"> <Size x="32" y="32"/> </Button>
-<Button name="BuffleAuraTemplate34" inherits="BuffleAuraTemplate" virtual="true"> <Size x="34" y="34"/> </Button>
-<Button name="BuffleAuraTemplate36" inherits="BuffleAuraTemplate" virtual="true"> <Size x="36" y="36"/> </Button>
-<Button name="BuffleAuraTemplate38" inherits="BuffleAuraTemplate" virtual="true"> <Size x="38" y="38"/> </Button>
-<Button name="BuffleAuraTemplate40" inherits="BuffleAuraTemplate" virtual="true"> <Size x="40" y="40"/> </Button>
-<Button name="BuffleAuraTemplate42" inherits="BuffleAuraTemplate" virtual="true"> <Size x="42" y="42"/> </Button>
-<Button name="BuffleAuraTemplate44" inherits="BuffleAuraTemplate" virtual="true"> <Size x="44" y="44"/> </Button>
-<Button name="BuffleAuraTemplate46" inherits="BuffleAuraTemplate" virtual="true"> <Size x="46" y="46"/> </Button>
-<Button name="BuffleAuraTemplate48" inherits="BuffleAuraTemplate" virtual="true"> <Size x="48" y="48"/> </Button>
-<Button name="BuffleAuraTemplate50" inherits="BuffleAuraTemplate" virtual="true"> <Size x="50" y="50"/> </Button>
-<Button name="BuffleAuraTemplate52" inherits="BuffleAuraTemplate" virtual="true"> <Size x="52" y="52"/> </Button>
-<Button name="BuffleAuraTemplate54" inherits="BuffleAuraTemplate" virtual="true"> <Size x="54" y="54"/> </Button>
-<Button name="BuffleAuraTemplate56" inherits="BuffleAuraTemplate" virtual="true"> <Size x="56" y="56"/> </Button>
-<Button name="BuffleAuraTemplate58" inherits="BuffleAuraTemplate" virtual="true"> <Size x="58" y="58"/> </Button>
-<Button name="BuffleAuraTemplate60" inherits="BuffleAuraTemplate" virtual="true"> <Size x="60" y="60"/> </Button>
-<Button name="BuffleAuraTemplate62" inherits="BuffleAuraTemplate" virtual="true"> <Size x="62" y="62"/> </Button>
-<Button name="BuffleAuraTemplate64" inherits="BuffleAuraTemplate" virtual="true"> <Size x="64" y="64"/> </Button>
+<Button name="BuffleheadAuraTemplate12" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="12" y="12"/> </Button>
+<Button name="BuffleheadAuraTemplate14" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="14" y="14"/> </Button>
+<Button name="BuffleheadAuraTemplate16" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="16" y="16"/> </Button>
+<Button name="BuffleheadAuraTemplate18" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="18" y="18"/> </Button>
+<Button name="BuffleheadAuraTemplate20" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="20" y="20"/> </Button>
+<Button name="BuffleheadAuraTemplate22" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="22" y="22"/> </Button>
+<Button name="BuffleheadAuraTemplate24" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="24" y="24"/> </Button>
+<Button name="BuffleheadAuraTemplate26" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="26" y="26"/> </Button>
+<Button name="BuffleheadAuraTemplate28" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="28" y="28"/> </Button>
+<Button name="BuffleheadAuraTemplate30" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="30" y="30"/> </Button>
+<Button name="BuffleheadAuraTemplate32" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="32" y="32"/> </Button>
+<Button name="BuffleheadAuraTemplate34" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="34" y="34"/> </Button>
+<Button name="BuffleheadAuraTemplate36" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="36" y="36"/> </Button>
+<Button name="BuffleheadAuraTemplate38" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="38" y="38"/> </Button>
+<Button name="BuffleheadAuraTemplate40" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="40" y="40"/> </Button>
+<Button name="BuffleheadAuraTemplate42" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="42" y="42"/> </Button>
+<Button name="BuffleheadAuraTemplate44" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="44" y="44"/> </Button>
+<Button name="BuffleheadAuraTemplate46" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="46" y="46"/> </Button>
+<Button name="BuffleheadAuraTemplate48" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="48" y="48"/> </Button>
+<Button name="BuffleheadAuraTemplate50" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="50" y="50"/> </Button>
+<Button name="BuffleheadAuraTemplate52" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="52" y="52"/> </Button>
+<Button name="BuffleheadAuraTemplate54" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="54" y="54"/> </Button>
+<Button name="BuffleheadAuraTemplate56" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="56" y="56"/> </Button>
+<Button name="BuffleheadAuraTemplate58" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="58" y="58"/> </Button>
+<Button name="BuffleheadAuraTemplate60" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="60" y="60"/> </Button>
+<Button name="BuffleheadAuraTemplate62" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="62" y="62"/> </Button>
+<Button name="BuffleheadAuraTemplate64" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="64" y="64"/> </Button>
 
 </Ui>

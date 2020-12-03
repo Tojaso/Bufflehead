@@ -1,11 +1,11 @@
 ## Interface: 90002
-## Title: Buffle: Player Buffs and Debuffs
+## Title: Bufflehead: Player Buffs and Debuffs
 ## Notes: Skins player buffs and debuffs
 ## Author: Tojaso/Tomber
 ## Version: 9.0.2
 ## DefaultState: enabled
 ## OptionalDependencies: Masque
-## SavedVariables: BuffleDB
+## SavedVariables: BuffleheadDB
 
 embeds.xml
 Templates.xml

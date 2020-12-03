@@ -1,4 +1,4 @@
--- Buffle is an addon to skin player buffs, including weapon enchants, and debuffs.
+-- Bufflehead is an addon to skin player buffs, including weapon enchants, and debuffs.
 --
 -- Features:
 -- 1. Hide/show Blizzard buff frame (buffs, debuffs, weapon enchants)
@@ -10,8 +10,8 @@
 -- Author: Tomber/Tojaso (curseforge, github, wowinterface)
 -- Copyright 2020, All Rights Reserved
 
-Buffle = LibStub("AceAddon-3.0"):NewAddon("Buffle", "AceConsole-3.0", "AceEvent-3.0")
-local MOD = Buffle
+Bufflehead = LibStub("AceAddon-3.0"):NewAddon("Bufflehead", "AceConsole-3.0", "AceEvent-3.0")
+local MOD = Bufflehead
 local _
 
 MOD.isClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
@@ -26,22 +26,22 @@ MOD.uiOpen = false -- true when options panel is open
 
 local FILTER_BUFFS = "HELPFUL"
 local FILTER_DEBUFFS = "HARMFUL"
-local BUFFS_TEMPLATE = "BuffleAuraTemplate"
-local HEADER_NAME = "BuffleSecureHeader"
+local BUFFS_TEMPLATE = "BuffleheadAuraTemplate"
+local HEADER_NAME = "BuffleheadSecureHeader"
 local PLAYER_BUFFS = "Player Buffs"
 local PLAYER_DEBUFFS = "Player Debuffs"
 local HEADER_PLAYER_BUFFS = HEADER_NAME .. "PlayerBuffs"
 local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. "PlayerDebuffs"
-local BUFFLE_ICON = "Interface\\AddOns\\Buffle\\Media\\BuffleIcon"
+local BUFFLE_ICON = "Interface\\AddOns\\Bufflehead\\Media\\BuffleheadIcon"
 local HEADER_FRAME_LEVEL = 100
 
 local onePixelBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
-	bgFile = "Interface\\AddOns\\Buffle\\Media\\WhiteBar",
+	bgFile = "Interface\\AddOns\\Bufflehead\\Media\\WhiteBar",
 	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 1, insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
 
 local twoPixelBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
-	bgFile = "Interface\\AddOns\\Buffle\\Media\\WhiteBar",
+	bgFile = "Interface\\AddOns\\Bufflehead\\Media\\WhiteBar",
 	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
 
@@ -182,8 +182,8 @@ local function SetPixelScale()
 	SetInsets(onePixelBackdrop, PS(1)) -- update one pixel border size
 	SetInsets(twoPixelBackdrop, PS(2)) -- update two pixel border size
 
-	MOD.Debug("Buffle: pixel w/h/scale", screenWidth, screenHeight, pixelScale, displayWidth, displayHeight, displayScale)
-	MOD.Debug("Buffle: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
+	MOD.Debug("Bufflehead: pixel w/h/scale", screenWidth, screenHeight, pixelScale, displayWidth, displayHeight, displayScale)
+	MOD.Debug("Bufflehead: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
 end
 
 -- Adjust pixel perfect scale factor when the UIScale is changed
@@ -214,14 +214,15 @@ function MOD:OnEnable()
 	if addonEnabled then return end -- only run this code once
 	addonEnabled = true
 
-	MOD.db = LibStub("AceDB-3.0"):New("BuffleDB", MOD.DefaultProfile) -- get current profile
+	MOD.db = LibStub("AceDB-3.0"):New("BuffleheadDB", MOD.DefaultProfile) -- get current profile
 	pg = MOD.db.global; pp = MOD.db.profile
 
+	MOD:RegisterChatCommand("bufflehead", function() MOD.OptionsPanel() end)
 	MOD:RegisterChatCommand("buffle", function() MOD.OptionsPanel() end)
 	MOD.InitializeLDB() -- initialize the data broker and minimap icon
 	MOD.LSM = LibStub("LibSharedMedia-3.0")
 	MOD.MSQ = LibStub("Masque", true)
-	if MOD.MSQ then MSQ_Group = MOD.MSQ:Group("Buffle", "Buffs and Debuffs") end
+	if MOD.MSQ then MSQ_Group = MOD.MSQ:Group("Bufflehead", "Buffs and Debuffs") end
 
 	MSQ_ButtonData = { AutoCast = false, AutoCastable = false, Border = false, Checked = false, Cooldown = false, Count = false, Duration = false,
 		Disabled = false, Flash = false, Highlight = false, HotKey = false, Icon = false, Name = false, Normal = false, Pushed = false }
@@ -265,7 +266,7 @@ function MOD:PLAYER_ENTERING_WORLD()
 				backdrop.caption:SetFontObject(ChatFontNormal)
 				PSetPoint(backdrop.caption,"CENTER", backdrop, "BOTTOM")
 				backdrop.caption:SetText(group.caption)
-				backdrop:SetFrameStrata("LOW") -- show it behind Buffle's buttons
+				backdrop:SetFrameStrata("LOW") -- show it behind Bufflehead's buttons
 				backdrop:SetMovable(true)
 				backdrop.headerName = name
 				header.anchorBackdrop = backdrop
@@ -284,9 +285,9 @@ end
 function MOD.InitializeLDB()
 	MOD.LibLDB = LibStub("LibDataBroker-1.1", true)
 	if not MOD.LibLDB then return end
-	MOD.ldb = MOD.LibLDB:NewDataObject("Buffle", {
+	MOD.ldb = MOD.LibLDB:NewDataObject("Bufflehead", {
 		type = "launcher",
-		text = "Buffle",
+		text = "Bufflehead",
 		icon = BUFFLE_ICON,
 		OnClick = function(_, msg)
 			if msg == "RightButton" then
@@ -306,7 +307,7 @@ function MOD.InitializeLDB()
 		end,
 		OnTooltipShow = function(tooltip)
 			if not tooltip or not tooltip.AddLine then return end
-			tooltip:AddLine("Buffle")
+			tooltip:AddLine("Bufflehead")
 			tooltip:AddLine("|cffffff00Left-click|r to open/close options menu")
 			tooltip:AddLine("|cffffff00Right-click|r to toggle locking anchors")
 			tooltip:AddLine("|cffffff00Shift-left-click|r to enable/disable this addon")
@@ -315,7 +316,7 @@ function MOD.InitializeLDB()
 	})
 
 	MOD.ldbi = LibStub("LibDBIcon-1.0", true)
-	if MOD.ldbi then MOD.ldbi:Register("Buffle", MOD.ldb, pg.Minimap) end
+	if MOD.ldbi then MOD.ldbi:Register("Bufflehead", MOD.ldb, pg.Minimap) end
 end
 
 -- Show or hide the blizzard buff frames, called during update so synched with other changes
@@ -329,7 +330,7 @@ function MOD.CheckBlizzFrames()
 	else
 		if pg.hideBlizz then show = false else show = blizzHidden end -- only show if this addon hid the frame
 	end
-	-- MOD.Debug("Buffle: hide/show", key, "hide:", hide, "show:", show, "vis: ", visible)
+	-- MOD.Debug("Bufflehead: hide/show", key, "hide:", hide, "show:", show, "vis: ", visible)
 	if hide then
 		BuffFrame:Hide()
 		TemporaryEnchantFrame:Hide()
@@ -417,7 +418,7 @@ local function SkinBorder(button, c)
 	if opt == "raven" then -- skin with raven's border
 		IconTextureTrim(tex, button, true, pp.iconSize * 0.86)
 		bib:SetAllPoints(button)
-		bib:SetTexture("Interface\\AddOns\\Buffle\\Media\\IconDefault")
+		bib:SetTexture("Interface\\AddOns\\Bufflehead\\Media\\IconDefault")
 		bib:SetVertexColor(c.r, c.g, c.b, c.a or 1)
 		bib:Show()
 		bih:Hide()
@@ -655,7 +656,7 @@ local function SkinBar(button, duration, expire, barColor)
 		PSetSize(bb, bw, bh)
 		bb:SetOrientation(pp.barOrientation and "HORIZONTAL" or "VERTICAL")
 		bb:SetFillStyle(pp.barDirection and "STANDARD" or "REVERSE")
-		bb:SetStatusBarTexture("Interface\\AddOns\\Buffle\\Media\\WhiteBar")
+		bb:SetStatusBarTexture("Interface\\AddOns\\Bufflehead\\Media\\WhiteBar")
 		local c = barColor
 		bb:SetStatusBarColor(c.r, c.g, c.b, c.a)
 		bb:SetMinMaxValues(0, duration)
@@ -800,7 +801,7 @@ local function UpdatePosition(header)
 		backdrop:ClearAllPoints()
 		PSetPoint(backdrop, pt, UIParent, "BOTTOMLEFT", x, y)
 	else
-		MOD.Debug("Buffle: invalid position", name)
+		MOD.Debug("Bufflehead: invalid position", name)
 	end
 end
 
@@ -828,7 +829,7 @@ local function UpdateBackdrop(backdrop)
 				dx = backdrop:GetLeft()
 				dy = backdrop:GetBottom()
 			else
-				MOD.Debug("Buffle: unknown anchor point", name, pt)
+				MOD.Debug("Bufflehead: unknown anchor point", name, pt)
 			end
 			group.anchorX = dx / displayWidth
 			group.anchorY = dy / displayHeight
@@ -921,7 +922,7 @@ function MOD.UpdateHeader(header)
 				header:SetAttribute("wrapYOffset", PS(wy))
 				header:SetAttribute("minWidth", PS(mw))
 				header:SetAttribute("minHeight", PS(mh))
-				-- if IsAltKeyDown() then MOD.Debug("Buffle: dx/dy", dx, dy, "wx/wy", wx, wy, "mw/mh", mw, mh) end
+				-- if IsAltKeyDown() then MOD.Debug("Bufflehead: dx/dy", dx, dy, "wx/wy", wx, wy, "mw/mh", mw, mh) end
 
 				UpdatePosition(header) -- update screen position based on current settings
 				PSetSize(header, 100, 100)
@@ -1016,7 +1017,7 @@ function MOD.TogglePreviews()
 			local previewButtons = MOD.previews[k]
 			local currentIcons = #previewButtons -- current number of preview icons
 			for i = currentIcons + 1, num do
-				local button = CreateFrame("Button", "BufflePreviewButton" .. i, UIParent, BackdropTemplateMixin and "BackdropTemplate")
+				local button = CreateFrame("Button", "BuffleheadPreviewButton" .. i, UIParent, BackdropTemplateMixin and "BackdropTemplate")
 				MOD:Button_OnLoad(button)
 				previewButtons[i] = button
 			end
