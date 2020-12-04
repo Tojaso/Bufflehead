@@ -426,7 +426,7 @@ local function SkinBorder(button, c)
 		bih:Hide()
 		bik:Hide()
 	elseif (opt == "one") or (opt == "two") then -- skin with single or double pixel border
-		IconTextureTrim(tex, button, true, pp.iconSize - ((opt == "one") and 2 or 4))
+		IconTextureTrim(tex, button, true, pp.iconSize - ((opt == "one") and PS(2) or PS(4)))
 		bik:SetAllPoints(button)
 		bik:SetBackdrop((opt == "one") and onePixelBackdrop or twoPixelBackdrop)
 		bik:SetBackdropColor(0, 0, 0, 0)
@@ -504,6 +504,9 @@ local function UpdateButtonTime(button)
 	if button and button._expire then -- make sure valid call
 		local now = GetTime()
 		local remaining = button._expire - now
+		local c = pp.timeColor
+		if remaining < 5 then c = pp.expireColor end -- set either regular or expiring color
+		button.timeText:SetTextColor(c.r, c.g, c.b, c.a)
 		if remaining > 0.05 then
 			if (button._update == 0) or ((now - button._update) > 0.05) then -- about 20/second
 				button._update = now
@@ -533,8 +536,6 @@ local function SkinTime(button, duration, expire)
 		bt:SetText("0:00:00") -- set to widest time string, note this is overwritten later with correct string!
 		local timeMaxWidth = bt:GetStringWidth() -- get maximum text width using current font
 		PSetWidth(bt, timeMaxWidth) -- helps with jitter since keeps size static
-		local c = pp.timeColor
-		bt:SetTextColor(c.r, c.g, c.b, c.a)
 		bt:SetShadowColor(0, 0, 0, pp.timeShadow and 1 or 0)
 		local pos = pp.timePosition
 		local pt = pos.point
@@ -794,16 +795,12 @@ local function UpdatePosition(header)
 	local group = pp.groups[name] -- use settings specific to this header
 	local pt = header.anchorPoint -- relative point for positioning
 
-	if pp.showAnchors then  -- anchor location is based on UIParent using fractions of its size for offsets
-		local x = group.anchorX * displayWidth
-		local y = group.anchorY * displayHeight
-		header:ClearAllPoints()
-		PSetPoint(header, pt, UIParent, "BOTTOMLEFT", x, y)
-		backdrop:ClearAllPoints()
-		PSetPoint(backdrop, pt, UIParent, "BOTTOMLEFT", x, y)
-	else
-		-- MOD.Debug("Bufflehead: invalid position setting", name)
-	end
+	local x = group.anchorX * displayWidth  -- anchor location is based on UIParent using fractions of its size for offsets
+	local y = group.anchorY * displayHeight
+	header:ClearAllPoints()
+	PSetPoint(header, pt, UIParent, "BOTTOMLEFT", x, y)
+	backdrop:ClearAllPoints()
+	PSetPoint(backdrop, pt, UIParent, "BOTTOMLEFT", x, y)
 end
 
 -- While moving an anchor, keep the header moving in sync
@@ -1128,6 +1125,7 @@ MOD.DefaultProfile = {
 		timeFontFlags = { outline = true, thick = false, mono = false },
 		timeShadow = true,
 		timeColor = { r = 1, g = 1, b = 1, a = 1 },
+		expireColor = { r = 1, g = 0, b = 0, a = 1 },
 		showCount = true,
 		countPosition = { point = "CENTER", relativePoint = "CENTER", anchor = "icon", offsetX = 0, offsetY = 0 },
 		countFont = "Arial Narrow", -- default font

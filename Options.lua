@@ -788,6 +788,18 @@ MOD.OptionsTable = {
 								UpdateAll()
 							end,
 						},
+						ExpireColor = {
+							type = "color", order = 40, name = "Expiring Color", hasAlpha = true,
+							get = function(info)
+								local t = pp.expireColor
+								return t.r, t.g, t.b, t.a
+							end,
+							set = function(info, r, g, b, a)
+								local t = pp.expireColor
+								t.r = r; t.g = g; t.b = b; t.a = a
+								UpdateAll()
+							end,
+						},
 						Space = { type = "description", name = "", order = 100 },
 						Outline = {
 							type = "toggle", order = 110, name = "Outline", width = "half",
