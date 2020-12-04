@@ -834,9 +834,10 @@ local function UpdateBackdrop(backdrop)
 			end
 			group.anchorX = dx / displayWidth
 			group.anchorY = dy / displayHeight
-			UpdatePosition(header)
 			backdrop._lastX = x
 			backdrop._lastY = y
+			UpdatePosition(header)
+			MOD.UpdateOptions() -- also update sliders in options panel, if it is open
 		end
 	end
 end
@@ -943,17 +944,18 @@ function MOD.UpdateHeader(header)
 				backdrop:SetBackdrop(twoPixelBackdrop)
 				backdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
 				backdrop:SetBackdropBorderColor(red, green, 0, 0.5) -- buffs have green border and debuffs have red border
-				if pp.showAnchors then backdrop:Show() else backdrop:Hide() end
 
-				if pp.movable and pp.showAnchors then
+				if pp.showAnchors then
 					backdrop:SetScript("OnMouseDown", Backdrop_OnMouseDown)
 					backdrop:SetScript("OnMouseUp", Backdrop_OnMouseUp)
 					backdrop.headerName = name
 					backdrop:EnableMouse(true)
+					backdrop:Show()
 				else
 					backdrop:SetScript("OnMouseDown", nil)
 					backdrop:SetScript("OnMouseUp", nil)
 					backdrop:EnableMouse(false)
+					backdrop:Hide()
 				end
 			else
 				header:Hide()
@@ -1099,8 +1101,7 @@ MOD.DefaultProfile = {
 	},
 	profile = { -- settings specific to a profile
 		showAnchors = true, -- show or hide the anchor rectangles
-		movable = true, -- true = click-and-drag anchors, false = use fixed position settings
-		iconSize = 36,
+		iconSize = 48,
 		iconBorder = "raven", -- "default", "one", "two", "raven", "masque"
 		iconBorderColor = { r = 0.5, g = 1, b = 0.5, a = 1 },
 		debuffColoring = true, -- use debuff color for border if applicable
@@ -1109,8 +1110,8 @@ MOD.DefaultProfile = {
 		directionY = -1, -- 1 = up, -1 = down
 		wrapAfter = 20,
 		maxWraps = 2,
-		spaceX = 2, -- horizontal distance between icons (allow space for elements positioned between icons)
-		spaceY = 20, -- vertical distance between icons (allow space for elements positioned between icons)
+		spaceX = 6, -- horizontal distance between icons (allow space for elements positioned between icons)
+		spaceY = 24, -- vertical distance between icons (allow space for elements positioned between icons)
 		sortMethod = "TIME", -- "INDEX", "NAME", "TIME"
 		sortDirection = "-", -- ASCENDING = "+", DESCENDING = "-"
 		separateOwn = 0, -- 0 = don't separate, 1 = sort before others, -1 = sort after others
@@ -1176,7 +1177,7 @@ MOD.DefaultProfile = {
 				filter = FILTER_DEBUFFS,
 				caption = PLAYER_DEBUFFS,
 				anchorX = 0.8,
-				anchorY = 0.8, -- default places it below the buffs group
+				anchorY = 0.84, -- default places it below the buffs group
 			},
 		},
 	},

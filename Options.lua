@@ -24,15 +24,20 @@ local sortMethods = { INDEX = "Sort by index", NAME = "Sort by name", TIME = "So
 local sortDirections = { ["+"] = "Ascending", ["-"] = "Descending" }
 local separateOwnOptions = { [0] = "Don't separate", [1] = "Sort before others", [-1] = "Sort after others"}
 
--- Call main function to update all settings.
+-- Shortcut function to update all settings
 local function UpdateAll() MOD.UpdateAll() end
 
 -- Update options in case anything changes
-local function UpdateOptions()
+function MOD.UpdateOptions()
 	if initialized and acedia.OpenFrames["Bufflehead"] then
 		acereg:NotifyChange("Bufflehead")
 	end
-	UpdateAll()
+end
+
+-- Function called when profile is changed
+local function UpdateProfile()
+	MOD.UpdateOptions()
+	MOD.UpdateAll()
 end
 
 -- Register the options table and link to the Blizzard addons interface
@@ -49,9 +54,9 @@ local function InitializeOptions()
 	local w, h = 890, 680 -- somewhat arbitrary numbers that seem to work for the configuration dialog layout
 	acedia:SetDefaultSize("Bufflehead", w, h)
 
-	MOD.db.RegisterCallback(MOD, "OnProfileChanged", UpdateOptions)
-	MOD.db.RegisterCallback(MOD, "OnProfileCopied", UpdateOptions)
-	MOD.db.RegisterCallback(MOD, "OnProfileReset", UpdateOptions)
+	MOD.db.RegisterCallback(MOD, "OnProfileChanged", UpdateProfile)
+	MOD.db.RegisterCallback(MOD, "OnProfileCopied", UpdateProfile)
+	MOD.db.RegisterCallback(MOD, "OnProfileReset", UpdateProfile)
 end
 
 -- Toggle display of the options panel
@@ -213,46 +218,40 @@ MOD.OptionsTable = {
 					},
 				},
 				PositionGroup = {
-					type = "group", order = 30, name = "Position", inline = true,
+					type = "group", order = 30, name = "Positions", inline = true,
 					args = {
 						ShowAnchors = {
 							type = "toggle", order = 10, name = "Show Anchors",
-							desc = "If enabled, anchor rectangles are shown around player buffs and debuffs.",
+							desc = "If enabled, movable anchors are shown around player buffs and debuffs, otherwise positions are locked.",
 							get = function(info) return pp.showAnchors end,
 							set = function(info, value) pp.showAnchors = value; UpdateAll() end,
 						},
-						MovableGroups = {
-							type = "toggle", order = 20, name = "Movable Anchors",
-							desc = "If enabled, you can click-and-drag anchors for buffs and debuffs, otherwise use position settings to move them.",
-							get = function(info) return pp.movable end,
-							set = function(info, value) pp.movable = value; UpdateAll() end,
-						},
 						Spacer1 = { type = "description", name = "", order = 100 },
 						BuffsHorizontal = {
-							type = "range", order = 110, name = "Buffs Offset X", min = -100, max = 100, step = 0.1,
+							type = "range", order = 110, name = "Buffs Offset X", min = 0, max = 100, step = 0.01,
 							desc = "Set buffs horizontal position as percentage of display width.",
-							disabled = function(info) return pp.movable end,
+							disabled = function(info) return not pp.showAnchors end,
 							get = function(info) return pp.groups[HEADER_PLAYER_BUFFS].anchorX * 100 end,
 							set = function(info, value) pp.groups[HEADER_PLAYER_BUFFS].anchorX = value / 100; UpdateAll() end,
 						},
 						BuffsVertical = {
-							type = "range", order = 120, name = "Buffs Offset Y", min = -100, max = 100, step = 0.1,
+							type = "range", order = 120, name = "Buffs Offset Y", min = 0, max = 100, step = 0.01,
 							desc = "Set buffs vertical position as percentage of display height.",
-							disabled = function(info) return pp.movable end,
+							disabled = function(info) return not pp.showAnchors end,
 							get = function(info) return pp.groups[HEADER_PLAYER_BUFFS].anchorY * 100 end,
 							set = function(info, value) pp.groups[HEADER_PLAYER_BUFFS].anchorY = value / 100; UpdateAll() end,
 						},
 						DebuffsHorizontal = {
-							type = "range", order = 130, name = "Debuffs Offset X", min = -100, max = 100, step = 0.1,
+							type = "range", order = 130, name = "Debuffs Offset X", min = 0, max = 100, step = 0.01,
 							desc = "Set debuffs horizontal position as percentage of display width.",
-							disabled = function(info) return pp.movable end,
+							disabled = function(info) return not pp.showAnchors end,
 							get = function(info) return pp.groups[HEADER_PLAYER_DEBUFFS].anchorX * 100 end,
 							set = function(info, value) pp.groups[HEADER_PLAYER_DEBUFFS].anchorX = value / 100; UpdateAll() end,
 						},
 						DebuffsVertical = {
-							type = "range", order = 140, name = "Debuffs Offset Y", min = -100, max = 100, step = 0.1,
+							type = "range", order = 140, name = "Debuffs Offset Y", min = 0, max = 100, step = 0.01,
 							desc = "Set debuffs vertical position as percentage of display height.",
-							disabled = function(info) return pp.movable end,
+							disabled = function(info) return not pp.showAnchors end,
 							get = function(info) return pp.groups[HEADER_PLAYER_DEBUFFS].anchorY * 100 end,
 							set = function(info, value) pp.groups[HEADER_PLAYER_DEBUFFS].anchorY = value / 100; UpdateAll() end,
 						},
