@@ -215,10 +215,46 @@ MOD.OptionsTable = {
 				PositionGroup = {
 					type = "group", order = 30, name = "Position", inline = true,
 					args = {
-						AnchorToggle = {
-							type = "execute", order = 10, name = "Toggle Anchors",
-							desc = "Toggle display of anchors. When unlocked, anchors can be moved by clicking and dragging with the mouse.",
-							func = function(info) MOD.ToggleAnchors(); UpdateAll() end,
+						ShowAnchors = {
+							type = "toggle", order = 10, name = "Show Anchors",
+							desc = "If enabled, anchor rectangles are shown around player buffs and debuffs.",
+							get = function(info) return pp.showAnchors end,
+							set = function(info, value) pp.showAnchors = value; UpdateAll() end,
+						},
+						MovableGroups = {
+							type = "toggle", order = 20, name = "Movable Anchors",
+							desc = "If enabled, you can click-and-drag anchors for buffs and debuffs, otherwise use position settings to move them.",
+							get = function(info) return pp.movable end,
+							set = function(info, value) pp.movable = value; UpdateAll() end,
+						},
+						Spacer1 = { type = "description", name = "", order = 100 },
+						BuffsHorizontal = {
+							type = "range", order = 110, name = "Buffs Offset X", min = -100, max = 100, step = 0.1,
+							desc = "Set buffs horizontal position as percentage of display width.",
+							disabled = function(info) return pp.movable end,
+							get = function(info) return pp.groups[HEADER_PLAYER_BUFFS].anchorX * 100 end,
+							set = function(info, value) pp.groups[HEADER_PLAYER_BUFFS].anchorX = value / 100; UpdateAll() end,
+						},
+						BuffsVertical = {
+							type = "range", order = 120, name = "Buffs Offset Y", min = -100, max = 100, step = 0.1,
+							desc = "Set buffs vertical position as percentage of display height.",
+							disabled = function(info) return pp.movable end,
+							get = function(info) return pp.groups[HEADER_PLAYER_BUFFS].anchorY * 100 end,
+							set = function(info, value) pp.groups[HEADER_PLAYER_BUFFS].anchorY = value / 100; UpdateAll() end,
+						},
+						DebuffsHorizontal = {
+							type = "range", order = 130, name = "Debuffs Offset X", min = -100, max = 100, step = 0.1,
+							desc = "Set debuffs horizontal position as percentage of display width.",
+							disabled = function(info) return pp.movable end,
+							get = function(info) return pp.groups[HEADER_PLAYER_DEBUFFS].anchorX * 100 end,
+							set = function(info, value) pp.groups[HEADER_PLAYER_DEBUFFS].anchorX = value / 100; UpdateAll() end,
+						},
+						DebuffsVertical = {
+							type = "range", order = 140, name = "Debuffs Offset Y", min = -100, max = 100, step = 0.1,
+							desc = "Set debuffs vertical position as percentage of display height.",
+							disabled = function(info) return pp.movable end,
+							get = function(info) return pp.groups[HEADER_PLAYER_DEBUFFS].anchorY * 100 end,
+							set = function(info, value) pp.groups[HEADER_PLAYER_DEBUFFS].anchorY = value / 100; UpdateAll() end,
 						},
 					},
 				},

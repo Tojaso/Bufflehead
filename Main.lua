@@ -182,8 +182,8 @@ local function SetPixelScale()
 	SetInsets(onePixelBackdrop, PS(1)) -- update one pixel border size
 	SetInsets(twoPixelBackdrop, PS(2)) -- update two pixel border size
 
-	MOD.Debug("Bufflehead: pixel w/h/scale", screenWidth, screenHeight, pixelScale, displayWidth, displayHeight, displayScale)
-	MOD.Debug("Bufflehead: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
+	-- MOD.Debug("Bufflehead: pixel w/h/scale", screenWidth, screenHeight, pixelScale, displayWidth, displayHeight, displayScale)
+	-- MOD.Debug("Bufflehead: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
 end
 
 -- Adjust pixel perfect scale factor when the UIScale is changed
@@ -790,10 +790,9 @@ local function UpdatePosition(header)
 	if not backdrop then return end -- make sure valid backdrop
 	local name = backdrop.headerName
 	local group = pp.groups[name] -- use settings specific to this header
-	local frame = group.anchorFrame
 	local pt = header.anchorPoint -- relative point for positioning
 
-	if frame == 0 then  -- default is based on UIParent using fractions of its size for offsets
+	if pp.showAnchors then  -- anchor location is based on UIParent using fractions of its size for offsets
 		local x = group.anchorX * displayWidth
 		local y = group.anchorY * displayHeight
 		header:ClearAllPoints()
@@ -801,7 +800,7 @@ local function UpdatePosition(header)
 		backdrop:ClearAllPoints()
 		PSetPoint(backdrop, pt, UIParent, "BOTTOMLEFT", x, y)
 	else
-		MOD.Debug("Bufflehead: invalid position", name)
+		-- MOD.Debug("Bufflehead: invalid position setting", name)
 	end
 end
 
@@ -850,7 +849,7 @@ local function Backdrop_OnMouseDown(backdrop)
 		backdrop:SetFrameStrata("HIGH")
 		backdrop:StartMoving()
 		backdrop:SetScript("OnUpdate", UpdateBackdrop) -- start updating for anchor movement
-		MOD.Debug("start moving", backdrop.headerName, backdrop._lastX, backdrop._lastY)
+		-- MOD.Debug("start moving", backdrop.headerName, backdrop._lastX, backdrop._lastY)
 	end
 end
 
@@ -942,17 +941,17 @@ function MOD.UpdateHeader(header)
 				backdrop:SetBackdrop(twoPixelBackdrop)
 				backdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
 				backdrop:SetBackdropBorderColor(red, green, 0, 0.5) -- buffs have green border and debuffs have red border
-				if pp.locked then
-					backdrop:SetScript("OnMouseDown", nil)
-					backdrop:SetScript("OnMouseUp", nil)
-					backdrop:EnableMouse(false)
-					backdrop:Hide()
-				else
+				if pp.showAnchors then backdrop:Show() else backdrop:Hide() end
+
+				if pp.movable and pp.showAnchors then
 					backdrop:SetScript("OnMouseDown", Backdrop_OnMouseDown)
 					backdrop:SetScript("OnMouseUp", Backdrop_OnMouseUp)
 					backdrop.headerName = name
 					backdrop:EnableMouse(true)
-					backdrop:Show()
+				else
+					backdrop:SetScript("OnMouseDown", nil)
+					backdrop:SetScript("OnMouseUp", nil)
+					backdrop:EnableMouse(false)
 				end
 			else
 				header:Hide()
@@ -1026,12 +1025,6 @@ function MOD.TogglePreviews()
 	end
 end
 
--- Toggle display of anchors
-function MOD.ToggleAnchors()
-	pp.locked = not pp.locked
-	MOD.UpdateAll()
-end
-
 -- Convert a time value into a compact text string using a selected display format
 MOD.TimeFormatOptions = {
 	{ 1, 1, 1, 1, 1 }, { 1, 1, 1, 3, 5 }, { 1, 1, 1, 3, 4 }, { 2, 3, 1, 2, 3 }, -- 4
@@ -1103,7 +1096,8 @@ MOD.DefaultProfile = {
 		hideOmniCC = true, -- only valid if OmniCC addon is available
 	},
 	profile = { -- settings specific to a profile
-		locked = true, -- hide the anchors when locked
+		showAnchors = true, -- show or hide the anchor rectangles
+		movable = true, -- true = click-and-drag anchors, false = use fixed position settings
 		iconSize = 36,
 		iconBorder = "raven", -- "default", "one", "two", "raven", "masque"
 		iconBorderColor = { r = 0.5, g = 1, b = 0.5, a = 1 },
@@ -1171,18 +1165,16 @@ MOD.DefaultProfile = {
 				unit = "player",
 				filter = FILTER_BUFFS,
 				caption = PLAYER_BUFFS,
-				anchorFrame = 0, -- default is fraction of screen from bottom left corner
-				anchorX = 0.8, -- default puts it up near the mini-map
-				anchorY = 0.95,
+				anchorX = 0.8, -- fraction of screen from left edge, puts it near the mini-map
+				anchorY = 0.98, -- fraction of the screen from bottom edge
 			},
 			[HEADER_PLAYER_DEBUFFS] = {
 				enabled = true,
 				unit = "player",
 				filter = FILTER_DEBUFFS,
 				caption = PLAYER_DEBUFFS,
-				anchorFrame = 0,
 				anchorX = 0.8,
-				anchorY = 0.8, -- set to allow roughly maxWraps * (iconSize + spaceY)
+				anchorY = 0.8, -- default places it below the buffs group
 			},
 		},
 	},
