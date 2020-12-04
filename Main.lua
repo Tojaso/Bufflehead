@@ -309,7 +309,7 @@ function MOD.InitializeLDB()
 			if not tooltip or not tooltip.AddLine then return end
 			tooltip:AddLine("Bufflehead")
 			tooltip:AddLine("|cffffff00Left-click|r to open/close options menu")
-			tooltip:AddLine("|cffffff00Right-click|r to toggle locking anchors")
+			tooltip:AddLine("|cffffff00Right-click|r to toggle showing anchors")
 			tooltip:AddLine("|cffffff00Shift-left-click|r to enable/disable this addon")
 			tooltip:AddLine("|cffffff00Shift-right-click|r to toggle Blizzard buffs and debuffs")
 		end,
@@ -346,6 +346,8 @@ end
 
 -- Toggle visibility of the anchors
 function MOD.ToggleAnchors()
+	pp.showAnchors = not pp.showAnchors
+	MOD.UpdateAll()
 end
 
 -- Get weapon enchant duration, since this is not supplied by blizzard look at current detected duration
@@ -907,13 +909,13 @@ function MOD.UpdateHeader(header)
 				if pp.growDirection == 1 then -- grow horizontally
 					dx = pp.directionX * (pp.spaceX + pp.iconSize)
 					wy = pp.directionY * (pp.spaceY + pp.iconSize)
-					mw = (pp.spaceX * (pp.wrapAfter - 1)) + (pp.iconSize * pp.wrapAfter)
-					mh = (pp.spaceY + pp.iconSize) * wraps
+					mw = (PS(pp.spaceX + pp.iconSize) * (pp.wrapAfter - 1)) + PS(pp.iconSize)
+					mh = PS(pp.spaceY + pp.iconSize) * wraps
 				else -- otherwise grow vertically
 					dy = pp.directionY * (pp.spaceY + pp.iconSize)
 					wx = pp.directionX * (pp.spaceX + pp.iconSize)
-					mw = (pp.spaceX * (wraps - 1)) + (pp.iconSize * wraps)
-					mh = (pp.spaceY + pp.iconSize) * pp.wrapAfter
+					mw = (PS(pp.spaceX + pp.iconSize) * (wraps - 1)) + PS(pp.iconSize)
+					mh = PS(pp.spaceY + pp.iconSize) * pp.wrapAfter
 				end
 				header:SetAttribute("xOffset", PS(dx))
 				header:SetAttribute("yOffset", PS(dy))
