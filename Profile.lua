@@ -3,6 +3,14 @@
 local MOD = Bufflehead
 local _
 
+local FILTER_BUFFS = "HELPFUL"
+local FILTER_DEBUFFS = "HARMFUL"
+local HEADER_NAME = "BuffleheadSecureHeader"
+local PLAYER_BUFFS = "Player Buffs"
+local PLAYER_DEBUFFS = "Player Debuffs"
+local HEADER_PLAYER_BUFFS = HEADER_NAME .. "PlayerBuffs"
+local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. "PlayerDebuffs"
+
 -- Default profile description used to initialize the SavedVariables persistent database
 MOD.DefaultProfile = {
 	global = { -- shared settings for all characters
