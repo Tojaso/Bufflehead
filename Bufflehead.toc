@@ -1,5 +1,5 @@
 ## Interface: 90002
-## Title: Bufflehead: Player Buffs and Debuffs
+## Title: Bufflehead
 ## Notes: Skins player buffs and debuffs
 ## Author: Tojaso/Tomber
 ## Version: 9.0.2
@@ -10,4 +10,5 @@
 embeds.xml
 Templates.xml
 Main.lua
+Profile.lua
 Options.lua
