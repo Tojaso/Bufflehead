@@ -355,46 +355,58 @@ MOD.OptionsTable = {
 				IconBorderGroup = {
 					type = "group", order = 40, name = "Icon Border", inline = true,
 					args = {
-						DefaultBorder = {
-							type = "toggle", order = 10, name = "Default", width = "half",
-							desc = "Use default icon borders.",
+						NoBorder = {
+							type = "toggle", order = 10, name = "None", width = "half",
+							desc = "Don't show an icon border.",
 							get = function(info) return pp.iconBorder == "none" or ((pp.iconBorder == "masque") and not MOD.MSQ) end,
 							set = function(info, value) pp.iconBorder = "none"; UpdateAll() end,
 						},
+						DefaultBorder = {
+							type = "toggle", order = 20, name = "Default", width = "half",
+							desc = "Show Blizzard's default icon borders.",
+							get = function(info) return pp.iconBorder == "default" end,
+							set = function(info, value) pp.iconBorder = "default"; UpdateAll() end,
+						},
 						MasqueBorder = {
-							type = "toggle", order = 20, name = "Masque", width = "half",
+							type = "toggle", order = 30, name = "Masque", width = "half",
 							desc = "Use the Masque addon to show icon borders.",
 							hidden = function(info) return not MOD.MSQ end, -- only show if Masque is loaded
 							get = function(info) return pp.iconBorder == "masque" end,
 							set = function(info, value) pp.iconBorder = "masque"; UpdateAll() end,
 						},
 						RavenBorder = {
-							type = "toggle", order = 30, name = "Raven", width = "half",
+							type = "toggle", order = 40, name = "Raven", width = "half",
 							desc = "Use the custom icon border included in Raven.",
 							get = function(info) return pp.iconBorder == "raven" end,
 							set = function(info, value) pp.iconBorder = "raven"; UpdateAll() end,
 						},
 						OnePixelBorder = {
-							type = "toggle", order = 40, name = "Pixel", width = "half",
+							type = "toggle", order = 50, name = "Pixel", width = "half",
 							desc = "Use single pixel icon borders.",
 							get = function(info) return pp.iconBorder == "one" end,
 							set = function(info, value) pp.iconBorder = "one"; UpdateAll() end,
 						},
 						TwoPixelBorder = {
-							type = "toggle", order = 50, name = "Two Pixel",
+							type = "toggle", order = 60, name = "Two Pixel",
 							desc = "Use two pixel icon borders.",
 							get = function(info) return pp.iconBorder == "two" end,
 							set = function(info, value) pp.iconBorder = "two"; UpdateAll() end,
 						},
 						Spacer = { type = "description", name = "", order = 100 },
-						BorderColor = {
-							type = "color", order = 110, name = "Border Color", hasAlpha = true,
+						BuffBorderColor = {
+							type = "color", order = 110, name = "Buff Borders", hasAlpha = true,
 							desc = "Set color for icon borders.",
-							get = function(info) local t = pp.iconBorderColor return t.r, t.g, t.b, t.a end,
-							set = function(info, r, g, b, a) local t = pp.iconBorderColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
+							get = function(info) local t = pp.iconBuffColor return t.r, t.g, t.b, t.a end,
+							set = function(info, r, g, b, a) local t = pp.iconBuffColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
+						},
+						DebuffBorderColor = {
+							type = "color", order = 110, name = "Debuff Borders", hasAlpha = true,
+							desc = "Set color for icon borders.",
+							get = function(info) local t = pp.iconDebuffColor return t.r, t.g, t.b, t.a end,
+							set = function(info, r, g, b, a) local t = pp.iconDebuffColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
 						},
 						DebuffTypeColor = {
-							type = "toggle", order = 130, name = "Debuff Type Color",
+							type = "toggle", order = 130, name = "Debuff Type Override",
 							desc = "Use debuff type colors for icon borders when appropriate.",
 							get = function(info) return pp.debuffColoring end,
 							set = function(info, value) pp.debuffColoring = value; UpdateAll() end,

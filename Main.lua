@@ -31,7 +31,11 @@ local HEADER_NAME = "BuffleheadSecureHeader"
 local HEADER_PLAYER_BUFFS = HEADER_NAME .. "PlayerBuffs"
 local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. "PlayerDebuffs"
 local BUFFLE_ICON = "Interface\\AddOns\\Bufflehead\\Media\\BuffleheadIcon"
+local PRESET_BUFF_ICON = "Interface\\Icons\\inv_bijou_green"
+local PRESET_DEBUFF_ICON = "Interface\\Icons\\inv_bijou_red"
 local HEADER_FRAME_LEVEL = 100
+local DEFAULT_ICON_BORDER = "Interface\\Buttons\\UI-ActionButton-Border"
+local RAVEN_ICON_BORDER = "Interface\\AddOns\\Bufflehead\\Media\\IconDefault"
 
 local onePixelBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
 	bgFile = "Interface\\AddOns\\Bufflehead\\Media\\WhiteBar",
@@ -365,7 +369,7 @@ function MOD:Button_OnLoad(button)
 	local level = button:GetFrameLevel()
 
 	button.iconTexture = button:CreateTexture(nil, "ARTWORK")
-	button.iconBorder = button:CreateTexture(nil, "BACKGROUND", nil, 3)
+	button.iconBorder = button:CreateTexture(nil, "OVERLAY", nil, -3)
 	button.iconBackdrop = CreateFrame("Frame", nil, button, BackdropTemplateMixin and "BackdropTemplate")
 	button.iconBackdrop:SetFrameLevel(level - 1) -- behind icon
 	button.iconHighlight = button:CreateTexture(nil, "HIGHLIGHT")
@@ -397,7 +401,7 @@ end
 -- Trim and scale icon
 local function IconTextureTrim(tex, icon, trim, iconSize)
 	local left, right, top, bottom = 0, 1, 0, 1 -- default without trim
-	if trim then left = 0.08; right = 0.92; top = 0.08; bottom = 0.92 end -- trim removes 7% of edges
+	if trim then left = 0.07; right = 0.93; top = 0.07; bottom = 0.93 end -- trim removes 7% of edges
 	tex:SetTexCoord(left, right, top, bottom) -- set the corner coordinates
 	PSetSize(tex, iconSize, iconSize)
 end
@@ -416,9 +420,9 @@ local function SkinBorder(button, c)
 	if not c then c = { r = 0.5, g = 0.5, b = 0.5, a = 1 } end
 
 	if opt == "raven" then -- skin with raven's border
-		IconTextureTrim(tex, button, true, pp.iconSize * 0.86)
+		IconTextureTrim(tex, button, true, pp.iconSize * 0.91)
 		bib:SetAllPoints(button)
-		bib:SetTexture("Interface\\AddOns\\Bufflehead\\Media\\IconDefault")
+		bib:SetTexture(GetFileIDFromPath(RAVEN_ICON_BORDER))
 		bib:SetVertexColor(c.r, c.g, c.b, c.a or 1)
 		bib:Show()
 		bih:Hide()
@@ -446,8 +450,17 @@ local function SkinBorder(button, c)
 		bdata.Highlight = button.iconHighlight
 		MSQ_Group:AddButton(button, bdata)
 		bik:Hide()
-	else -- default is to just show blizzard's standard border
+	elseif opt == "default" then -- show blizzard's standard border
 		IconTextureTrim(tex, button, false, pp.iconSize)
+		bib:SetTexture(GetFileIDFromPath(DEFAULT_ICON_BORDER))
+		bib:SetVertexColor(c.r, c.g, c.b, c.a or 1)
+		PSetSize(bib, pp.iconSize, pp.iconSize)
+		PSetPoint(bib, "CENTER", button, "CENTER")
+		bib:Show()
+		bih:Hide()
+		bik:Hide()
+	else -- no border (remove standard border)
+		IconTextureTrim(tex, button, true, pp.iconSize)
 		bib:Hide()
 		bih:Hide()
 		bik:Hide()
@@ -742,8 +755,8 @@ function MOD:Button_OnAttributeChanged(k, v)
 	local show, hide = false, false
 	local name, icon, count, btype, duration, expire
 	local enchant, remaining, id, offEnchant, offRemaining, offCount, offId
-	local borderColor = pp.iconBorderColor
 	local barColor = pp.barBuffColor
+	local borderColor = pp.iconBuffColor
 
 	if k == "index" then -- update a buff or debuff
 		name, icon, count, btype, duration, expire = UnitAura(unit, v, filter)
@@ -751,6 +764,7 @@ function MOD:Button_OnAttributeChanged(k, v)
 			show = true
 			if filter == FILTER_DEBUFFS then
 				barColor = pp.barDebuffColor
+				borderColor = pp.iconDebuffColor
 				if pp.debuffColoring then
 					btype = btype or "none"
 					local c = _G.DebuffTypeColor[btype]
@@ -969,6 +983,7 @@ local function UpdatePreviews()
 		local dy = header:GetAttribute("yOffset")
 		local wx = header:GetAttribute("wrapXOffset")
 		local wy = header:GetAttribute("wrapYOffset")
+		local filter = header:GetAttribute("filter")
 		local columns, rows = pp.wrapAfter, pp.maxWraps
 		local num = rows * columns -- number of icons needed for previewing
 		if num > 40 then num = 40 end -- respect the limit on player buffs/debuffs
@@ -993,8 +1008,11 @@ local function UpdatePreviews()
 					local duration = i * 10
 					local expire = button._expire or (GetTime() + duration)
 					local name = "#" .. i
-					local icon = GetFileIDFromPath(BUFFLE_ICON)
-					ShowButton(button, name, icon, duration, expire, i, "preview", pp.barBuffColor, pp.iconBorderColor)
+					local icon = PRESET_BUFF_ICON
+					local icolor = pp.iconBuffColor
+					local bcolor = pp.barBuffColor
+					if filter == FILTER_DEBUFFS then icon = PRESET_DEBUFF_ICON; icolor = pp.iconDebuffColor; bcolor = pp.barDebuffColor end
+					ShowButton(button, name, GetFileIDFromPath(icon), duration, expire, i, "preview", bcolor, icolor)
 					button:Show()
 					hide = false
 				end

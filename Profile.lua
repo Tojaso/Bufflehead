@@ -20,10 +20,11 @@ MOD.DefaultProfile = {
 		hideOmniCC = true, -- only valid if OmniCC addon is available
 	},
 	profile = { -- settings specific to a profile
-		showAnchors = true, -- show or hide the anchor rectangles
+		showAnchors = false, -- show or hide the anchor rectangles
 		iconSize = 48,
-		iconBorder = "raven", -- "default", "one", "two", "raven", "masque"
-		iconBorderColor = { r = 0.5, g = 1, b = 0.5, a = 1 },
+		iconBorder = "raven", -- "default", "none", "one", "two", "raven", "masque"
+		iconBuffColor = { r = 0.5, g = 1, b = 0.5, a = 1 },
+    iconDebuffColor = { r = 1, g = 0.5, b = 0.5, a = 1 },
 		debuffColoring = true, -- use debuff color for border if applicable
 		growDirection = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
@@ -41,7 +42,6 @@ MOD.DefaultProfile = {
 		timeFormat = 24, -- use simple time format
 		timeSpaces = false, -- if true include spaces in time text
 		timeCase = false, -- if true use upper case in time text
-		timeLimit = 0, -- if timeLimit > 0 then only show time when < timeLimit
 		timeFont = "Arial Narrow", -- default font
 		timeFontPath = 0, -- actual font path
 		timeFontSize = 14,
@@ -81,7 +81,7 @@ MOD.DefaultProfile = {
 		barHeight = 10, --  0 = same as icon height
 		barOrientation = true, -- true = "HORIZONTAL", false = "VERTICAL"
 		barDirection = true, -- true = "STANDARD", false = "REVERSE"
-		barBorder = "two", -- "none", "one", "two"
+		barBorder = "one", -- "none", "one", "two"
 		barBorderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 },
 		groups = {
 			[HEADER_PLAYER_BUFFS] = {
@@ -102,4 +102,161 @@ MOD.DefaultProfile = {
 			},
 		},
 	},
+}
+
+MOD.Presets = {
+  [1] = { -- horizontal icons with time, basically same as starting profile except don't reset appearance settings
+		growDirection = 1, -- horizontal = 1, otherwise vertical
+		directionX = -1, -- 1 = right, -1 = left
+		directionY = -1, -- 1 = up, -1 = down
+		wrapAfter = 20,
+		maxWraps = 2,
+		spaceX = 6, -- horizontal distance between icons (allow space for elements positioned between icons)
+		spaceY = 24, -- vertical distance between icons (allow space for elements positioned between icons)
+		showTime = true,
+		timePosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = 0 },
+		showCount = true,
+		countPosition = { point = "CENTER", relativePoint = "CENTER", anchor = "icon", offsetX = 0, offsetY = 0 },
+		showLabel = false,
+		showClock = false, -- show clock overlay to indicate remaining time
+		showBar = false,
+		groups = {
+			[HEADER_PLAYER_BUFFS] = {
+				enabled = true,
+				unit = "player",
+				filter = FILTER_BUFFS,
+				caption = PLAYER_BUFFS,
+				anchorX = 0.8, -- fraction of screen from left edge, puts it near the mini-map
+				anchorY = 0.98, -- fraction of the screen from bottom edge
+			},
+			[HEADER_PLAYER_DEBUFFS] = {
+				enabled = true,
+				unit = "player",
+				filter = FILTER_DEBUFFS,
+				caption = PLAYER_DEBUFFS,
+				anchorX = 0.8,
+				anchorY = 0.84, -- default places it below the buffs group
+			},
+		},
+  },
+  [2] = { -- vertical icons with clock overlay
+		growDirection = 0, -- horizontal = 1, otherwise vertical
+		directionX = -1, -- 1 = right, -1 = left
+		directionY = -1, -- 1 = up, -1 = down
+		wrapAfter = 16,
+		maxWraps = 3,
+		spaceX = 12, -- horizontal distance between icons (allow space for elements positioned between icons)
+		spaceY = 8, -- vertical distance between icons (allow space for elements positioned between icons)
+		showTime = false,
+		showCount = true,
+		countPosition = { point = "CENTER", relativePoint = "CENTER", anchor = "icon", offsetX = 0, offsetY = 0 },
+		showLabel = false,
+		showClock = true, -- show clock overlay to indicate remaining time
+    clockEdge = true,
+		clockReverse = false,
+		clockColor = { r = 0, g = 0, b = 0, a = 0.75 },
+		showBar = false,
+		groups = {
+			[HEADER_PLAYER_BUFFS] = {
+				enabled = true,
+				unit = "player",
+				filter = FILTER_BUFFS,
+				caption = PLAYER_BUFFS,
+				anchorX = 0.8, -- fraction of screen from left edge, puts it near the mini-map
+				anchorY = 0.84, -- fraction of the screen from bottom edge
+			},
+			[HEADER_PLAYER_DEBUFFS] = {
+				enabled = true,
+				unit = "player",
+				filter = FILTER_DEBUFFS,
+				caption = PLAYER_DEBUFFS,
+				anchorX = 0.65,
+				anchorY = 0.84, -- default places it left of the buffs group
+			},
+		},
+  },
+  [3] = { -- horizontal icons with timer bars
+		growDirection = 1, -- horizontal = 1, otherwise vertical
+		directionX = -1, -- 1 = right, -1 = left
+		directionY = -1, -- 1 = up, -1 = down
+		wrapAfter = 16,
+		maxWraps = 3,
+		spaceX = 10, -- horizontal distance between icons (allow space for elements positioned between icons)
+		spaceY = 16, -- vertical distance between icons (allow space for elements positioned between icons)
+		showTime = false,
+		showCount = true,
+		countPosition = { point = "CENTER", relativePoint = "CENTER", anchor = "icon", offsetX = 0, offsetY = 0 },
+		showLabel = false,
+		showClock = false, -- show clock overlay to indicate remaining time
+		showBar = true,
+    barPosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = 0 },
+		barWidth = 0, --  0 = same as icon width
+		barHeight = 12, --  0 = same as icon height
+		barOrientation = true, -- true = "HORIZONTAL", false = "VERTICAL"
+		barDirection = true, -- true = "STANDARD", false = "REVERSE"
+    groups = {
+			[HEADER_PLAYER_BUFFS] = {
+				enabled = true,
+				unit = "player",
+				filter = FILTER_BUFFS,
+				caption = PLAYER_BUFFS,
+				anchorX = 0.8, -- fraction of screen from left edge, puts it near the mini-map
+				anchorY = 0.98, -- fraction of the screen from bottom edge
+			},
+			[HEADER_PLAYER_DEBUFFS] = {
+				enabled = true,
+				unit = "player",
+				filter = FILTER_DEBUFFS,
+				caption = PLAYER_DEBUFFS,
+				anchorX = 0.8,
+				anchorY = 0.84, -- default places it below the buffs group
+			},
+		},
+  },
+  [4] = { -- vertical stack of full-size bars with labels and time texts
+		growDirection = 0, -- horizontal = 1, otherwise vertical
+		directionX = -1, -- 1 = right, -1 = left
+		directionY = -1, -- 1 = up, -1 = down
+		wrapAfter = 20,
+		maxWraps = 2,
+		spaceX = 12, -- horizontal distance between icons (allow space for elements positioned between icons)
+		spaceY = 8, -- vertical distance between icons (allow space for elements positioned between icons)
+    showTime = true,
+		timePosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = 0 },
+		showCount = true,
+		countPosition = { point = "CENTER", relativePoint = "CENTER", anchor = "icon", offsetX = 0, offsetY = 0 },
+    showLabel = true,
+		labelPosition = { point = "BOTTOM", relativePoint = "TOP", anchor = "icon", offsetX = 0, offsetY = 0 },
+		labelMaxWidth = 40, -- set if want to truncate or wrap
+		labelWrap = false,
+		labelWordWrap = false,
+		showClock = true, -- show clock overlay to indicate remaining time
+    clockEdge = true,
+		clockReverse = false,
+		clockColor = { r = 0, g = 0, b = 0, a = 0.75 },
+    showBar = true,
+    barPosition = { point = "LEFT", relativePoint = "RIGHT", anchor = "icon", offsetX = 4, offsetY = 0 },
+		barWidth = 128, --  0 = same as icon width
+		barHeight = 20, --  0 = same as icon height
+		barOrientation = true, -- true = "HORIZONTAL", false = "VERTICAL"
+		barDirection = true, -- true = "STANDARD", false = "REVERSE"
+		groups = {
+			[HEADER_PLAYER_BUFFS] = {
+				enabled = true,
+				unit = "player",
+				filter = FILTER_BUFFS,
+				caption = PLAYER_BUFFS,
+				anchorX = 0.8, -- fraction of screen from left edge, puts it near the mini-map
+				anchorY = 0.84, -- fraction of the screen from bottom edge
+			},
+			[HEADER_PLAYER_DEBUFFS] = {
+				enabled = true,
+				unit = "player",
+				filter = FILTER_DEBUFFS,
+				caption = PLAYER_DEBUFFS,
+				anchorX = 0.65,
+				anchorY = 0.84, -- default places it left of the buffs group
+			},
+		},
+  },
 }
