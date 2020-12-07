@@ -465,422 +465,430 @@ MOD.OptionsTable = {
 				},
 			},
 		},
-		CountTextGroup = {
-			type = "group", order = 40, name = "Count Text",
+		TextsGroup = {
+			type = "group", order = 40, name = "Texts",
 			args = {
-				EnableGroup = {
-					type = "toggle", order = 10, name = "Enable",
-					desc = "Enable showing count, if greater than one, with each icon.",
-					get = function(info) return pp.showCount end,
-					set = function(info, value) pp.showCount = value; UpdateAll() end,
-				},
-				PositionGroup = {
-					type = "group", order = 20, name = "Position", inline = true,
+				CountTextGroup = {
+					type = "group", order = 10, name = "Stack Count",
 					args = {
-						AnchorIcon = {
-							type = "toggle", order = 10, name = "Icon Relative",
-							desc = "Set position relative to icon.",
-							get = function(info) return not pp.showBar or (pp.countPosition.anchor ~= "bar") end,
-							set = function(info, value) pp.countPosition.anchor = "icon"; UpdateAll() end,
+						EnableGroup = {
+							type = "toggle", order = 10, name = "Enable",
+							desc = "Enable showing count, if greater than one, with each icon.",
+							get = function(info) return pp.showCount end,
+							set = function(info, value) pp.showCount = value; UpdateAll() end,
 						},
-						AnchorBar = {
-							type = "toggle", order = 20, name = "Timer Bar Relative",
-							desc = "Set position relative to timer bar.",
-							disabled = function(info) return not pp.showBar end,
-							get = function(info) return pp.countPosition.anchor == "bar" end,
-							set = function(info, value) pp.countPosition.anchor = "bar"; UpdateAll() end,
+						PositionGroup = {
+							type = "group", order = 20, name = "Position", inline = true,
+							args = {
+								AnchorIcon = {
+									type = "toggle", order = 10, name = "Icon Relative",
+									desc = "Set position relative to icon.",
+									get = function(info) return not pp.showBar or (pp.countPosition.anchor ~= "bar") end,
+									set = function(info, value) pp.countPosition.anchor = "icon"; UpdateAll() end,
+								},
+								AnchorBar = {
+									type = "toggle", order = 20, name = "Timer Bar Relative",
+									desc = "Set position relative to timer bar.",
+									disabled = function(info) return not pp.showBar end,
+									get = function(info) return pp.countPosition.anchor == "bar" end,
+									set = function(info, value) pp.countPosition.anchor = "bar"; UpdateAll() end,
+								},
+								Space1 = { type = "description", name = "", order = 100 },
+								RelativePoint = {
+									type = "select", order = 110, name = "Relative Point",
+									desc = function(info) return "Select relative point on " .. ((pp.showBar and (pp.countPosition.anchor == "bar")) and "bar." or "icon.") end,
+									get = function(info) return pp.countPosition.relativePoint end,
+									set = function(info, value) pp.countPosition.relativePoint = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								AnchorPoint = {
+									type = "select", order = 120, name = "Anchor Point",
+									desc = "Select anchor point on count text, aligning as needed.",
+									get = function(info) return pp.countPosition.point end,
+									set = function(info, value) pp.countPosition.point = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								Space2 = { type = "description", name = "", order = 200 },
+								Horizontal = {
+									type = "range", order = 210, name = "Offset X", min = -100, max = 100, step = 1,
+									desc = "Set horizontal offset from the anchor.",
+									get = function(info) return pp.countPosition.offsetX end,
+									set = function(info, value) pp.countPosition.offsetX = value; UpdateAll() end,
+								},
+								Vertical = {
+									type = "range", order = 220, name = "Offset Y", min = -100, max = 100, step = 1,
+									desc = "Set vertical offset from the anchor.",
+									get = function(info) return pp.countPosition.offsetY end,
+									set = function(info, value) pp.countPosition.offsetY = value; UpdateAll() end,
+								},
+							},
 						},
-						Space = { type = "description", name = "", order = 100 },
-						RelativePoint = {
-							type = "select", order = 110, name = "Relative Point",
-							desc = function(info) return "Select relative point on " .. ((pp.showBar and (pp.countPosition.anchor == "bar")) and "bar." or "icon.") end,
-							get = function(info) return pp.countPosition.relativePoint end,
-							set = function(info, value) pp.countPosition.relativePoint = value end,
-							values = function(info) return anchorPoints end,
-							style = "dropdown",
-						},
-						AnchorPoint = {
-							type = "select", order = 120, name = "Anchor Point",
-							desc = "Select anchor point on count text, aligning as needed.",
-							get = function(info) return pp.countPosition.point end,
-							set = function(info, value) pp.countPosition.point = value end,
-							values = function(info) return anchorPoints end,
-							style = "dropdown",
-						},
-						Horizontal = {
-							type = "range", order = 130, name = "Offset X", min = -100, max = 100, step = 1,
-							desc = "Set horizontal offset from the anchor.",
-							get = function(info) return pp.countPosition.offsetX end,
-							set = function(info, value) pp.countPosition.offsetX = value; UpdateAll() end,
-						},
-						Vertical = {
-							type = "range", order = 140, name = "Offset Y", min = -100, max = 100, step = 1,
-							desc = "Set vertical offset from the anchor.",
-							get = function(info) return pp.countPosition.offsetY end,
-							set = function(info, value) pp.countPosition.offsetY = value; UpdateAll() end,
+						AppearanceGroup = {
+							type = "group", order = 30, name = "Appearance", inline = true,
+							args = {
+								Font = {
+									type = "select", order = 10, name = "Font",
+									desc = "Select font.",
+									dialogControl = "LSM30_Font",
+									values = AceGUIWidgetLSMlists.font,
+									get = function(info) return pp.countFont end,
+									set = function(info, value)
+										pp.countFont = value
+										pp.countFontPath = MOD.LSM:Fetch("font", value)
+										UpdateAll()
+									end,
+								},
+								FontSize = {
+									type = "range", order = 20, name = "Font Size", min = 5, max = 50, step = 1,
+									desc = "Set font size.",
+									get = function(info) return pp.countFontSize end,
+									set = function(info, value) pp.countFontSize = value; UpdateAll() end,
+								},
+								Color = {
+									type = "color", order = 30, name = "Color", hasAlpha = true, width = "half",
+									get = function(info)
+										local t = pp.countColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a)
+										local t = pp.countColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
+								},
+								Space = { type = "description", name = "", order = 100 },
+								Outline = {
+									type = "toggle", order = 110, name = "Outline", width = "half",
+									desc = "Add black outline.",
+									get = function(info) return pp.countFontFlags.outline end,
+									set = function(info, value) pp.countFontFlags.outline = value; UpdateAll() end,
+								},
+								Thick = {
+									type = "toggle", order = 120, name = "Thick", width = "half",
+									desc = "Add thick black outline.",
+									get = function(info) return pp.countFontFlags.thick end,
+									set = function(info, value) pp.countFontFlags.thick = value; UpdateAll() end,
+								},
+								Mono = {
+									type = "toggle", order = 130, name = "Mono", width = "half",
+									desc = "Render font without antialiasing.",
+									get = function(info) return pp.countFontFlags.mono end,
+									set = function(info, value) pp.countFontFlags.mono = value; UpdateAll() end,
+								},
+								Shadow = {
+									type = "toggle", order = 140, name = "Shadow", width = "half",
+									desc = "Render font with shadow.",
+									get = function(info) return pp.countShadow end,
+									set = function(info, value) pp.countShadow = value; UpdateAll() end,
+								},
+							},
 						},
 					},
 				},
-				AppearanceGroup = {
-					type = "group", order = 30, name = "Appearance", inline = true,
+				LabelTextGroup = {
+					type = "group", order = 20, name = "Label",
 					args = {
-						Font = {
-							type = "select", order = 10, name = "Font",
-							desc = "Select font.",
-							dialogControl = "LSM30_Font",
-							values = AceGUIWidgetLSMlists.font,
-							get = function(info) return pp.countFont end,
-							set = function(info, value)
-								pp.countFont = value
-								pp.countFontPath = MOD.LSM:Fetch("font", value)
-								UpdateAll()
-							end,
+						EnableGroup = {
+							type = "toggle", order = 10, name = "Enable",
+							desc = "Enable showing a label with the spell name for each icon. Be sure to allow " ..
+								"room for long labels and set maximum width as needed to prevent overlaps.",
+							get = function(info) return pp.showLabel end,
+							set = function(info, value) pp.showLabel = value; UpdateAll() end,
 						},
-						FontSize = {
-							type = "range", order = 20, name = "Font Size", min = 5, max = 50, step = 1,
-							desc = "Set font size.",
-							get = function(info) return pp.countFontSize end,
-							set = function(info, value) pp.countFontSize = value; UpdateAll() end,
+						PositionGroup = {
+							type = "group", order = 20, name = "Position", inline = true,
+							args = {
+								AnchorIcon = {
+									type = "toggle", order = 10, name = "Icon Relative",
+									desc = "Set position relative to icon.",
+									get = function(info) return not pp.showBar or (pp.labelPosition.anchor ~= "bar") end,
+									set = function(info, value) pp.labelPosition.anchor = "icon"; UpdateAll() end,
+								},
+								AnchorBar = {
+									type = "toggle", order = 20, name = "Timer Bar Relative",
+									desc = "Set position relative to timer bar.",
+									disabled = function(info) return not pp.showBar end,
+									get = function(info) return pp.labelPosition.anchor == "bar" end,
+									set = function(info, value) pp.labelPosition.anchor = "bar"; UpdateAll() end,
+								},
+								Space1 = { type = "description", name = "", order = 100 },
+								RelativePoint = {
+									type = "select", order = 110, name = "Relative Point",
+									desc = function(info) return "Select relative point on " .. ((pp.showBar and (pp.labelPosition.anchor == "bar")) and "bar." or "icon.") end,
+									get = function(info) return pp.labelPosition.relativePoint end,
+									set = function(info, value) pp.labelPosition.relativePoint = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								AnchorPoint = {
+									type = "select", order = 120, name = "Anchor Point",
+									desc = "Select anchor point on label text, aligning as needed.",
+									get = function(info) return pp.labelPosition.point end,
+									set = function(info, value) pp.labelPosition.point = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								Space2 = { type = "description", name = "", order = 200 },
+								Horizontal = {
+									type = "range", order = 210, name = "Offset X", min = -100, max = 100, step = 1,
+									desc = "Set horizontal offset from the anchor.",
+									get = function(info) return pp.labelPosition.offsetX end,
+									set = function(info, value) pp.labelPosition.offsetX = value; UpdateAll() end,
+								},
+								Vertical = {
+									type = "range", order = 220, name = "Offset Y", min = -100, max = 100, step = 1,
+									desc = "Set vertical offset from the anchor.",
+									get = function(info) return pp.labelPosition.offsetY end,
+									set = function(info, value) pp.labelPosition.offsetY = value; UpdateAll() end,
+								},
+							},
 						},
-						Color = {
-							type = "color", order = 30, name = "Color", hasAlpha = true, width = "half",
-							get = function(info)
-								local t = pp.countColor
-								return t.r, t.g, t.b, t.a
-							end,
-							set = function(info, r, g, b, a)
-								local t = pp.countColor
-								t.r = r; t.g = g; t.b = b; t.a = a
-								UpdateAll()
-							end,
+						AppearanceGroup = {
+							type = "group", order = 30, name = "Appearance", inline = true,
+							args = {
+								Font = {
+									type = "select", order = 10, name = "Font",
+									desc = "Select font.",
+									dialogControl = "LSM30_Font",
+									values = AceGUIWidgetLSMlists.font,
+									get = function(info) return pp.labelFont end,
+									set = function(info, value)
+										pp.labelFont = value
+										pp.labelFontPath = MOD.LSM:Fetch("font", value)
+										UpdateAll()
+									end,
+								},
+								FontSize = {
+									type = "range", order = 20, name = "Font Size", min = 5, max = 50, step = 1,
+									desc = "Set font size.",
+									get = function(info) return pp.labelFontSize end,
+									set = function(info, value) pp.labelFontSize = value; UpdateAll() end,
+								},
+								Color = {
+									type = "color", order = 30, name = "Color", hasAlpha = true, width = "half",
+									get = function(info)
+										local t = pp.labelColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a)
+										local t = pp.labelColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
+								},
+								Space = { type = "description", name = "", order = 100 },
+								Outline = {
+									type = "toggle", order = 110, name = "Outline", width = "half",
+									desc = "Add black outline.",
+									get = function(info) return pp.labelFontFlags.outline end,
+									set = function(info, value) pp.labelFontFlags.outline = value; UpdateAll() end,
+								},
+								Thick = {
+									type = "toggle", order = 120, name = "Thick", width = "half",
+									desc = "Add thick black outline.",
+									get = function(info) return pp.labelFontFlags.thick end,
+									set = function(info, value) pp.labelFontFlags.thick = value; UpdateAll() end,
+								},
+								Mono = {
+									type = "toggle", order = 130, name = "Mono", width = "half",
+									desc = "Render font without antialiasing.",
+									get = function(info) return pp.labelFontFlags.mono end,
+									set = function(info, value) pp.labelFontFlags.mono = value; UpdateAll() end,
+								},
+								Shadow = {
+									type = "toggle", order = 140, name = "Shadow", width = "half",
+									desc = "Render font with shadow.",
+									get = function(info) return pp.labelShadow end,
+									set = function(info, value) pp.labelShadow = value; UpdateAll() end,
+								},
+							},
 						},
-						Space = { type = "description", name = "", order = 100 },
-						Outline = {
-							type = "toggle", order = 110, name = "Outline", width = "half",
-							desc = "Add black outline.",
-							get = function(info) return pp.countFontFlags.outline end,
-							set = function(info, value) pp.countFontFlags.outline = value; UpdateAll() end,
-						},
-						Thick = {
-							type = "toggle", order = 120, name = "Thick", width = "half",
-							desc = "Add thick black outline.",
-							get = function(info) return pp.countFontFlags.thick end,
-							set = function(info, value) pp.countFontFlags.thick = value; UpdateAll() end,
-						},
-						Mono = {
-							type = "toggle", order = 130, name = "Mono", width = "half",
-							desc = "Render font without antialiasing.",
-							get = function(info) return pp.countFontFlags.mono end,
-							set = function(info, value) pp.countFontFlags.mono = value; UpdateAll() end,
-						},
-						Shadow = {
-							type = "toggle", order = 140, name = "Shadow", width = "half",
-							desc = "Render font with shadow.",
-							get = function(info) return pp.countShadow end,
-							set = function(info, value) pp.countShadow = value; UpdateAll() end,
+						WrapGroup = {
+							type = "group", order = 40, name = "Wrapping", inline = true,
+							args = {
+								TextWrap = {
+									type = "toggle", order = 10, name = "Text Wrap",
+									desc = "If checked, text can wrap to more than one line. Otherwise, long text is truncated.",
+									get = function(info) return pp.labelWrap end,
+									set = function(info, value) pp.labelWrap = value; UpdateAll() end,
+								},
+								WordWrap = {
+									type = "toggle", order = 20, name = "Word Wrap",
+									desc = "If checked, longer words can wrap to more than one line. Otherwise, long words are truncated.",
+									get = function(info) return pp.labelWordWrap end,
+									set = function(info, value) pp.labelWordWrap = value; UpdateAll() end,
+								},
+								MaxTextWidth = {
+									type = "range", order = 30, name = "Maximum Text Width", min = 0, max = 500, step = 1,
+									desc = "Set maximum width for text before wrapping or truncating. Set to 0 for unlimited width.",
+									get = function(info) return pp.labelMaxWidth end,
+									set = function(info, value) pp.labelMaxWidth = value; UpdateAll() end,
+								},
+							},
 						},
 					},
 				},
-			},
-		},
-		LabelTextGroup = {
-			type = "group", order = 50, name = "Label Text",
-			args = {
-				EnableGroup = {
-					type = "toggle", order = 10, name = "Enable",
-					desc = "Enable showing a label with the spell name for each icon. Be sure to allow " ..
-						"room for long labels and set maximum width as needed to prevent overlaps.",
-					get = function(info) return pp.showLabel end,
-					set = function(info, value) pp.showLabel = value; UpdateAll() end,
-				},
-				PositionGroup = {
-					type = "group", order = 20, name = "Position", inline = true,
+				TimeTextGroup = {
+					type = "group", order = 30, name = "Time Left",
 					args = {
-						AnchorIcon = {
-							type = "toggle", order = 10, name = "Icon Relative",
-							desc = "Set position relative to icon.",
-							get = function(info) return not pp.showBar or (pp.labelPosition.anchor ~= "bar") end,
-							set = function(info, value) pp.labelPosition.anchor = "icon"; UpdateAll() end,
+						EnableGroup = {
+							type = "toggle", order = 10, name = "Enable",
+							desc = "Enable showing formatted time text with each icon.",
+							get = function(info) return pp.showTime end,
+							set = function(info, value) pp.showTime = value; UpdateAll() end,
 						},
-						AnchorBar = {
-							type = "toggle", order = 20, name = "Timer Bar Relative",
-							desc = "Set position relative to timer bar.",
-							disabled = function(info) return not pp.showBar end,
-							get = function(info) return pp.labelPosition.anchor == "bar" end,
-							set = function(info, value) pp.labelPosition.anchor = "bar"; UpdateAll() end,
+						PositionGroup = {
+							type = "group", order = 20, name = "Position", inline = true,
+							args = {
+								AnchorIcon = {
+									type = "toggle", order = 10, name = "Icon Relative",
+									desc = "Set position relative to icon.",
+									get = function(info) return not pp.showBar or (pp.timePosition.anchor ~= "bar") end,
+									set = function(info, value) pp.timePosition.anchor = "icon"; UpdateAll() end,
+								},
+								AnchorBar = {
+									type = "toggle", order = 20, name = "Timer Bar Relative",
+									desc = "Set position relative to timer bar.",
+									disabled = function(info) return not pp.showBar end,
+									get = function(info) return pp.timePosition.anchor == "bar" end,
+									set = function(info, value) pp.timePosition.anchor = "bar"; UpdateAll() end,
+								},
+								Space1 = { type = "description", name = "", order = 100 },
+								RelativePoint = {
+									type = "select", order = 110, name = "Relative Point",
+									desc = function(info) return "Select relative point on " .. ((pp.showBar and (pp.timePosition.anchor == "bar")) and "bar." or "icon.") end,
+									get = function(info) return pp.timePosition.relativePoint end,
+									set = function(info, value) pp.timePosition.relativePoint = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								AnchorPoint = {
+									type = "select", order = 120, name = "Anchor Point",
+									desc = "Select anchor point on time text, aligning as needed.",
+									get = function(info) return pp.timePosition.point end,
+									set = function(info, value) pp.timePosition.point = value end,
+									values = function(info) return anchorPoints end,
+									style = "dropdown",
+								},
+								Space2 = { type = "description", name = "", order = 200 },
+								Horizontal = {
+									type = "range", order = 210, name = "Offset X", min = -100, max = 100, step = 1,
+									desc = "Set horizontal offset from the anchor.",
+									get = function(info) return pp.timePosition.offsetX end,
+									set = function(info, value) pp.timePosition.offsetX = value; UpdateAll() end,
+								},
+								Vertical = {
+									type = "range", order = 220, name = "Offset Y", min = -100, max = 100, step = 1,
+									desc = "Set vertical offset from the anchor.",
+									get = function(info) return pp.timePosition.offsetY end,
+									set = function(info, value) pp.timePosition.offsetY = value; UpdateAll() end,
+								},
+							},
 						},
-						Space = { type = "description", name = "", order = 100 },
-						RelativePoint = {
-							type = "select", order = 110, name = "Relative Point",
-							desc = function(info) return "Select relative point on " .. ((pp.showBar and (pp.labelPosition.anchor == "bar")) and "bar." or "icon.") end,
-							get = function(info) return pp.labelPosition.relativePoint end,
-							set = function(info, value) pp.labelPosition.relativePoint = value end,
-							values = function(info) return anchorPoints end,
-							style = "dropdown",
-						},
-						AnchorPoint = {
-							type = "select", order = 120, name = "Anchor Point",
-							desc = "Select anchor point on label text, aligning as needed.",
-							get = function(info) return pp.labelPosition.point end,
-							set = function(info, value) pp.labelPosition.point = value end,
-							values = function(info) return anchorPoints end,
-							style = "dropdown",
-						},
-						Horizontal = {
-							type = "range", order = 130, name = "Offset X", min = -100, max = 100, step = 1,
-							desc = "Set horizontal offset from the anchor.",
-							get = function(info) return pp.labelPosition.offsetX end,
-							set = function(info, value) pp.labelPosition.offsetX = value; UpdateAll() end,
-						},
-						Vertical = {
-							type = "range", order = 140, name = "Offset Y", min = -100, max = 100, step = 1,
-							desc = "Set vertical offset from the anchor.",
-							get = function(info) return pp.labelPosition.offsetY end,
-							set = function(info, value) pp.labelPosition.offsetY = value; UpdateAll() end,
-						},
-					},
-				},
-				AppearanceGroup = {
-					type = "group", order = 30, name = "Appearance", inline = true,
-					args = {
-						Font = {
-							type = "select", order = 10, name = "Font",
-							desc = "Select font.",
-							dialogControl = "LSM30_Font",
-							values = AceGUIWidgetLSMlists.font,
-							get = function(info) return pp.labelFont end,
-							set = function(info, value)
-								pp.labelFont = value
-								pp.labelFontPath = MOD.LSM:Fetch("font", value)
-								UpdateAll()
-							end,
-						},
-						FontSize = {
-							type = "range", order = 20, name = "Font Size", min = 5, max = 50, step = 1,
-							desc = "Set font size.",
-							get = function(info) return pp.labelFontSize end,
-							set = function(info, value) pp.labelFontSize = value; UpdateAll() end,
-						},
-						Color = {
-							type = "color", order = 30, name = "Color", hasAlpha = true, width = "half",
-							get = function(info)
-								local t = pp.labelColor
-								return t.r, t.g, t.b, t.a
-							end,
-							set = function(info, r, g, b, a)
-								local t = pp.labelColor
-								t.r = r; t.g = g; t.b = b; t.a = a
-								UpdateAll()
-							end,
-						},
-						Space = { type = "description", name = "", order = 100 },
-						Outline = {
-							type = "toggle", order = 110, name = "Outline", width = "half",
-							desc = "Add black outline.",
-							get = function(info) return pp.labelFontFlags.outline end,
-							set = function(info, value) pp.labelFontFlags.outline = value; UpdateAll() end,
-						},
-						Thick = {
-							type = "toggle", order = 120, name = "Thick", width = "half",
-							desc = "Add thick black outline.",
-							get = function(info) return pp.labelFontFlags.thick end,
-							set = function(info, value) pp.labelFontFlags.thick = value; UpdateAll() end,
-						},
-						Mono = {
-							type = "toggle", order = 130, name = "Mono", width = "half",
-							desc = "Render font without antialiasing.",
-							get = function(info) return pp.labelFontFlags.mono end,
-							set = function(info, value) pp.labelFontFlags.mono = value; UpdateAll() end,
-						},
-						Shadow = {
-							type = "toggle", order = 140, name = "Shadow", width = "half",
-							desc = "Render font with shadow.",
-							get = function(info) return pp.labelShadow end,
-							set = function(info, value) pp.labelShadow = value; UpdateAll() end,
-						},
-					},
-				},
-				WrapGroup = {
-					type = "group", order = 40, name = "Wrapping", inline = true,
-					args = {
-						TextWrap = {
-							type = "toggle", order = 10, name = "Text Wrap",
-							desc = "If checked, text can wrap to more than one line. Otherwise, long text is truncated.",
-							get = function(info) return pp.labelWrap end,
-							set = function(info, value) pp.labelWrap = value; UpdateAll() end,
-						},
-						WordWrap = {
-							type = "toggle", order = 20, name = "Word Wrap",
-							desc = "If checked, longer words can wrap to more than one line. Otherwise, long words are truncated.",
-							get = function(info) return pp.labelWordWrap end,
-							set = function(info, value) pp.labelWordWrap = value; UpdateAll() end,
-						},
-						MaxTextWidth = {
-							type = "range", order = 30, name = "Maximum Text Width", min = 0, max = 500, step = 1,
-							desc = "Set maximum width for text before wrapping or truncating. Set to 0 for unlimited width.",
-							get = function(info) return pp.labelMaxWidth end,
-							set = function(info, value) pp.labelMaxWidth = value; UpdateAll() end,
-						},
-					},
-				},
-			},
-		},
-		TimeTextGroup = {
-			type = "group", order = 60, name = "Time Text",
-			args = {
-				EnableGroup = {
-					type = "toggle", order = 10, name = "Enable",
-					desc = "Enable showing formatted time text with each icon.",
-					get = function(info) return pp.showTime end,
-					set = function(info, value) pp.showTime = value; UpdateAll() end,
-				},
-				PositionGroup = {
-					type = "group", order = 20, name = "Position", inline = true,
-					args = {
-						AnchorIcon = {
-							type = "toggle", order = 10, name = "Icon Relative",
-							desc = "Set position relative to icon.",
-							get = function(info) return not pp.showBar or (pp.timePosition.anchor ~= "bar") end,
-							set = function(info, value) pp.timePosition.anchor = "icon"; UpdateAll() end,
-						},
-						AnchorBar = {
-							type = "toggle", order = 20, name = "Timer Bar Relative",
-							desc = "Set position relative to timer bar.",
-							disabled = function(info) return not pp.showBar end,
-							get = function(info) return pp.timePosition.anchor == "bar" end,
-							set = function(info, value) pp.timePosition.anchor = "bar"; UpdateAll() end,
-						},
-						Space = { type = "description", name = "", order = 100 },
-						RelativePoint = {
-							type = "select", order = 110, name = "Relative Point",
-							desc = function(info) return "Select relative point on " .. ((pp.showBar and (pp.timePosition.anchor == "bar")) and "bar." or "icon.") end,
-							get = function(info) return pp.timePosition.relativePoint end,
-							set = function(info, value) pp.timePosition.relativePoint = value end,
-							values = function(info) return anchorPoints end,
-							style = "dropdown",
-						},
-						AnchorPoint = {
-							type = "select", order = 120, name = "Anchor Point",
-							desc = "Select anchor point on time text, aligning as needed.",
-							get = function(info) return pp.timePosition.point end,
-							set = function(info, value) pp.timePosition.point = value end,
-							values = function(info) return anchorPoints end,
-							style = "dropdown",
-						},
-						Horizontal = {
-							type = "range", order = 130, name = "Offset X", min = -100, max = 100, step = 1,
-							desc = "Set horizontal offset from the anchor.",
-							get = function(info) return pp.timePosition.offsetX end,
-							set = function(info, value) pp.timePosition.offsetX = value; UpdateAll() end,
-						},
-						Vertical = {
-							type = "range", order = 140, name = "Offset Y", min = -100, max = 100, step = 1,
-							desc = "Set vertical offset from the anchor.",
-							get = function(info) return pp.timePosition.offsetY end,
-							set = function(info, value) pp.timePosition.offsetY = value; UpdateAll() end,
-						},
-					},
-				},
-				AppearanceGroup = {
-					type = "group", order = 30, name = "Appearance", inline = true,
-					args = {
-						Font = {
-							type = "select", order = 10, name = "Font",
-							desc = "Select font.",
-							dialogControl = "LSM30_Font",
-							values = AceGUIWidgetLSMlists.font,
-							get = function(info) return pp.timeFont end,
-							set = function(info, value)
-								pp.timeFont = value
-								pp.timeFontPath = MOD.LSM:Fetch("font", value)
-								UpdateAll()
-							end,
-						},
-						FontSize = {
-							type = "range", order = 20, name = "Font Size", min = 5, max = 50, step = 1,
-							desc = "Set font size.",
-							get = function(info) return pp.timeFontSize end,
-							set = function(info, value) pp.timeFontSize = value; UpdateAll() end,
-						},
-						Color = {
-							type = "color", order = 30, name = "Color", hasAlpha = true, width = "half",
-							get = function(info)
-								local t = pp.timeColor
-								return t.r, t.g, t.b, t.a
-							end,
-							set = function(info, r, g, b, a)
-								local t = pp.timeColor
-								t.r = r; t.g = g; t.b = b; t.a = a
-								UpdateAll()
-							end,
-						},
-						ExpireColor = {
-							type = "color", order = 40, name = "Expiring Color", hasAlpha = true,
-							get = function(info)
-								local t = pp.expireColor
-								return t.r, t.g, t.b, t.a
-							end,
-							set = function(info, r, g, b, a)
-								local t = pp.expireColor
-								t.r = r; t.g = g; t.b = b; t.a = a
-								UpdateAll()
-							end,
-						},
-						Space = { type = "description", name = "", order = 100 },
-						Outline = {
-							type = "toggle", order = 110, name = "Outline", width = "half",
-							desc = "Add black outline.",
-							get = function(info) return pp.timeFontFlags.outline end,
-							set = function(info, value) pp.timeFontFlags.outline = value; UpdateAll() end,
-						},
-						Thick = {
-							type = "toggle", order = 120, name = "Thick", width = "half",
-							desc = "Add thick black outline.",
-							get = function(info) return pp.timeFontFlags.thick end,
-							set = function(info, value) pp.timeFontFlags.thick = value; UpdateAll() end,
-						},
-						Mono = {
-							type = "toggle", order = 130, name = "Mono", width = "half",
-							desc = "Render font without antialiasing.",
-							get = function(info) return pp.timeFontFlags.mono end,
-							set = function(info, value) pp.timeFontFlags.mono = value; UpdateAll() end,
-						},
-						Shadow = {
-							type = "toggle", order = 140, name = "Shadow", width = "half",
-							desc = "Render font with shadow.",
-							get = function(info) return pp.timeShadow end,
-							set = function(info, value) pp.timeShadow = value; UpdateAll() end,
-						},
-						Space1 = { type = "description", name = "", order = 200 },
-						TimeFormat = {
-							type = "select", order = 210, name = "Time Format", width = "double",
-							desc = "Select format for time text.",
-							get = function(info) return pp.timeFormat end,
-							set = function(info, value) pp.timeFormat = value; UpdateAll() end,
-							values = function(info)
-								local s, c = pp.timeSpaces, pp.timeCase
-								return GetTimeFormatList(s, c)
-							end,
-							style = "dropdown",
-						},
-						Spaces = {
-							type = "toggle", order = 220, name = "Spaces", width = "half",
-							desc = "Include spaces between values in time format.",
-							get = function(info) return pp.timeSpaces end,
-							set = function(info, value) pp.timeSpaces = value; UpdateAll() end,
-						},
-						Capitals = {
-							type = "toggle", order = 230, name = "H,M,S", width = "half",
-							desc = "If checked, use uppercase H, M and S in time format, otherwise use lowercase.",
-							get = function(info) return pp.timeCase end,
-							set = function(info, value) pp.timeCase = value; UpdateAll() end,
+						AppearanceGroup = {
+							type = "group", order = 30, name = "Appearance", inline = true,
+							args = {
+								Font = {
+									type = "select", order = 10, name = "Font",
+									desc = "Select font.",
+									dialogControl = "LSM30_Font",
+									values = AceGUIWidgetLSMlists.font,
+									get = function(info) return pp.timeFont end,
+									set = function(info, value)
+										pp.timeFont = value
+										pp.timeFontPath = MOD.LSM:Fetch("font", value)
+										UpdateAll()
+									end,
+								},
+								FontSize = {
+									type = "range", order = 20, name = "Font Size", min = 5, max = 50, step = 1,
+									desc = "Set font size.",
+									get = function(info) return pp.timeFontSize end,
+									set = function(info, value) pp.timeFontSize = value; UpdateAll() end,
+								},
+								Color = {
+									type = "color", order = 30, name = "Color", hasAlpha = true, width = "half",
+									get = function(info)
+										local t = pp.timeColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a)
+										local t = pp.timeColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
+								},
+								ExpireColor = {
+									type = "color", order = 40, name = "Expiring Color", hasAlpha = true,
+									get = function(info)
+										local t = pp.expireColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a)
+										local t = pp.expireColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
+								},
+								Space = { type = "description", name = "", order = 100 },
+								Outline = {
+									type = "toggle", order = 110, name = "Outline", width = "half",
+									desc = "Add black outline.",
+									get = function(info) return pp.timeFontFlags.outline end,
+									set = function(info, value) pp.timeFontFlags.outline = value; UpdateAll() end,
+								},
+								Thick = {
+									type = "toggle", order = 120, name = "Thick", width = "half",
+									desc = "Add thick black outline.",
+									get = function(info) return pp.timeFontFlags.thick end,
+									set = function(info, value) pp.timeFontFlags.thick = value; UpdateAll() end,
+								},
+								Mono = {
+									type = "toggle", order = 130, name = "Mono", width = "half",
+									desc = "Render font without antialiasing.",
+									get = function(info) return pp.timeFontFlags.mono end,
+									set = function(info, value) pp.timeFontFlags.mono = value; UpdateAll() end,
+								},
+								Shadow = {
+									type = "toggle", order = 140, name = "Shadow", width = "half",
+									desc = "Render font with shadow.",
+									get = function(info) return pp.timeShadow end,
+									set = function(info, value) pp.timeShadow = value; UpdateAll() end,
+								},
+								Space1 = { type = "description", name = "", order = 200 },
+								TimeFormat = {
+									type = "select", order = 210, name = "Time Format", width = "double",
+									desc = "Select format for time text.",
+									get = function(info) return pp.timeFormat end,
+									set = function(info, value) pp.timeFormat = value; UpdateAll() end,
+									values = function(info)
+										local s, c = pp.timeSpaces, pp.timeCase
+										return GetTimeFormatList(s, c)
+									end,
+									style = "dropdown",
+								},
+								Spaces = {
+									type = "toggle", order = 220, name = "Spaces", width = "half",
+									desc = "Include spaces between values in time format.",
+									get = function(info) return pp.timeSpaces end,
+									set = function(info, value) pp.timeSpaces = value; UpdateAll() end,
+								},
+								Capitals = {
+									type = "toggle", order = 230, name = "H,M,S", width = "half",
+									desc = "If checked, use uppercase H, M and S in time format, otherwise use lowercase.",
+									get = function(info) return pp.timeCase end,
+									set = function(info, value) pp.timeCase = value; UpdateAll() end,
+								},
+							},
 						},
 					},
 				},
 			},
 		},
 		TimerBarGroup = {
-			type = "group", order =80, name = "Timer Bars",
+			type = "group", order =50, name = "Bars",
 			args = {
 				EnableGroup = {
 					type = "toggle", order = 10, name = "Enable",
