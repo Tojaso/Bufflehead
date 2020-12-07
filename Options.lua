@@ -396,14 +396,28 @@ MOD.OptionsTable = {
 						BuffBorderColor = {
 							type = "color", order = 110, name = "Buff Borders", hasAlpha = true,
 							desc = "Set color for icon borders.",
-							get = function(info) local t = pp.iconBuffColor return t.r, t.g, t.b, t.a end,
-							set = function(info, r, g, b, a) local t = pp.iconBuffColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
+							get = function(info)
+								local t = pp.iconBuffColor
+								return t.r, t.g, t.b, t.a
+							end,
+							set = function(info, r, g, b, a)
+								local t = pp.iconBuffColor
+								t.r = r; t.g = g; t.b = b; t.a = a
+								UpdateAll()
+							end,
 						},
 						DebuffBorderColor = {
-							type = "color", order = 110, name = "Debuff Borders", hasAlpha = true,
+							type = "color", order = 120, name = "Debuff Borders", hasAlpha = true,
 							desc = "Set color for icon borders.",
-							get = function(info) local t = pp.iconDebuffColor return t.r, t.g, t.b, t.a end,
-							set = function(info, r, g, b, a) local t = pp.iconDebuffColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
+							get = function(info)
+								local t = pp.iconDebuffColor
+								return t.r, t.g, t.b, t.a
+							end,
+							set = function(info, r, g, b, a)
+								local t = pp.iconDebuffColor
+								t.r = r; t.g = g; t.b = b; t.a = a
+								UpdateAll()
+							end,
 						},
 						DebuffTypeColor = {
 							type = "toggle", order = 130, name = "Debuff Type Override",
@@ -940,55 +954,134 @@ MOD.OptionsTable = {
 				AppearanceGroup = {
 					type = "group", order = 40, name = "Appearance", inline = true,
 					args = {
-						BorderGroup = {
-							type = "group", order = 10, name = "Bar Border", inline = true,
+						BarsGroup = {
+							type = "group", order = 10, name = "Bars", inline = true,
 							args = {
-								DefaultBorder = {
-									type = "toggle", order = 10, name = "None", width = "half",
-									desc = "Do not display bar borders.",
-									get = function(info) return pp.barBorder == "none" end,
-									set = function(info, value) pp.barBorder = "none"; UpdateAll() end,
+								BarTexture = {
+									type = "select", order = 10, name = "Bar Texture",
+									desc = "Select shared media texture for bars.",
+									dialogControl = 'LSM30_Statusbar',
+									values = AceGUIWidgetLSMlists.statusbar,
+									get = function(info) return pp.barTexture end,
+									set = function(info, value) pp.barTexture = value; UpdateAll() end,
 								},
-								OnePixelBorder = {
-									type = "toggle", order = 20, name = "Pixel", width = "half",
-									desc = "Use single pixel bar borders (requires bar width and height greater than 4).",
-									get = function(info) return pp.barBorder == "one" end,
-									set = function(info, value) pp.barBorder = "one"; UpdateAll() end,
-								},
-								TwoPixelBorder = {
-									type = "toggle", order = 30, name = "Two Pixel",
-									desc = "Use two pixel bar borders (requires bar width and height greater than 4).",
-									get = function(info) return pp.barBorder == "two" end,
-									set = function(info, value) pp.barBorder = "two"; UpdateAll() end,
-								},
-								BorderColor = {
-									type = "color", order = 40, name = "Border Color", hasAlpha = true,
-									desc = "Set color for bar borders.",
-									get = function(info) local t = pp.barBorderColor return t.r, t.g, t.b, t.a end,
-									set = function(info, r, g, b, a) local t = pp.barBorderColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
-								},
-							},
-						},
-						ColorsGroup = {
-							type = "group", order = 20, name = "Bar Colors", inline = true,
-							args = {
-								BuffColor = {
-									type = "color", order = 10, name = "Buffs", hasAlpha = true,
-									desc = "Set color for buff bars.",
-									get = function(info) local t = pp.barBuffColor return t.r, t.g, t.b, t.a end,
-									set = function(info, r, g, b, a) local t = pp.barBuffColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
-								},
-								DebuffColor = {
-									type = "color", order = 20, name = "Debuffs", hasAlpha = true,
-									desc = "Set color for debuff bars.",
-									get = function(info) local t = pp.barDebuffColor return t.r, t.g, t.b, t.a end,
-									set = function(info, r, g, b, a) local t = pp.barDebuffColor t.r = r; t.g = g; t.b = b; t.a = a; UpdateAll() end,
+								ForegroundOpacity = {
+									type = "range", order = 20, name = "Background Opacity", min = 0, max = 1, step = 0.05,
+									desc = "Set foreground opacity for bars.",
+									get = function(info) return pp.barForegroundOpacity end,
+									set = function(info, value) pp.barForegroundOpacity = value; UpdateAll() end,
 								},
 								BackgroundOpacity = {
 									type = "range", order = 30, name = "Background Opacity", min = 0, max = 1, step = 0.05,
 									desc = "Set background opacity for bars.",
 									get = function(info) return pp.barBackgroundOpacity end,
 									set = function(info, value) pp.barBackgroundOpacity = value; UpdateAll() end,
+								},
+								Spacer1 = { type = "description", name = "", order = 100 },
+								BuffColor = {
+									type = "color", order = 110, name = "Buffs", hasAlpha = true,
+									desc = "Set color for buff bars.",
+									get = function(info)
+										local t = pp.barBuffColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a) local t = pp.barBuffColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
+								},
+								DebuffColor = {
+									type = "color", order = 120, name = "Debuffs", hasAlpha = true,
+									desc = "Set color for debuff bars.",
+									get = function(info)
+										local t = pp.barDebuffColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a)
+										local t = pp.barDebuffColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
+								},
+							},
+						},
+						BordersGroup = {
+							type = "group", order = 20, name = "Borders", inline = true,
+							args = {
+								NoBorder = {
+									type = "toggle", order = 10, name = "None", width = "half",
+									desc = "Do not display bar borders.",
+									get = function(info) return pp.barBorder == "none" end,
+									set = function(info, value) pp.barBorder = "none"; UpdateAll() end,
+								},
+								MediaBorder = {
+									type = "toggle", order = 20, name = "Media", width = "half",
+									desc = "Use a shared media bar border.",
+									get = function(info) return pp.barBorder == "media" end,
+									set = function(info, value) pp.barBorder = "media"; UpdateAll() end,
+								},
+								OnePixelBorder = {
+									type = "toggle", order = 30, name = "Pixel", width = "half",
+									desc = "Use single pixel bar borders (requires bar width and height greater than 4).",
+									get = function(info) return pp.barBorder == "one" end,
+									set = function(info, value) pp.barBorder = "one"; UpdateAll() end,
+								},
+								TwoPixelBorder = {
+									type = "toggle", order = 40, name = "Two Pixel",
+									desc = "Use two pixel bar borders (requires bar width and height greater than 4).",
+									get = function(info) return pp.barBorder == "two" end,
+									set = function(info, value) pp.barBorder = "two"; UpdateAll() end,
+								},
+								Spacer1 = { type = "description", name = "", order = 100 },
+								BorderTexture = {
+									type = "select", order = 110, name = "Bar Border",
+									desc = "Select shared media border for bars.",
+									dialogControl = 'LSM30_Border',
+									disabled = function(info) return pp.barBorder ~= "media" end,
+									values = AceGUIWidgetLSMlists.border,
+									get = function(info) return pp.barBorderMedia end,
+									set = function(info, value) pp.barBorderMedia = value; UpdateAll() end,
+								},
+								BorderWidth = {
+									type = "range", order = 120, name = "Edge Size", min = 0, max = 32, step = 0.01,
+									desc = "Adjust width of the border's edge (best size depends on the selected border).",
+									disabled = function(info) return pp.barBorder ~= "media" end,
+									get = function(info) return pp.barBorderWidth end,
+									set = function(info, value) pp.barBorderWidth = value; UpdateAll() end,
+								},
+								BorderOffset = {
+									type = "range", order = 130, name = "Offset", min = -16, max = 16, step = 0.01,
+									desc = "Adjust offset to the border from the bar (best offset depends on the selected border).",
+									disabled = function(info) return pp.barBorder ~= "media" end,
+									get = function(info) return pp.barBorderOffset end,
+									set = function(info, value) pp.barBorderOffset = value; UpdateAll() end,
+								},
+								Spacer2 = { type = "description", name = "", order = 200 },
+								BorderBuffColor = {
+									type = "color", order = 210, name = "Buff Border Color", hasAlpha = true,
+									desc = "Set color for the bar border.",
+									get = function(info)
+										local t = pp.barBorderBuffColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a)
+										local t = pp.barBorderBuffColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
+								},
+								BorderDebuffColor = {
+									type = "color", order = 220, name = "Debuff Border Color", hasAlpha = true,
+									desc = "Set color for the bar border.",
+									get = function(info)
+										local t = pp.barBorderDebuffColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a)
+										local t = pp.barBorderDebuffColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
 								},
 							},
 						},

@@ -39,12 +39,12 @@ local RAVEN_ICON_BORDER = "Interface\\AddOns\\Bufflehead\\Media\\IconDefault"
 
 local onePixelBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
 	bgFile = "Interface\\AddOns\\Bufflehead\\Media\\WhiteBar",
-	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 1, insets = { left = 0, right = 0, top = 0, bottom = 0 }
+	edgeFile = "Interface\\BUTTONS\\WHITE8X8.blp", edgeSize = 1, insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
 
 local twoPixelBackdrop = { -- backdrop initialization for icons when using optional one and two pixel borders
 	bgFile = "Interface\\AddOns\\Bufflehead\\Media\\WhiteBar",
-	edgeFile = [[Interface\BUTTONS\WHITE8X8.blp]], edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }
+	edgeFile = "Interface\\BUTTONS\\WHITE8X8.blp", edgeSize = 2, insets = { left = 0, right = 0, top = 0, bottom = 0 }
 }
 
 local justifyH = { BOTTOM = "CENTER", BOTTOMLEFT = "LEFT", BOTTOMRIGHT = "RIGHT", CENTER = "CENTER", LEFT = "LEFT",
@@ -167,9 +167,8 @@ function MOD:OnInitialize()
 	LoadAddOn("LibDBIcon-1.0")
 end
 
--- Adjust a backdrop's edgeSize and insets for pixel perfect factor
+-- Adjust a backdrop's insets for pixel perfect factor
 local function SetInsets(backdrop, x)
-	backdrop.edgeSize = x
 	local t = backdrop.insets
 	t.left = x; t.right = x; t.top = x; t.bottom = x
 end
@@ -181,8 +180,10 @@ local function SetPixelScale()
 	displayHeight = UIParent:GetHeight()
 	displayScale = UIParent:GetScale() -- adjusted by ElvUI and possibly others
 	pixelScale = GetScreenHeight() / screenHeight -- figure out how big virtual pixels are versus screen pixels
-	SetInsets(onePixelBackdrop, PS(1)) -- update one pixel border size
-	SetInsets(twoPixelBackdrop, PS(2)) -- update two pixel border size
+	onePixelBackdrop.edgeSize = PS(1) -- update one pixel border backdrop
+	SetInsets(onePixelBackdrop, PS(1))
+	twoPixelBackdrop.edgeSize = PS(2) -- update two pixel border backdrop
+	SetInsets(twoPixelBackdrop, PS(2))
 
 	-- MOD.Debug("Bufflehead: pixel w/h/scale", screenWidth, screenHeight, pixelScale, displayWidth, displayHeight, displayScale)
 	-- MOD.Debug("Bufflehead: UIParent scale/effective", UIParent:GetScale(), UIParent:GetEffectiveScale())
@@ -424,6 +425,7 @@ local function SkinBorder(button, c)
 		bib:SetAllPoints(button)
 		bib:SetTexture(GetFileIDFromPath(RAVEN_ICON_BORDER))
 		bib:SetVertexColor(c.r, c.g, c.b, c.a or 1)
+		bib:SetBlendMode("ADD")
 		bib:Show()
 		bih:Hide()
 		bik:Hide()
@@ -440,6 +442,7 @@ local function SkinBorder(button, c)
 		IconTextureTrim(tex, button, false, pp.iconSize)
 		bib:SetAllPoints(button)
 		bib:SetVertexColor(c.r, c.g, c.b, c.a or 1)
+		bib:SetBlendMode("ADD")
 		bib:Show()
 		bih:Show()
 		local bdata = button.buttonData
@@ -655,25 +658,72 @@ local function UpdateBar(bb)
 	end
 end
 
--- Configure the button's bar
-local function SkinBar(button, duration, expire, barColor)
+-- Configure the button's bar and its border
+local function SkinBar(button, duration, expire, barColor, barBorderColor)
 	local bb = button.bar
+	local bbk = button.barBackdrop
+	local opt = pp.barBorder -- option for type of border
 	local remaining = (expire or 0) - GetTime()
+	local showBorder = false -- set to true when showing border
+	local delta, width = 0, 0
 
 	if pp.showBar and duration and duration > 0.1 and remaining > 0.05 then
 		bb:ClearAllPoints()
+		bbk:ClearAllPoints()
+		bbk:SetBackdrop(nil)
 		bb._duration = duration
 		bb._expire = expire
 		local pos = pp.barPosition
 		PSetPoint(bb, pos.point, button, pos.relativePoint, pos.offsetX, pos.offsetY)
 		local bw = (pp.barWidth > 0) and pp.barWidth or pp.iconSize
 		local bh = (pp.barHeight > 0) and pp.barHeight or pp.iconSize
-		PSetSize(bb, bw, bh)
+
 		bb:SetOrientation(pp.barOrientation and "HORIZONTAL" or "VERTICAL")
 		bb:SetFillStyle(pp.barDirection and "STANDARD" or "REVERSE")
-		bb:SetStatusBarTexture("Interface\\AddOns\\Bufflehead\\Media\\WhiteBar")
+
+		local tex = pp.barTexture
+		if tex == "None" then tex = nil end
+		if tex then tex = MOD.LSM:Fetch("statusbar", tex) end
+		if not tex then tex = "Interface\\AddOns\\Bufflehead\\Media\\WhiteBar" end
+		bb:SetStatusBarTexture(tex)
+
+		local drop = { -- backdrop initialization for bars, initialized to facilitate pixel borders
+			bgFile = tex, edgeFile = "Interface\\BUTTONS\\WHITE8X8.blp",
+			tile = false, edgeSize = 1, insets = { left = 0, right = 0, top = 0, bottom = 0 }
+		}
+
+		if (opt == "one") or (opt == "two") then -- skin single/double pixel border
+			if (bw > 4) and (bh > 4) then -- check minimum dimensions for border
+				if opt == "one" then delta = 2; width = 1 else delta = 4; width = 2 end
+				drop.edgeSize = PS(width)
+				showBorder = true
+			end
+		elseif (opt == "media") and (pp.barBorderMedia ~= "None") then -- use shared media border
+			width = pp.barBorderOffset or 0
+			delta = width * 2
+			if (bw > delta) and (bh > delta) then -- check minimum dimensions for this border
+				drop.edgeFile = MOD.LSM:Fetch("border", pp.barBorderMedia) or nil
+				drop.edgeSize = PS(pp.barBorderWidth or 1)
+				showBorder = true
+			end
+		end
+
+		if showBorder then
+			PSetPoint(bbk, "CENTER", bb, "CENTER") -- use backdrop to show the border
+			PSetSize(bbk, bw, bh)
+			SetInsets(drop, PS(width))
+			bbk:SetBackdrop(drop)
+			local c = barColor
+			bbk:SetBackdropColor(c.r, c.g, c.b, pp.barBackgroundOpacity or c.a)
+			c = barBorderColor -- bar backdrop color
+			bbk:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+			bbk:Show()
+		end
+
+		PSetSize(bb, bw - delta, bh - delta) -- set bar size based on border adjustments
+
 		local c = barColor
-		bb:SetStatusBarColor(c.r, c.g, c.b, c.a)
+		bb:SetStatusBarColor(c.r, c.g, c.b, pp.barForegroundOpacity or 1)
 		bb:SetMinMaxValues(0, duration)
 		UpdateBar(bb)
 		bb:Show()
@@ -684,33 +734,8 @@ local function SkinBar(button, duration, expire, barColor)
 	end
 end
 
--- Skin the bar's border
-local function SkinBarBorder(button, barColor)
-	local bbk = button.barBackdrop
-	local opt = pp.barBorder -- option for type of border
-	local bw = (pp.barWidth > 0) and pp.barWidth or pp.iconSize
-	local bh = (pp.barHeight > 0) and pp.barHeight or pp.iconSize
-
-	if (bw > 4) and (bh > 4) and ((opt == "one") or (opt == "two")) then -- skin bar with single pixel border
-		local delta, drop = 4, twoPixelBackdrop
-		if opt == "one" then delta = 2; drop = onePixelBackdrop end
-		PSetPoint(bbk, "CENTER", button.bar, "CENTER")
-		PSetSize(bbk, bw, bh)
-		PSetSize(button.bar, bw - PS(delta), bh - PS(delta))
-		bbk:SetBackdrop(drop)
-
-		local c = barColor
-		bbk:SetBackdropColor(c.r, c.g, c.b, pp.barBackgroundOpacity)
-		c = pp.barBorderColor -- bar backdrop color
-		bbk:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-		bbk:Show()
-	else -- default is to not show a bar border
-		bbk:Hide()
-	end
-end
-
 -- Show a button and skin all its enabled elements
-local function ShowButton(button, name, icon, duration, expire, count, btype, barColor, borderColor)
+local function ShowButton(button, name, icon, duration, expire, count, btype, barColor, borderColor, barBorderColor)
 	if ((duration ~= 0) and (expire ~= button._expire)) or (duration ~= button._duration) or (icon ~= button._icon) or
 		(count ~= button._count) or (name ~=button._name) or (btype ~= button._btype) or MOD.uiOpen then
 
@@ -728,10 +753,9 @@ local function ShowButton(button, name, icon, duration, expire, count, btype, ba
 		SkinBorder(button, borderColor)
 		SkinClock(button, duration, expire) -- after highlight!
 		SkinTime(button, duration, expire)
-		SkinBar(button, duration, expire, barColor)
 		SkinCount(button, count)
 		SkinLabel(button, name)
-		SkinBarBorder(button, barColor)
+		SkinBar(button, duration, expire, barColor, barBorderColor)
 	end
 end
 
@@ -758,6 +782,7 @@ function MOD:Button_OnAttributeChanged(k, v)
 	local enchant, remaining, id, offEnchant, offRemaining, offCount, offId
 	local barColor = pp.barBuffColor
 	local borderColor = pp.iconBuffColor
+	local barBorderColor = pp.barBorderBuffColor
 
 	if k == "index" then -- update a buff or debuff
 		name, icon, count, btype, duration, expire = UnitAura(unit, v, filter)
@@ -766,6 +791,7 @@ function MOD:Button_OnAttributeChanged(k, v)
 			if filter == FILTER_DEBUFFS then
 				barColor = pp.barDebuffColor
 				borderColor = pp.iconDebuffColor
+				barBorderColor = pp.barBorderDebuffColor
 				if pp.debuffColoring then
 					btype = btype or "none"
 					local c = _G.DebuffTypeColor[btype]
@@ -793,7 +819,7 @@ function MOD:Button_OnAttributeChanged(k, v)
 	end
 
 	if show then -- show the button after skinning all its elements
-		ShowButton(button, name, icon, duration, expire, count, btype, barColor, borderColor)
+		ShowButton(button, name, icon, duration, expire, count, btype, barColor, borderColor, barBorderColor)
 	elseif hide then -- hide the button and all its elements
 		HideButton(button)
 	end
@@ -1010,10 +1036,16 @@ local function UpdatePreviews()
 					local expire = button._expire or (GetTime() + duration)
 					local name = "#" .. i
 					local icon = PRESET_BUFF_ICON
-					local icolor = pp.iconBuffColor
-					local bcolor = pp.barBuffColor
-					if filter == FILTER_DEBUFFS then icon = PRESET_DEBUFF_ICON; icolor = pp.iconDebuffColor; bcolor = pp.barDebuffColor end
-					ShowButton(button, name, GetFileIDFromPath(icon), duration, expire, i, "preview", bcolor, icolor)
+					local iconColor = pp.iconBuffColor
+					local barColor = pp.barBuffColor
+					local barBorderColor = pp.barBorderBuffColor
+					if filter == FILTER_DEBUFFS then
+						icon = PRESET_DEBUFF_ICON
+						iconColor = pp.iconDebuffColor
+						barColor = pp.barDebuffColor
+						barBorderColor = pp.barBorderDebuffColor
+					end
+					ShowButton(button, name, GetFileIDFromPath(icon), duration, expire, i, "preview", barColor, iconColor, barBorderColor)
 					button:Show()
 					hide = false
 				end

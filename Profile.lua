@@ -74,15 +74,21 @@ MOD.DefaultProfile = {
 		clockColor = { r = 0, g = 0, b = 0, a = 0.75 },
 		showBar = false,
 		barPosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = 0 },
-		barBuffColor = { r = 0, g = 0.75, b = 0, a = 1 },
-		barDebuffColor = { r = 0.75, g = 0, b = 0, a = 1 },
-		barBackgroundOpacity = 0.25,
 		barWidth = 0, --  0 = same as icon width
 		barHeight = 10, --  0 = same as icon height
 		barOrientation = true, -- true = "HORIZONTAL", false = "VERTICAL"
 		barDirection = true, -- true = "STANDARD", false = "REVERSE"
-		barBorder = "one", -- "none", "one", "two"
-		barBorderColor = { r = 0.5, g = 0.5, b = 0.5, a = 1 },
+    barTexture = "None", -- shared media statusbar name
+    barForegroundOpacity = 1,
+    barBackgroundOpacity = 0.45,
+    barBuffColor = { r = 0, g = 0.75, b = 0, a = 1 },
+		barDebuffColor = { r = 0.75, g = 0, b = 0, a = 1 },
+		barBorder = "one", -- "none", "one", "two", "media"
+		barBorderBuffColor = { r = 0.5, g = 0.8, b = 0.5, a = 1 },
+    barBorderDebuffColor = { r = 0.8, g = 0.5, b = 0.5, a = 1 },
+    barBorderMedia = "None", -- shared media border name
+    barBorderWidth = 1, -- depends on selected media file
+    barBorderOffset = 0, -- depends on selected media file
 		groups = {
 			[HEADER_PLAYER_BUFFS] = {
 				enabled = true,
