@@ -1126,13 +1126,22 @@ function MOD.FormatTime(t, timeFormat, timeSpaces, timeCase)
 	return f
 end
 
--- Helper functions for positioning anchors in the options panel
-function MOD.GetBuffsPercentX() return 20 end
-function MOD.SetBuffsPercentX(value) end
-function MOD.GetBuffsPercentY() return 10 end
-function MOD.SetBuffsPercentY(value) end
+-- Helper function for copying table with up to one level of nested table
+local function CopyTable(src, dst)
+	for k, v in pairs(src) do
+		if type(v) == "table" then
+			local t = dst[k]
+			if not t or (type(t) ~= "table") then t = {} end
+			for ks, vs in pairs(v) do t[ks] = vs end -- tables can only contain scalar values
+			dst[k] = t
+		else
+			dst[k] = v
+		end
+	end
+end
 
--- Apply the selected preset to the settings, overwriting current settings
+-- Apply the selected preset to the profile, overwriting current settings
 function MOD.ApplyPreset(preset)
-	return
+	CopyTable(MOD.Presets[preset], pp)
+	MOD.UpdateAll()
 end

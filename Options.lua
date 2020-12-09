@@ -208,7 +208,7 @@ MOD.OptionsTable = {
 							type = "execute", order = 100, name = "Apply Preset",
 							desc = "Apply the selected preset.",
 							confirm = ConfirmPreset,
-							func = function(info) MOD.ApplyPreset() end,
+							func = function(info) MOD.ApplyPreset(selectPreset) end,
 						},
 						PreviewToggle = {
 							type = "execute", order = 110, name = "Toggle Previews",

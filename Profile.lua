@@ -242,8 +242,8 @@ MOD.Presets = {
 		clockColor = { r = 0, g = 0, b = 0, a = 0.75 },
     showBar = true,
     barPosition = { point = "LEFT", relativePoint = "RIGHT", anchor = "icon", offsetX = 4, offsetY = 0 },
-		barWidth = 128, --  0 = same as icon width
-		barHeight = 20, --  0 = same as icon height
+		barWidth = 192, --  0 = same as icon width
+		barHeight = 24, --  0 = same as icon height
 		barOrientation = true, -- true = "HORIZONTAL", false = "VERTICAL"
 		barDirection = true, -- true = "STANDARD", false = "REVERSE"
 		groups = {
@@ -253,15 +253,15 @@ MOD.Presets = {
 				filter = FILTER_BUFFS,
 				caption = PLAYER_BUFFS,
 				anchorX = 0.8, -- fraction of screen from left edge, puts it near the mini-map
-				anchorY = 0.84, -- fraction of the screen from bottom edge
+				anchorY = 0.9, -- fraction of the screen from bottom edge
 			},
 			[HEADER_PLAYER_DEBUFFS] = {
 				enabled = true,
 				unit = "player",
 				filter = FILTER_DEBUFFS,
 				caption = PLAYER_DEBUFFS,
-				anchorX = 0.65,
-				anchorY = 0.84, -- default places it left of the buffs group
+				anchorX = 0.5,
+				anchorY = 0.9, -- default places it in near center and top of display, growing down
 			},
 		},
   },
