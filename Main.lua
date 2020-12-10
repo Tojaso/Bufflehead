@@ -53,6 +53,8 @@ local justifyH = { BOTTOM = "CENTER", BOTTOMLEFT = "LEFT", BOTTOMRIGHT = "RIGHT"
 local justifyV = { BOTTOM = "BOTTOM", BOTTOMLEFT = "BOTTOM", BOTTOMRIGHT = "BOTTOM", CENTER = "MIDDLE", LEFT = "MIDDLE",
 	RIGHT = "MIDDLE", TOP = "TOP", TOPLEFT = "TOP", TOPRIGHT = "TOP" }
 
+local debuffTypes = { "none", "Disease", "Poison", "Curse", "Magic" }
+
 local addonInitialized = false -- set when the addon is initialized
 local addonEnabled = false -- set when the addon is enabled
 local blizzHidden = false -- set when blizzard buffs and debuffs are hidden
@@ -1049,7 +1051,9 @@ local function UpdatePreviews()
 					local expire = button._expire or button.bar._expire or (GetTime() + duration)
 					local name = "#" .. i
 					local icon = PRESET_BUFF_ICON
-					local iconColor = pp.iconBuffColor
+					local btype = "none"
+					local count = (i % 5) + 1
+					local borderColor = pp.iconBuffColor
 					local barColor = pp.barBuffColor
 					local barBorderColor = pp.barBorderBuffColor
 					if filter == FILTER_DEBUFFS then
@@ -1057,8 +1061,17 @@ local function UpdatePreviews()
 						iconColor = pp.iconDebuffColor
 						barColor = pp.barDebuffColor
 						barBorderColor = pp.barBorderDebuffColor
+						local btype = debuffTypes[count]
+						if btype ~= "none" then
+							local c = _G.DebuffTypeColor[btype]
+							if c then
+								if pp.debuffColoring then borderColor = c end
+								if pp.barDebuffColoring then barColor = c end
+								if pp.barBorderDebuffColoring then barBorderColor = c end
+							end
+						end
 					end
-					ShowButton(button, name, GetFileIDFromPath(icon), duration, expire, i, "preview", barColor, iconColor, barBorderColor)
+					ShowButton(button, name, GetFileIDFromPath(icon), duration, expire, count, btype, barColor, borderColor, barBorderColor)
 					button:Show()
 					hide = false
 				end
