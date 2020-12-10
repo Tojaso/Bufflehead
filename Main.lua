@@ -638,6 +638,7 @@ local function StopBar(bb)
 		bb:SetScript("OnUpdate", nil) -- stop updating the time text
 		bb._duration = nil
 		bb._expire = nil
+		bb._limited = nil
 		bb:Hide()
 	end
 end
@@ -645,15 +646,23 @@ end
 -- Update the amount of fill for a button's bar, triggered OnUpdate so keep it quick
 local function UpdateBar(bb)
 	if bb and bb._duration and bb._expire then -- make sure valid call
-		local now = GetTime()
 		local duration = bb._duration
-		local remaining = bb._expire - now
+		local remaining = bb._expire - GetTime()
+		local stopping = false
 
-		if duration and (remaining > 0) then
+		if duration then
 			if remaining > duration then remaining = duration end -- range check
+			if duration > 0.1 then -- real timer bar
+			 	if remaining < 0.05 then stopping = true end
+			else -- unlimited bar, check if "full" or "empty"
+				if bb._limited == "empty" then remaining = 0 else remaining = 100 end
+			end
+		end
+
+		if not stopping then
 			bb:SetValue(remaining)
 		else
-			StopBar(button)
+			StopBar(bb)
 		end
 	end
 end
@@ -667,12 +676,13 @@ local function SkinBar(button, duration, expire, barColor, barBorderColor)
 	local showBorder = false -- set to true when showing border
 	local delta, width = 0, 0
 
-	if pp.showBar and duration and duration > 0.1 and remaining > 0.05 then
+	if pp.showBar and ((pp.barUnlimited ~= "none") or (duration and (duration > 0.1) and (remaining > 0.05))) then
 		bb:ClearAllPoints()
 		bbk:ClearAllPoints()
 		bbk:SetBackdrop(nil)
-		bb._duration = duration
-		bb._expire = expire
+		bb._duration = duration or 0
+		bb._expire = expire or 0
+		bb._limited = pp.barUnlimited
 		local pos = pp.barPosition
 		PSetPoint(bb, pos.point, button, pos.relativePoint, pos.offsetX, pos.offsetY)
 		local bw = (pp.barWidth > 0) and pp.barWidth or pp.iconSize
@@ -724,6 +734,7 @@ local function SkinBar(button, duration, expire, barColor, barBorderColor)
 
 		local c = barColor
 		bb:SetStatusBarColor(c.r, c.g, c.b, pp.barForegroundOpacity or 1)
+		if (pp.barUnlimited ~= "none") and (duration == 0) then duration = 100 end -- ensure shows unlimited bars
 		bb:SetMinMaxValues(0, duration)
 		UpdateBar(bb)
 		bb:Show()
@@ -792,10 +803,12 @@ function MOD:Button_OnAttributeChanged(k, v)
 				barColor = pp.barDebuffColor
 				borderColor = pp.iconDebuffColor
 				barBorderColor = pp.barBorderDebuffColor
-				if pp.debuffColoring then
-					btype = btype or "none"
-					local c = _G.DebuffTypeColor[btype]
-					if c then borderColor = c end
+				btype = btype or "none"
+				local c = _G.DebuffTypeColor[btype]
+				if c then
+					if pp.debuffColoring then borderColor = c end
+					if pp.barDebuffColoring then barColor = c end
+					if pp.barBorderDebuffColoring then barBorderColor = c end
 				end
 			end
 		else
@@ -1032,8 +1045,8 @@ local function UpdatePreviews()
 					-- if IsAltKeyDown() then MOD.Debug("Preview: x/y", math.floor((dx * column) + (wx * row)), math.floor((dy * column) + (wy * row)), i, column, row,
 					--	math.floor(dx), math.floor(dy), math.floor(wx), math.floor(wy)) end
 
-					local duration = i * 10
-					local expire = button._expire or (GetTime() + duration)
+					local duration = i * 5
+					local expire = button._expire or button.bar._expire or (GetTime() + duration)
 					local name = "#" .. i
 					local icon = PRESET_BUFF_ICON
 					local iconColor = pp.iconBuffColor
@@ -1126,13 +1139,13 @@ function MOD.FormatTime(t, timeFormat, timeSpaces, timeCase)
 	return f
 end
 
--- Helper function for copying table with up to one level of nested table
+-- Helper function for copying table, potentially with multiple levels of embedded tables
 local function CopyTable(src, dst)
 	for k, v in pairs(src) do
 		if type(v) == "table" then
 			local t = dst[k]
 			if not t or (type(t) ~= "table") then t = {} end
-			for ks, vs in pairs(v) do t[ks] = vs end -- tables can only contain scalar values
+			CopyTable(v, t)
 			dst[k] = t
 		else
 			dst[k] = v

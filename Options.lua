@@ -1011,6 +1011,12 @@ MOD.OptionsTable = {
 										UpdateAll()
 									end,
 								},
+								DebuffTypeColor = {
+									type = "toggle", order = 130, name = "Debuff Type Override",
+									desc = "Use debuff type colors for bars when appropriate.",
+									get = function(info) return pp.barDebuffColoring end,
+									set = function(info, value) pp.barDebuffColoring = value; UpdateAll() end,
+								},
 							},
 						},
 						BordersGroup = {
@@ -1090,6 +1096,35 @@ MOD.OptionsTable = {
 										t.r = r; t.g = g; t.b = b; t.a = a
 										UpdateAll()
 									end,
+								},
+								DebuffTypeColor = {
+									type = "toggle", order = 230, name = "Debuff Type Override",
+									desc = "Use debuff type colors for bar borders when appropriate.",
+									get = function(info) return pp.barDebuffColoring end,
+									set = function(info, value) pp.barDebuffColoring = value; UpdateAll() end,
+								},
+							},
+						},
+						UnlimitedGroup = {
+							type = "group", order = 30, name = "Unlimited Duration", inline = true,
+							args = {
+								NoUnlimited = {
+									type = "toggle", order = 10, name = "No Bar",
+									desc = "Do not display a bar when duration is unlimited.",
+									get = function(info) return pp.barUnlimited == "none" end,
+									set = function(info, value) pp.barUnlimited = "none"; UpdateAll() end,
+								},
+								EmptyUnlimited = {
+									type = "toggle", order = 20, name = "Empty Bar",
+									desc = "Display an empty bar when duration is unlimited.",
+									get = function(info) return pp.barUnlimited == "empty" end,
+									set = function(info, value) pp.barUnlimited = "empty"; UpdateAll() end,
+								},
+								FullUnlimited = {
+									type = "toggle", order = 30, name = "Full Bar",
+									desc = "Display a full bar when duration is unlimited.",
+									get = function(info) return pp.barUnlimited == "full" end,
+									set = function(info, value) pp.barUnlimited = "full"; UpdateAll() end,
 								},
 							},
 						},
