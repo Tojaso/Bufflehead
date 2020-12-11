@@ -23,6 +23,7 @@ MOD.LibLDB = nil -- LibDataBroker support
 MOD.ldb = nil -- set to addon's data broker object
 MOD.ldbi = nil -- set for addon's minimap icon
 MOD.uiOpen = false -- true when options panel is open
+MOD.showAnchors = false -- toggle to show anchors
 
 local FILTER_BUFFS = "HELPFUL"
 local FILTER_DEBUFFS = "HARMFUL"
@@ -351,7 +352,7 @@ end
 
 -- Toggle visibility of the anchors
 function MOD.ToggleAnchors()
-	pp.showAnchors = not pp.showAnchors
+	MOD.showAnchors = not MOD.showAnchors
 	MOD.UpdateAll()
 end
 
@@ -996,7 +997,7 @@ function MOD.UpdateHeader(header)
 				backdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
 				backdrop:SetBackdropBorderColor(red, green, 0, 0.5) -- buffs have green border and debuffs have red border
 
-				if pp.showAnchors then
+				if MOD.showAnchors then
 					backdrop:SetScript("OnMouseDown", Backdrop_OnMouseDown)
 					backdrop:SetScript("OnMouseUp", Backdrop_OnMouseUp)
 					backdrop.headerName = name
