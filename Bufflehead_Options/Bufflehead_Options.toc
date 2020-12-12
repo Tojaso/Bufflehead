@@ -1,5 +1,5 @@
 ## Interface: 90002
-## Title: Bufflehead_Options
+## Title: Bufflehead Options
 ## Notes: Load-on-demand options for Bufflehead
 ## Author: Tojaso/Tomber
 ## Version: 9.0.2
