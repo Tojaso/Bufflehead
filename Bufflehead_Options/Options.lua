@@ -60,7 +60,7 @@ local function InitializeOptions()
 end
 
 -- Toggle display of the options panel
-function MOD.OptionsPanel()
+function MOD.ToggleOptions()
 	if not initialized then InitializeOptions() end
 	if acedia.OpenFrames["Bufflehead"] then
 		acedia:Close("Bufflehead")
@@ -144,7 +144,7 @@ MOD.OptionsTable = {
 							set = function(info, value) pp.groups[HEADER_PLAYER_BUFFS].enabled = value; ReloadUI() end,
 						},
 						EnableWeaponEnchants = {
-							type = "toggle", order = 120, name = "Include Weapon Enchants",
+							type = "toggle", order = 120, name = "Weapon Enchants",
 							desc = "If checked, include weapon enchants in player buffs.",
 							confirm = ConfirmChange,
 							get = function(info) return pp.weaponEnchants end,

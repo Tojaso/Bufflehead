@@ -1,0 +1,10 @@
+## Interface: 90002
+## Title: Bufflehead_Options
+## Notes: Load-on-demand options for Bufflehead
+## Author: Tojaso/Tomber
+## Version: 9.0.2
+## Dependencies: Bufflehead
+## LoadOnDemand: 1
+
+embeds.xml
+Options.lua

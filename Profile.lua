@@ -22,7 +22,7 @@ MOD.DefaultProfile = {
 	profile = { -- settings specific to a profile
 		iconSize = 40,
 		iconBorder = "raven", -- "default", "none", "one", "two", "raven", "masque"
-		iconBuffColor = { r = 0.3, g = 0.6, b = 0.3, a = 1 },
+		iconBuffColor = { r = 1, g = 1, b = 1, a = 1 },
     iconDebuffColor = { r = 0.6, g = 0.3, b = 0.3, a = 1 },
 		debuffColoring = true, -- use debuff color for border if applicable
 		growDirection = 1, -- horizontal = 1, otherwise vertical
@@ -69,8 +69,8 @@ MOD.DefaultProfile = {
 		labelColor = { r = 1, g = 1, b = 1, a = 1 },
 		showClock = false, -- show clock overlay to indicate remaining time
 		clockEdge = true,
-		clockReverse = false,
-		clockColor = { r = 0, g = 0, b = 0, a = 0.75 },
+		clockReverse = true,
+		clockColor = { r = 0, g = 0, b = 0, a = 0.6 },
 		showBar = false,
 		barPosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = 0 },
 		barWidth = 0, --  0 = same as icon width
@@ -112,9 +112,9 @@ MOD.DefaultProfile = {
 
 MOD.Presets = {
   [1] = { -- horizontal icons with time, basically same as starting profile except don't reset appearance settings
-    iconSize = 40,
+    iconSize = 44,
     iconBorder = "raven", -- "default", "none", "one", "two", "raven", "masque"
-    iconBuffColor = { r = 0.3, g = 0.6, b = 0.3, a = 1 },
+    iconBuffColor = { r = 1, g = 1, b = 1, a = 1 },
     iconDebuffColor = { r = 0.6, g = 0.3, b = 0.3, a = 1 },
     debuffColoring = true, -- use debuff color for border if applicable
 		growDirection = 1, -- horizontal = 1, otherwise vertical
@@ -191,8 +191,8 @@ MOD.Presets = {
 		showLabel = false,
 		showClock = true, -- show clock overlay to indicate remaining time
     clockEdge = true,
-		clockReverse = false,
-		clockColor = { r = 0, g = 0, b = 0, a = 0.75 },
+		clockReverse = true,
+		clockColor = { r = 0, g = 0, b = 0, a = 0.6 },
 		showBar = false,
 		groups = {
 			[HEADER_PLAYER_BUFFS] = {

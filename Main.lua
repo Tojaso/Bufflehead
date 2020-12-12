@@ -12,6 +12,7 @@
 
 Bufflehead = LibStub("AceAddon-3.0"):NewAddon("Bufflehead", "AceConsole-3.0", "AceEvent-3.0")
 local MOD = Bufflehead
+local MOD_Options = "Bufflehead_Options"
 local _
 
 MOD.isClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
@@ -109,6 +110,19 @@ function MOD.Debug(a, ...)
 		for i = 1, #parm do s = s .. " " .. tostring(parm[i]) end -- append remaining arguments converted to strings
 		print(s)
 	end
+end
+
+-- Check if the options panel is loaded, if not then get it loaded and ask it to toggle open/close status
+function MOD.OptionsPanel()
+  if not optionsLoaded and not optionsFailed then
+    optionsLoaded = true
+    local loaded, reason = LoadAddOn(MOD_Options) -- try to load the options panel on demand
+    if not loaded then
+        print("Bufflehead: failed to load " .. tostring(MOD_Options) .. ": " .. tostring(reason))
+				optionsFailed = true
+    end
+	end
+	if not optionsFailed then MOD:ToggleOptions() end
 end
 
 -- Initialize tooltip to be used for determining weapon buffs
@@ -296,28 +310,18 @@ function MOD.InitializeLDB()
 		text = "Bufflehead",
 		icon = BUFFLE_ICON,
 		OnClick = function(_, msg)
-			if msg == "RightButton" then
-				if IsShiftKeyDown() then
-					pg.hideBlizz = not pg.hideBlizz
-					MOD.CheckBlizzFrames()
-				else
-					MOD.ToggleAnchors()
-				end
-			elseif msg == "LeftButton" then
-				if IsShiftKeyDown() then
-					pg.enabled = not pg.enabled
-				else
-					MOD.OptionsPanel()
-				end
+			if IsShiftKeyDown() or IsAltKeyDown() then return end
+			if msg == "LeftButton" then
+				MOD.OptionsPanel()
+			elseif msg == "RightButton" then
+				MOD.TogglePreviews()
 			end
 		end,
 		OnTooltipShow = function(tooltip)
 			if not tooltip or not tooltip.AddLine then return end
 			tooltip:AddLine("Bufflehead")
 			tooltip:AddLine("|cffffff00Left-click|r to open/close options menu")
-			tooltip:AddLine("|cffffff00Right-click|r to toggle showing anchors")
-			tooltip:AddLine("|cffffff00Shift-left-click|r to enable/disable this addon")
-			tooltip:AddLine("|cffffff00Shift-right-click|r to toggle Blizzard buffs and debuffs")
+			tooltip:AddLine("|cffffff00Right-click|r to toggle showing previews")
 		end,
 	})
 
@@ -379,10 +383,14 @@ function MOD:Button_OnLoad(button)
 	button.iconHighlight = button:CreateTexture(nil, "HIGHLIGHT")
 	button.iconHighlight:SetColorTexture(1, 1, 1, 0.5)
 	button.clock = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
-	button.clock.noCooldownCount = pg.hideOmniCC -- enable or disable OmniCC text
-	button.clock:SetHideCountdownNumbers(true)
-	button.clock:SetFrameLevel(level + 2) -- in front of icon but behind bar
-	button.clock:SetDrawBling(false)
+	local bc = button.clock
+	bc.noCooldownCount = pg.hideOmniCC -- enable or disable OmniCC text
+	bc:SetHideCountdownNumbers(true)
+	bc:SetFrameLevel(level + 2) -- in front of icon but behind bar
+	bc:SetSwipeTexture(0)
+	bc:SetDrawBling(false)
+	bc:ClearAllPoints()
+	bc:SetPoint("CENTER", button, "CENTER") -- always centered on the button
 	button.texts = CreateFrame("Frame", nil, button) -- all texts are in this frame
 	button.texts:SetFrameLevel(level + 6) -- texts are on top of everything else
 	button.timeText = button.texts:CreateFontString(nil, "OVERLAY")
@@ -479,15 +487,15 @@ local function SkinClock(button, duration, expire)
 	local bc = button.clock
 
 	if pp.showClock and duration and duration > 0 and expire and expire > 0 then
-		bc:ClearAllPoints()
+		-- bc:ClearAllPoints()
 		local w, h = button.iconTexture:GetSize()
 		bc:SetDrawEdge(pp.clockEdge)
 		bc:SetReverse(pp.clockReverse)
 		local c = pp.clockColor
-		bc:SetSwipeTexture(0)
+		-- bc:SetSwipeTexture(0)
 		bc:SetSwipeColor(c.r, c.g, c.b, c.a or 1)
 		bc:SetSize(w, h) -- icon texture was already sized and scaled
-		bc:SetPoint("CENTER", button, "CENTER")
+		-- bc:SetPoint("CENTER", button, "CENTER")
 		bc:SetCooldown(expire - duration, duration)
 		bc:Show()
 	else

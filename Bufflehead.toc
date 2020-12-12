@@ -11,4 +11,3 @@ embeds.xml
 Templates.xml
 Main.lua
 Profile.lua
-Options.lua

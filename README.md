@@ -1,4 +1,3 @@
 # Bufflehead
-Bufflehead is an addon for World of Warcraft for replacing the default display of player buffs and debuffs.
-By default, it provides an improved appearance with no user setup. It does include a variety of options
-that can be used for to further customize layouts and looks.
+Bufflehead provides improved player buffs and debuffs. Bufflehead supports right-click cancel and is compatible with Masque and OmniCC.
+Bufflehead includes customization features that allow you to configure both icon-oriented and bar-oriented layouts and appearance.
