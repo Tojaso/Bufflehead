@@ -8,3 +8,4 @@
 
 embeds.xml
 Options.lua
+Templates.lua

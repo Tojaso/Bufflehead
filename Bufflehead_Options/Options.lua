@@ -4,7 +4,7 @@ local MOD = Bufflehead
 local _
 local initialized = false -- set when options are first accessed
 local pg, pp -- global and character-specific profiles
-local selectPreset = 1
+local selectTemplate = 1
 
 local HEADER_NAME = "BuffleheadSecureHeader"
 local PLAYER_BUFFS = "PlayerBuffs"
@@ -23,6 +23,20 @@ local anchorPoints = { BOTTOM = "BOTTOM", BOTTOMLEFT = "BOTTOMLEFT", BOTTOMRIGHT
 local sortMethods = { INDEX = "Sort by index", NAME = "Sort by name", TIME = "Sort by time left" }
 local sortDirections = { ["+"] = "Ascending", ["-"] = "Descending" }
 local separateOwnOptions = { [0] = "Don't separate", [1] = "Sort before others", [-1] = "Sort after others"}
+
+-- Helper function for copying table, potentially with multiple levels of embedded tables
+local function CopyTable(src, dst)
+	for k, v in pairs(src) do
+		if type(v) == "table" then
+			local t = dst[k]
+			if not t or (type(t) ~= "table") then t = {} end
+			CopyTable(v, t)
+			dst[k] = t
+		else
+			dst[k] = v
+		end
+	end
+end
 
 -- Shortcut function to update all settings
 local function UpdateAll() MOD.UpdateAll() end
@@ -87,8 +101,11 @@ end
 -- Some changes require reload of the UI, ask for confirmation before making the change
 local function ConfirmChange() return "Changing this setting requires that you reload your user interface. Continue?" end
 
--- Applying a preset will overwrite most current settings so ask for confirmation
-local function ConfirmPreset() return "Applying a preset will overwrite current settings. Continue?" end
+-- Applying a template will overwrite most current settings so ask for confirmation
+local function ConfirmTemplate() return "Using a template will overwrite current settings. Continue?" end
+
+-- Apply the selected preset to the profile, overwriting current settings
+function MOD.UseTemplate(template) CopyTable(MOD.Templates[template], pp); UpdateAll() end
 
 -- Reload the UI
 local function ReloadUI() C_UI.Reload() end
@@ -159,19 +176,19 @@ MOD.OptionsTable = {
 						},
 					},
 				},
-				PresetsGroup = {
-					type = "group", order = 20, name = "Presets", inline = true,
+				TemplatesGroup = {
+					type = "group", order = 20, name = "Templates", inline = true,
 					args = {
 						Description = {
-							type = "description", order = 1, name = "These presets demonstrate several ways Bufflehead can be configured " ..
-							"(use Toggle Previews to check them out). " ..
-							"Presets also provide a convenient starting point for new users. " ..
-							"Please note that presets overwrite all settings so be sure to use profiles to save/restore when necessary."
+							type = "description", order = 1, name = "These templates demonstrate several ways Bufflehead can be configured " ..
+							"(use Toggle Templates to check them out). " ..
+							"Templates also provide a convenient starting point for new users. " ..
+							"Please note that templates overwrite all settings so be sure to use profiles to save/restore when necessary."
 						},
 						IconTextGroup = {
 							type = "toggle", order = 10, name = "Icons + Time",
-							get = function(info) return selectPreset == 1 end,
-							set = function(info, value) selectPreset = 1 end,
+							get = function(info) return selectTemplate == 1 end,
+							set = function(info, value) selectTemplate = 1 end,
 						},
 						Spacer1 = { type = "description", order = 11, width = "double",
 							name = function() return "Icons laid out horizontally with time below each icon (default)." end,
@@ -179,8 +196,8 @@ MOD.OptionsTable = {
 						Spacer1A = { type = "description", name = "", order = 12 },
 						IconClockGroup = {
 							type = "toggle", order = 20, name = "Icons + Clock",
-							get = function(info) return selectPreset == 2 end,
-							set = function(info, value) selectPreset = 2 end,
+							get = function(info) return selectTemplate == 2 end,
+							set = function(info, value) selectTemplate = 2 end,
 						},
 						Spacer2 = { type = "description", order = 21, width = "double",
 							name = function() return "Icons with clock overlays laid out vertically." end,
@@ -188,8 +205,8 @@ MOD.OptionsTable = {
 						Spacer2A = { type = "description", name = "", order = 22 },
 						IconMiniBarGroup = {
 							type = "toggle", order = 30, name = "Icons + Mini-Bars",
-							get = function(info) return selectPreset == 3 end,
-							set = function(info, value) selectPreset = 3 end,
+							get = function(info) return selectTemplate == 3 end,
+							set = function(info, value) selectTemplate = 3 end,
 						},
 						Spacer3 = { type = "description", order = 31, width = "double",
 							name = function() return "Icons laid out horizontally with a timer mini-bar below each icon." end,
@@ -197,8 +214,8 @@ MOD.OptionsTable = {
 						Spacer3A = { type = "description", name = "", order = 32 },
 						HorizontalBarGroup = {
 							type = "toggle", order = 40, name = "Horizontal Bars",
-							get = function(info) return selectPreset == 4 end,
-							set = function(info, value) selectPreset = 4 end,
+							get = function(info) return selectTemplate == 4 end,
+							set = function(info, value) selectTemplate = 4 end,
 						},
 						Spacer4 = { type = "description", order = 41, width = "double",
 							name = function() return "Full-size horizontal timer bars with labels." end,
@@ -206,18 +223,18 @@ MOD.OptionsTable = {
 						Spacer4A = { type = "description", name = "", order = 42 },
 						VerticalBarGroup = {
 							type = "toggle", order = 50, name = "Vertical Bars",
-							get = function(info) return selectPreset == 5 end,
-							set = function(info, value) selectPreset = 5 end,
+							get = function(info) return selectTemplate == 5 end,
+							set = function(info, value) selectTemplate = 5 end,
 						},
 						Spacer5 = { type = "description", order = 51, width = "double",
 							name = function() return "Full-size vertical timer bars." end,
 						},
 						Spacer5A = { type = "description", name = "", order = 52 },
-						ApplyPreset = {
-							type = "execute", order = 100, name = "Apply Preset",
-							desc = "Apply the selected preset.",
-							confirm = ConfirmPreset,
-							func = function(info) MOD.ApplyPreset(selectPreset) end,
+						UseTemplate = {
+							type = "execute", order = 100, name = "Use Template",
+							desc = "Use the selected template.",
+							confirm = ConfirmTemplate,
+							func = function(info) MOD.UseTemplate(selectTemplate) end,
 						},
 						PreviewToggle = {
 							type = "execute", order = 110, name = "Toggle Previews",
@@ -229,9 +246,10 @@ MOD.OptionsTable = {
 				PositionGroup = {
 					type = "group", order = 30, name = "Positions", inline = true,
 					args = {
-						ShowAnchors = {
-							type = "toggle", order = 10, name = "Show Anchors",
-							desc = "If enabled, movable anchors are shown around player buffs and debuffs, otherwise positions are locked.",
+						ShowBoundingBoxes = {
+							type = "toggle", order = 10, name = "Show Bounding Boxes",
+							desc = "If enabled, bounding boxes are shown around player buffs and debuffs. " ..
+							"Buff and debuff positions can be moved using click-and-drag in the associated bounding box.",
 							get = function(info) return MOD.showAnchors end,
 							set = function(info, value) MOD.showAnchors = value; UpdateAll() end,
 						},

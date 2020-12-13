@@ -1160,23 +1160,3 @@ function MOD.FormatTime(t, timeFormat, timeSpaces, timeCase)
 	if timeCase then f = string.upper(f) end
 	return f
 end
-
--- Helper function for copying table, potentially with multiple levels of embedded tables
-local function CopyTable(src, dst)
-	for k, v in pairs(src) do
-		if type(v) == "table" then
-			local t = dst[k]
-			if not t or (type(t) ~= "table") then t = {} end
-			CopyTable(v, t)
-			dst[k] = t
-		else
-			dst[k] = v
-		end
-	end
-end
-
--- Apply the selected preset to the profile, overwriting current settings
-function MOD.ApplyPreset(preset)
-	CopyTable(MOD.Presets[preset], pp)
-	MOD.UpdateAll()
-end
