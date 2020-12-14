@@ -11,6 +11,25 @@ local PLAYER_DEBUFFS = "Player Debuffs"
 local HEADER_PLAYER_BUFFS = HEADER_NAME .. "PlayerBuffs"
 local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. "PlayerDebuffs"
 
+MOD.SupportedTemplates = { -- table of templates to be used in options to select appropriate bar or icon template
+  [1] = { name = "Icons in rows, time left shown in text below icon", icons = true },
+  [2] = { name = "Icons in rows, time left shown with clock overlay on icon", icons = true },
+  [3] = { name = "Icons in rows, time left shown as right-to-left mini-bars below icon", icons = true },
+  [4] = { name = "Icons in rows, time left shown with left-to-right mini-bars below icon", icons = true },
+  [5] = { name = "Icons in columns, time left shown in text below icon", icons = true },
+  [6] = { name = "Icons in columns, time left shown with clock overlay on icon", icons = true },
+  [7] = { name = "Icons in columns, time left shown as right-to-left mini-bars below icon", icons = true },
+  [8] = { name = "Icons in columns, time left shown as left-to-right mini-bars below icon", icons = true },
+	[9] = { name = "Right-to-left bars, label left, icon left", bars = true },
+  [10] = { name = "Right-to-left bars, label right, icon left", bars = true },
+  [11] = { name = "Right-to-left bars, label left, icon right", bars = true },
+  [12] = { name = "Right-to-left bars, label right, icon right", bars = true },
+	[13] = { name = "Left-to-right bars, label left, icon left", bars = true },
+	[14] = { name = "Left-to-right bars, label right, icon left", bars = true },
+	[15] = { name = "Left-to-right bars, label left, icon right", bars = true },
+	[16] = { name = "Left-to-right bars, label right, icon right", bars = true },
+}
+
 MOD.Templates = {
   [1] = { -- horizontal icons with time, basically same as starting profile except don't reset appearance settings
     iconSize = 44,

@@ -4,7 +4,8 @@ local MOD = Bufflehead
 local _
 local initialized = false -- set when options are first accessed
 local pg, pp -- global and character-specific profiles
-local selectTemplate = 1
+local templateType = "icons"
+local selectedTemplate = 0
 
 local HEADER_NAME = "BuffleheadSecureHeader"
 local PLAYER_BUFFS = "PlayerBuffs"
@@ -14,6 +15,12 @@ local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. PLAYER_DEBUFFS
 
 local acereg = LibStub("AceConfigRegistry-3.0")
 local acedia = LibStub("AceConfigDialog-3.0")
+
+local iconTemplates = {
+}
+
+local barTemplates = {
+}
 
 local weaponBuffs = { ["Mainhand Weapon"] = true, ["Offhand Weapon"] = true }
 
@@ -180,64 +187,41 @@ MOD.OptionsTable = {
 					type = "group", order = 20, name = "Templates", inline = true,
 					args = {
 						Description = {
-							type = "description", order = 1, name = "These templates demonstrate several ways Bufflehead can be configured " ..
-							"(use Toggle Templates to check them out). " ..
-							"Templates also provide a convenient starting point for new users. " ..
-							"Please note that templates overwrite all settings so be sure to use profiles to save/restore when necessary."
+							type = "description", order = 1, name = "These templates provide a starting point for new users and " ..
+							"also demonstrate the variety of ways that Bufflehead can be configured. " ..
+							"Select the icon-oriented or bar-oriented template closest to your preferred display of players buffs/debuffs. " ..
+							"Click on the Use Template button to apply the template's settings. " ..
+							"Click on the Toggle Previews button to show what the full set of player buffs/debuffs looks like."
 						},
-						IconTextGroup = {
-							type = "toggle", order = 10, name = "Icons + Time",
-							get = function(info) return selectTemplate == 1 end,
-							set = function(info, value) selectTemplate = 1 end,
+						IconConfiguration = {
+							type = "toggle", order = 10, name = "Icon Templates",
+							desc = "If checked, list contains icon-oriented templates."],
+							get = function(info) return templateType == "icons" end,
+							set = function(info, value) if templateType ~= "icons" then templateType = "icons"; selectedTemplate = 0  end,
 						},
-						Spacer1 = { type = "description", order = 11, width = "double",
-							name = function() return "Icons laid out horizontally with time below each icon (default)." end,
+						BarConfiguration = {
+							type = "toggle", order = 11, name = "Bar Templates",
+							desc = "If checked, list contains bar-oriented templates.",
+							get = function(info) return templateType == "bars" end,
+							set = function(info, value) if templateType ~= "bars" then templateType = "bars"; selectedTemplate = 0 end,
 						},
-						Spacer1A = { type = "description", name = "", order = 12 },
-						IconClockGroup = {
-							type = "toggle", order = 20, name = "Icons + Clock",
-							get = function(info) return selectTemplate == 2 end,
-							set = function(info, value) selectTemplate = 2 end,
+						Configuration = {
+							type = "select", order = 12, name = "Templates", width = "double",
+							desc = "Select a template option for bars or icons.",
+							get = function(info) if selectedTemplate == 0 then return nil else return selectedTemplate end end,
+							set = function(info, value) selectedTemplate = value end,
+							values = function(info) return (templateType == "icons") and iconTemplates or barTemplates end,
+							style = "dropdown",
 						},
-						Spacer2 = { type = "description", order = 21, width = "double",
-							name = function() return "Icons with clock overlays laid out vertically." end,
-						},
-						Spacer2A = { type = "description", name = "", order = 22 },
-						IconMiniBarGroup = {
-							type = "toggle", order = 30, name = "Icons + Mini-Bars",
-							get = function(info) return selectTemplate == 3 end,
-							set = function(info, value) selectTemplate = 3 end,
-						},
-						Spacer3 = { type = "description", order = 31, width = "double",
-							name = function() return "Icons laid out horizontally with a timer mini-bar below each icon." end,
-						},
-						Spacer3A = { type = "description", name = "", order = 32 },
-						HorizontalBarGroup = {
-							type = "toggle", order = 40, name = "Horizontal Bars",
-							get = function(info) return selectTemplate == 4 end,
-							set = function(info, value) selectTemplate = 4 end,
-						},
-						Spacer4 = { type = "description", order = 41, width = "double",
-							name = function() return "Full-size horizontal timer bars with labels." end,
-						},
-						Spacer4A = { type = "description", name = "", order = 42 },
-						VerticalBarGroup = {
-							type = "toggle", order = 50, name = "Vertical Bars",
-							get = function(info) return selectTemplate == 5 end,
-							set = function(info, value) selectTemplate = 5 end,
-						},
-						Spacer5 = { type = "description", order = 51, width = "double",
-							name = function() return "Full-size vertical timer bars." end,
-						},
-						Spacer5A = { type = "description", name = "", order = 52 },
+						Spacer = { type = "description", order = 100, width = "double",
 						UseTemplate = {
-							type = "execute", order = 100, name = "Use Template",
-							desc = "Use the selected template.",
+							type = "execute", order = 110, name = "Use Template",
+							desc = "Use the selected template. Note that this will overwrite ",
 							confirm = ConfirmTemplate,
 							func = function(info) MOD.UseTemplate(selectTemplate) end,
 						},
 						PreviewToggle = {
-							type = "execute", order = 110, name = "Toggle Previews",
+							type = "execute", order = 120, name = "Toggle Previews",
 							desc = "Toggle display of previews. Previews show what a full set of player buffs/debuffs look like.",
 							func = function(info) MOD.TogglePreviews(); UpdateAll() end,
 						},
@@ -248,8 +232,9 @@ MOD.OptionsTable = {
 					args = {
 						ShowBoundingBoxes = {
 							type = "toggle", order = 10, name = "Show Bounding Boxes",
-							desc = "If enabled, bounding boxes are shown around player buffs and debuffs. " ..
-							"Buff and debuff positions can be moved using click-and-drag in the associated bounding box.",
+							desc = "If enabled, bounding boxes are shown around player buff and debuff icons. " ..
+							"Buff and debuff positions can be moved using click-and-drag in the associated bounding box." ..
+							"Texts and timer bars may be outside the bounding boxes around icons so be sure to provide sufficient space.",
 							get = function(info) return MOD.showAnchors end,
 							set = function(info, value) MOD.showAnchors = value; UpdateAll() end,
 						},
@@ -343,8 +328,8 @@ MOD.OptionsTable = {
 						},
 						MaxWraps = {
 							type = "range", order = 120, name = "Maximum Wraps", min = 1, max = 40, step = 1,
-							desc = "Set the number of times that icons can wrap to another row or column. " ..
-							"There can be no more than 40 total icons, independent of the number of rows and columns.",
+							desc = "Limit the number of rows or columns. " ..
+							"There can be no more than 40 total icons.",
 							get = function(info) return pp.maxWraps end,
 							set = function(info, value) pp.maxWraps = value; UpdateAll() end,
 						},
@@ -1001,7 +986,7 @@ MOD.OptionsTable = {
 									set = function(info, value) pp.barTexture = value; UpdateAll() end,
 								},
 								ForegroundOpacity = {
-									type = "range", order = 20, name = "Background Opacity", min = 0, max = 1, step = 0.05,
+									type = "range", order = 20, name = "Foreground Opacity", min = 0, max = 1, step = 0.05,
 									desc = "Set foreground opacity for bars.",
 									get = function(info) return pp.barForegroundOpacity end,
 									set = function(info, value) pp.barForegroundOpacity = value; UpdateAll() end,
