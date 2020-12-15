@@ -16,12 +16,6 @@ local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. PLAYER_DEBUFFS
 local acereg = LibStub("AceConfigRegistry-3.0")
 local acedia = LibStub("AceConfigDialog-3.0")
 
-local iconTemplates = {
-}
-
-local barTemplates = {
-}
-
 local weaponBuffs = { ["Mainhand Weapon"] = true, ["Offhand Weapon"] = true }
 
 local anchorPoints = { BOTTOM = "BOTTOM", BOTTOMLEFT = "BOTTOMLEFT", BOTTOMRIGHT = "BOTTOMRIGHT", CENTER = "CENTER", LEFT = "LEFT",
@@ -69,6 +63,7 @@ local function InitializeOptions()
 	acereg:RegisterOptionsTable("Bufflehead", options)
 	acereg:RegisterOptionsTable("Bufflehead: "..options.args.BuffleheadOptions.name, options.args.BuffleheadOptions)
 	acereg:RegisterOptionsTable("Bufflehead: "..options.args.profile.name, options.args.profile)
+	acereg:RegisterOptionsTable("Bufflehead Options", MOD.BlizzardInterfaceOptionsTable)
 	acedia:AddToBlizOptions("Bufflehead Options", "Bufflehead")
 	pg = MOD.db.global; pp = MOD.db.profile
 
@@ -111,11 +106,37 @@ local function ConfirmChange() return "Changing this setting requires that you r
 -- Applying a template will overwrite most current settings so ask for confirmation
 local function ConfirmTemplate() return "Using a template will overwrite current settings. Continue?" end
 
+-- Get list of available templates given setting for bar or icon orientation
+function MOD.GetTemplates()
+	local i, t = 0, {}
+	for k, template in pairs(MOD.SupportedTemplates) do
+		if ((templateType == "icons") and template.icons) or ((templateType == "bars") and template.bars) then
+			i = i + 1
+			t[i] = template.desc
+		end
+	end
+	if i == 0 then selectedTemplate = 0; return nil end
+	if selectedTemplate == 0 then selectedTemplate = 1 end
+	return t
+end
+
 -- Apply the selected preset to the profile, overwriting current settings
-function MOD.UseTemplate(template) CopyTable(MOD.Templates[template], pp); UpdateAll() end
+function MOD.UseTemplate() CopyTable(MOD.Templates[selectedTemplate], pp); UpdateAll() end
 
 -- Reload the UI
 local function ReloadUI() C_UI.Reload() end
+
+-- Create a mini-options table to be inserted at top level in the Blizz interface
+MOD.BlizzardInterfaceOptionsTable = {
+	type = "group", order = 1,
+	args = {
+		Configure = {
+			type = "execute", order = 90, name = "Configure",
+			desc = "Open Bufflehead's standalone options panel.",
+			func = function(info) MOD.OptionsPanel() end,
+		},
+	},
+}
 
 -- Create the options table to be used by the configuration GUI
 MOD.OptionsTable = {
@@ -195,30 +216,30 @@ MOD.OptionsTable = {
 						},
 						IconConfiguration = {
 							type = "toggle", order = 10, name = "Icon Templates",
-							desc = "If checked, list contains icon-oriented templates."],
+							desc = "If checked, list icon-oriented templates.",
 							get = function(info) return templateType == "icons" end,
-							set = function(info, value) if templateType ~= "icons" then templateType = "icons"; selectedTemplate = 0  end,
+							set = function(info, value) if templateType ~= "icons" then templateType = "icons"; selectedTemplate = 0 end end,
 						},
 						BarConfiguration = {
 							type = "toggle", order = 11, name = "Bar Templates",
-							desc = "If checked, list contains bar-oriented templates.",
+							desc = "If checked, list bar-oriented templates.",
 							get = function(info) return templateType == "bars" end,
-							set = function(info, value) if templateType ~= "bars" then templateType = "bars"; selectedTemplate = 0 end,
+							set = function(info, value) if templateType ~= "bars" then templateType = "bars"; selectedTemplate = 0 end end,
 						},
 						Configuration = {
 							type = "select", order = 12, name = "Templates", width = "double",
 							desc = "Select a template option for bars or icons.",
 							get = function(info) if selectedTemplate == 0 then return nil else return selectedTemplate end end,
 							set = function(info, value) selectedTemplate = value end,
-							values = function(info) return (templateType == "icons") and iconTemplates or barTemplates end,
+							values = function(info) return MOD.GetTemplates() end,
 							style = "dropdown",
 						},
-						Spacer = { type = "description", order = 100, width = "double",
+						Spacer = { type = "description", name = "", order = 100 },
 						UseTemplate = {
 							type = "execute", order = 110, name = "Use Template",
-							desc = "Use the selected template. Note that this will overwrite ",
+							desc = "Use the selected template.",
 							confirm = ConfirmTemplate,
-							func = function(info) MOD.UseTemplate(selectTemplate) end,
+							func = function(info) MOD.UseTemplate() end,
 						},
 						PreviewToggle = {
 							type = "execute", order = 120, name = "Toggle Previews",
