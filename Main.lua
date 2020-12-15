@@ -729,21 +729,24 @@ local function SkinBar(button, duration, expire, barColor, barBorderColor)
 			end
 		end
 
+		PSetPoint(bbk, "CENTER", bb, "CENTER") -- use backdrop to show the border
+		PSetSize(bbk, bw, bh)
+		SetInsets(drop, PS(width))
+		bbk:SetBackdrop(drop)
+		local c = pp.barBackgroundColor
+		if pp.barUseForeground then c = barColor end
+		bbk:SetBackdropColor(c.r, c.g, c.b, pp.barBackgroundOpacity or c.a)
 		if showBorder then
-			PSetPoint(bbk, "CENTER", bb, "CENTER") -- use backdrop to show the border
-			PSetSize(bbk, bw, bh)
-			SetInsets(drop, PS(width))
-			bbk:SetBackdrop(drop)
-			local c = barColor
-			bbk:SetBackdropColor(c.r, c.g, c.b, pp.barBackgroundOpacity or c.a)
 			c = barBorderColor -- bar backdrop color
 			bbk:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
-			bbk:Show()
+		else
+			bbk:SetBackdropBorderColor(0, 0, 0, 0) -- invisible border
 		end
+		bbk:Show()
 
 		PSetSize(bb, bw - delta, bh - delta) -- set bar size based on border adjustments
 
-		local c = barColor
+		c = barColor
 		bb:SetStatusBarColor(c.r, c.g, c.b, pp.barForegroundOpacity or 1)
 		if (pp.barUnlimited ~= "none") and (duration == 0) then duration = 100 end -- ensure shows unlimited bars
 		bb:SetMinMaxValues(0, duration)

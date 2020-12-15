@@ -12,14 +12,14 @@ local HEADER_PLAYER_BUFFS = HEADER_NAME .. "PlayerBuffs"
 local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. "PlayerDebuffs"
 
 MOD.SupportedTemplates = { -- table of templates to be used in options to select appropriate bar or icon template
-  [1] = { desc = "Icons in rows, time left shown in text below icon", icons = true, base = 1, time = "text" },
-  [2] = { desc = "Icons in rows, time left shown with clock overlay on icon", icons = true, base = 1, time = "clock" },
-  [3] = { desc = "Icons in rows, time left shown as right-to-left mini-bars below icon", icons = true, base = 1, time = "mini r-to-l" },
-  [4] = { desc = "Icons in rows, time left shown with left-to-right mini-bars below icon", icons = true, base = 1, time = "mini l-to-r" },
-  [5] = { desc = "Icons in columns, time left shown in text below icon", icons = true, base = 2, time = "text" },
-  [6] = { desc = "Icons in columns, time left shown with clock overlay on icon", icons = true, base = 2, time = "clock" },
-  [7] = { desc = "Icons in columns, time left shown as right-to-left mini-bars below icon", icons = true, base = 2, time = "mini r-to-l" },
-  [8] = { desc = "Icons in columns, time left shown as left-to-right mini-bars below icon", icons = true, base = 2, time = "mini l-to-r" },
+  [1] = { desc = "Icons in rows, time left in text", icons = true, base = 1, time = "text" },
+  [2] = { desc = "Icons in rows, time left with clock overlay", icons = true, base = 1, time = "clock" },
+  [3] = { desc = "Icons in rows, time left with bars below icon", icons = true, base = 1, time = "hbar" },
+  [4] = { desc = "Icons in rows, time left with bars beside icon", icons = true, base = 1, time = "vbar" },
+  [5] = { desc = "Icons in columns, time left in text", icons = true, base = 2, time = "text" },
+  [6] = { desc = "Icons in columns, time left with clock overlay", icons = true, base = 2, time = "clock" },
+  [7] = { desc = "Icons in columns, time left with bars below icon", icons = true, base = 2, time = "hbar" },
+  [8] = { desc = "Icons in columns, time left with bars beside icon", icons = true, base = 2, time = "vbar" },
 	[9] = { desc = "Right-to-left bars, label left, icon left", bars = true, base = 3, label = "left", icon = "left" },
   [10] = { desc = "Right-to-left bars, label right, icon left", bars = true, base = 3, label = "right", icon = "left" },
   [11] = { desc = "Right-to-left bars, label left, icon right", bars = true, base = 3, label = "left", icon = "right" },
@@ -30,7 +30,7 @@ MOD.SupportedTemplates = { -- table of templates to be used in options to select
 	[16] = { desc = "Left-to-right bars, label right, icon right", bars = true, base = 4, label = "right", icon = "right" },
 }
 
-MOD.Templates = { -- table of base template settings that are used to configuration selected template
+MOD.BaseTemplates = { -- table of base template settings that are used to configuration selected template
   [1] = { -- icons in rows, includes settings for all time left options so can toggle them on/off
     iconSize = 44,
     iconBorder = "one", -- "default", "none", "one", "two", "raven", "masque"
@@ -82,6 +82,8 @@ MOD.Templates = { -- table of base template settings that are used to configurat
     barBackgroundOpacity = 0.5,
     barBuffColor = { r = 0.3, g = 0.6, b = 0.3, a = 1 },
 		barDebuffColor = { r = 0.6, g = 0.3, b = 0.3, a = 1 },
+    barBackgroundColor = { r = 0, g = 0, b = 0, a = 1 },
+		barUseForeground = true,
     barDebuffColoring = true, -- use debuff color for bar if applicable
 		barBorder = "one", -- "none", "one", "two", "media"
     barBorderBuffColor = { r = 1, g = 1, b = 1, a = 1 },
@@ -157,6 +159,8 @@ MOD.Templates = { -- table of base template settings that are used to configurat
     barBackgroundOpacity = 0.5,
     barBuffColor = { r = 0.3, g = 0.6, b = 0.3, a = 1 },
 		barDebuffColor = { r = 0.6, g = 0.3, b = 0.3, a = 1 },
+    barBackgroundColor = { r = 0, g = 0, b = 0, a = 1 },
+		barUseForeground = true,
     barDebuffColoring = true, -- use debuff color for bar if applicable
 		barBorder = "one", -- "none", "one", "two", "media"
     barBorderBuffColor = { r = 1, g = 1, b = 1, a = 1 },
@@ -241,6 +245,8 @@ MOD.Templates = { -- table of base template settings that are used to configurat
     barBackgroundOpacity = 0.5,
     barBuffColor = { r = 0.3, g = 0.6, b = 0.3, a = 1 },
 		barDebuffColor = { r = 0.6, g = 0.3, b = 0.3, a = 1 },
+    barBackgroundColor = { r = 0, g = 0, b = 0, a = 1 },
+		barUseForeground = true,
     barDebuffColoring = true, -- use debuff color for bar if applicable
 		barBorder = "one", -- "none", "one", "two", "media"
 		barBorderBuffColor = { r = 1, g = 1, b = 1, a = 1 },
@@ -326,6 +332,8 @@ MOD.Templates = { -- table of base template settings that are used to configurat
     barBackgroundOpacity = 0.5,
     barBuffColor = { r = 0.3, g = 0.6, b = 0.3, a = 1 },
 		barDebuffColor = { r = 0.6, g = 0.3, b = 0.3, a = 1 },
+    barBackgroundColor = { r = 0, g = 0, b = 0, a = 1 },
+		barUseForeground = true,
     barDebuffColoring = true, -- use debuff color for bar if applicable
 		barBorder = "one", -- "none", "one", "two", "media"
 		barBorderBuffColor = { r = 1, g = 1, b = 1, a = 1 },

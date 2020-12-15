@@ -23,7 +23,7 @@ MOD.DefaultProfile = {
 		iconSize = 40,
 		iconBorder = "one", -- "default", "none", "one", "two", "raven", "masque"
 		iconBuffColor = { r = 1, g = 1, b = 1, a = 1 },
-    iconDebuffColor = { r = 0.6, g = 0.3, b = 0.3, a = 1 },
+    iconDebuffColor = { r = 1, g = 1, b = 1, a = 1 },
 		debuffColoring = true, -- use debuff color for border if applicable
 		growDirection = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
@@ -83,6 +83,9 @@ MOD.DefaultProfile = {
     barBackgroundOpacity = 0.5,
     barBuffColor = { r = 0.3, g = 0.6, b = 0.3, a = 1 },
 		barDebuffColor = { r = 0.6, g = 0.3, b = 0.3, a = 1 },
+		barBackgroundColor = { r = 0, g = 0, b = 0, a = 1 },
+		barUseForeground = true,
+		barDebuffColoring = true, -- use debuff color for bar if applicable
 		barBorder = "one", -- "none", "one", "two", "media"
 		barBorderBuffColor = { r = 0.3, g = 0.6, b = 0.3, a = 1 },
     barBorderDebuffColor = { r = 0.6, g = 0.3, b = 0.3, a = 1 },

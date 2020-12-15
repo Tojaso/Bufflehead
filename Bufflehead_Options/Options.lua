@@ -109,7 +109,7 @@ local function ConfirmTemplate() return "Using a template will overwrite current
 -- Get list of available templates given setting for bar or icon orientation
 function MOD.GetTemplates()
 	local i, t = 0, {}
-	for k, template in pairs(MOD.SupportedTemplates) do
+	for k, template in ipairs(MOD.SupportedTemplates) do
 		if ((templateType == "icons") and template.icons) or ((templateType == "bars") and template.bars) then
 			i = i + 1
 			t[i] = template.desc
@@ -121,7 +121,51 @@ function MOD.GetTemplates()
 end
 
 -- Apply the selected preset to the profile, overwriting current settings
-function MOD.UseTemplate() CopyTable(MOD.Templates[selectedTemplate], pp); UpdateAll() end
+function MOD.UseTemplate()
+	local i = 0
+	for k, template in ipairs(MOD.SupportedTemplates) do
+		if ((templateType == "icons") and template.icons) or ((templateType == "bars") and template.bars) then
+			i = i + 1
+			if i == selectedTemplate then
+				CopyTable(MOD.BaseTemplates[template.base], pp) -- apply base template to the current profile
+				if templateType == "icons" then
+					if template.time == "text" then -- apply optional settings for icons
+						pp.showTime = true
+					elseif template.time == "clock" then
+						pp.showClock = true
+					elseif template.time == "hbar" then
+						pp.showBar = true
+					elseif template.time == "vbar" then
+						pp.showBar = true
+						pp.barOrientation = false -- vertical orientation
+						pp.barWidth = pp.barHeight -- swap dimensions from hbar
+						pp.barHeight = 0
+						local bp = pp.barPosition
+						bp.point = "RIGHT"
+						bp.relativePoint = "LEFT"
+						bp.offsetX = -4
+						bp.offsetY = 0
+					end
+				elseif templateType == "bars" then -- apply optional settings for bars
+					if template.label == "right" then -- default in base template is for label on left
+						local lp = pp.labelPosition
+						lp.point = "RIGHT"
+						lp.relativePoint = "RIGHT"
+						lp.offsetX = -lp.offsetX
+					end
+					if template.icon == "right" then -- default in base template is for icon on left
+						local bp = pp.barPosition
+						bp.point = "RIGHT"
+						bp.relativePoint = "LEFT"
+						bp.offsetX = -bp.offsetX
+					end
+				end
+				UpdateAll()
+				return
+			end
+		end
+	end
+end
 
 -- Reload the UI
 local function ReloadUI() C_UI.Reload() end
@@ -1020,7 +1064,7 @@ MOD.OptionsTable = {
 								},
 								Spacer1 = { type = "description", name = "", order = 100 },
 								BuffColor = {
-									type = "color", order = 110, name = "Buffs", hasAlpha = true,
+									type = "color", order = 110, name = "Buffs", hasAlpha = false,
 									desc = "Set color for buff bars.",
 									get = function(info)
 										local t = pp.barBuffColor
@@ -1032,7 +1076,7 @@ MOD.OptionsTable = {
 									end,
 								},
 								DebuffColor = {
-									type = "color", order = 120, name = "Debuffs", hasAlpha = true,
+									type = "color", order = 120, name = "Debuffs", hasAlpha = false,
 									desc = "Set color for debuff bars.",
 									get = function(info)
 										local t = pp.barDebuffColor
@@ -1049,6 +1093,26 @@ MOD.OptionsTable = {
 									desc = "Use debuff type colors for bars when appropriate.",
 									get = function(info) return pp.barDebuffColoring end,
 									set = function(info, value) pp.barDebuffColoring = value; UpdateAll() end,
+								},
+								Spacer2 = { type = "description", name = "", order = 200 },
+								BackgroundColor = {
+									type = "color", order = 210, name = "Background Color", hasAlpha = false,
+									desc = "Set the background color for bars.",
+									disabled = function(info) return pp.barUseForeground end,
+									get = function(info)
+										local t = pp.barBackgroundColor
+										return t.r, t.g, t.b, t.a
+									end,
+									set = function(info, r, g, b, a) local t = pp.barBackgroundColor
+										t.r = r; t.g = g; t.b = b; t.a = a
+										UpdateAll()
+									end,
+								},
+								BackgroundUseForegroundColor = {
+									type = "toggle", order = 230, name = "Use Foreground Color",
+									desc = "Use bar foreground color for its background.",
+									get = function(info) return pp.barUseForeground end,
+									set = function(info, value) pp.barUseForeground = value; UpdateAll() end,
 								},
 							},
 						},
