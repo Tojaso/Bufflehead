@@ -971,7 +971,7 @@ function MOD.UpdateHeader(header)
 				local wraps = pp.maxWraps -- limit anchor to include just enough rows and columns for 40 buttons
 				if (pp.maxWraps * pp.wrapAfter) > 40 then wraps = math.ceil(40 / pp.wrapAfter) end
 				local dx, dy, mw, mh, wx, wy = 0, 0, 0, 0, 0, 0
-				if pp.growDirection == 1 then -- grow horizontally
+				if pp.orientation == 1 then -- grow horizontally
 					dx = pp.directionX * (pp.spaceX + pp.iconSize)
 					wy = pp.directionY * (pp.spaceY + pp.iconSize)
 					mw = (PS(pp.spaceX + pp.iconSize) * (pp.wrapAfter - 1)) + PS(pp.iconSize)

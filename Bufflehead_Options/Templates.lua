@@ -35,7 +35,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
     iconBuffColor = { r = 1, g = 1, b = 1, a = 1 },
     iconDebuffColor = { r = 0.6, g = 0.3, b = 0.3, a = 1 },
     debuffColoring = true, -- use debuff color for border if applicable
-		growDirection = 1, -- horizontal = 1, otherwise vertical
+		orientation = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down
 		wrapAfter = 20,
@@ -114,7 +114,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
     iconBuffColor = { r = 1, g = 1, b = 1, a = 1 },
     iconDebuffColor = { r = 0.6, g = 0.3, b = 0.3, a = 1 },
     debuffColoring = true, -- use debuff color for border if applicable
-    growDirection = 0, -- horizontal = 1, otherwise vertical
+    orientation = 0, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down
 		wrapAfter = 10,
@@ -191,7 +191,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
     iconBuffColor = { r = 1, g = 1, b = 1, a = 1 },
     iconDebuffColor = { r = 1, g = 1, b = 1, a = 1 },
     debuffColoring = false, -- use debuff color for border if applicable
-		growDirection = 0, -- horizontal = 1, otherwise vertical
+		orientation = 0, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down
 		wrapAfter = 20,
@@ -237,7 +237,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
     barBorder = "one", -- "none", "one", "two", "media"
 		barOrientation = true, -- true = "HORIZONTAL", false = "VERTICAL"
 		barDirection = true, -- true = "STANDARD", false = "REVERSE"
-    barUnlimited = "empty", -- for unlimited duration, "none" = no bar, "empty" = empty bar, "full" = full bar
+    barUnlimited = "full", -- for unlimited duration, "none" = no bar, "empty" = empty bar, "full" = full bar
     barTexture = "None", -- shared media statusbar name
     barForegroundOpacity = 1,
     barBackgroundOpacity = 0.65,
@@ -278,14 +278,14 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
     iconBuffColor = { r = 1, g = 1, b = 1, a = 1 },
     iconDebuffColor = { r = 1, g = 1, b = 1, a = 1 },
     debuffColoring = false, -- use debuff color for border if applicable
-		growDirection = 0, -- horizontal = 1, otherwise vertical
+		orientation = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down
 		wrapAfter = 20,
 		maxWraps = 2,
-		spaceX = 270, -- horizontal distance between icons (allow space for elements positioned between icons)
-		spaceY = 8, -- vertical distance between icons (allow space for elements positioned between icons)
-    showTime = true,
+		spaceX = 8, -- horizontal distance between icons (allow space for elements positioned between icons)
+		spaceY = 190, -- vertical distance between icons (allow space for elements positioned between icons)
+    showTime = false,
 		timePosition = { point = "RIGHT", relativePoint = "RIGHT", anchor = "bar", offsetX = 0, offsetY = 0 },
     timeFormat = 24, -- use simple time format
 		timeSpaces = false, -- if true include spaces in time text
@@ -305,7 +305,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
 		countFontFlags = { outline = true, thick = false, mono = false },
 		countShadow = true,
 		countColor = { r = 1, g = 1, b = 1, a = 1 },
-    showLabel = true,
+    showLabel = false,
 		labelPosition = { point = "LEFT", relativePoint = "LEFT", anchor = "bar", offsetX = 0, offsetY = 0 },
 		labelMaxWidth = 160, -- set if want to truncate or wrap
 		labelWrap = false,
@@ -319,12 +319,12 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
 		showClock = false, -- show clock overlay to indicate remaining time
     showBar = true,
     barPosition = { point = "LEFT", relativePoint = "RIGHT", anchor = "icon", offsetX = 0, offsetY = 0 },
-		barWidth = 200, --  0 = same as icon width
-		barHeight = 24, --  0 = same as icon height
+		barWidth = 24, --  0 = same as icon width
+		barHeight = 120, --  0 = same as icon height
     barBorder = "one", -- "none", "one", "two", "media"
-		barOrientation = true, -- true = "HORIZONTAL", false = "VERTICAL"
-		barDirection = true, -- true = "STANDARD", false = "REVERSE"
-    barUnlimited = "empty", -- for unlimited duration, "none" = no bar, "empty" = empty bar, "full" = full bar
+		barOrientation = false, -- true = "HORIZONTAL", false = "VERTICAL"
+		barDirection = false, -- true = "STANDARD", false = "REVERSE"
+    barUnlimited = "full", -- for unlimited duration, "none" = no bar, "empty" = empty bar, "full" = full bar
     barTexture = "None", -- shared media statusbar name
     barForegroundOpacity = 1,
     barBackgroundOpacity = 0.65,
@@ -346,8 +346,8 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
 				unit = "player",
 				filter = FILTER_BUFFS,
 				caption = PLAYER_BUFFS,
-				anchorX = 0.75, -- fraction of screen from left edge, puts it near the mini-map
-				anchorY = 0.98, -- fraction of the screen from bottom edge
+				anchorX = 0.85, -- fraction of screen from left edge, puts it near the mini-map
+				anchorY = 0.85, -- fraction of the screen from bottom edge
 			},
 			[HEADER_PLAYER_DEBUFFS] = {
 				enabled = true,
@@ -355,7 +355,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
 				filter = FILTER_DEBUFFS,
 				caption = PLAYER_DEBUFFS,
 				anchorX = 0.5,
-				anchorY = 0.98, -- default places it in near center and top of display, growing down
+				anchorY = 0.85, -- default places it in near center and top of display, growing down
 			},
 		},
   },

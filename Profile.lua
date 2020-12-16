@@ -25,7 +25,7 @@ MOD.DefaultProfile = {
 		iconBuffColor = { r = 1, g = 1, b = 1, a = 1 },
     iconDebuffColor = { r = 1, g = 1, b = 1, a = 1 },
 		debuffColoring = true, -- use debuff color for border if applicable
-		growDirection = 1, -- horizontal = 1, otherwise vertical
+		orientation = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down
 		wrapAfter = 20,

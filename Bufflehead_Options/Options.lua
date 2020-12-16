@@ -191,18 +191,22 @@ function MOD.UseTemplate()
 						bp.point = "RIGHT"
 						bp.relativePoint = "LEFT"
 						bp.offsetX = -DEFAULT_SPACING
+						pp.barDirection = false
 					elseif template.icon == "left" then
 						bp.point = "LEFT"
 						bp.relativePoint = "RIGHT"
 						bp.offsetX = DEFAULT_SPACING
+						pp.barDirection = true
 					elseif template.icon == "top" then
 						bp.point = "TOP"
 						bp.relativePoint = "BOTTOM"
 						bp.offsetY = -DEFAULT_SPACING
+						pp.barDirection = false
 					elseif template.icon == "bottom" then
 						bp.point = "BOTTOM"
 						bp.relativePoint = "TOP"
 						bp.offsetY = DEFAULT_SPACING
+						pp.barDirection = true
 					end
 				end
 				UpdateAll()
@@ -413,8 +417,8 @@ MOD.OptionsTable = {
 						Orientation = {
 							type = "toggle", order = 10, name = "Orientation",
 							desc = "If checked, icons are laid out horizontally in rows, otherwise vertically in columns.",
-							get = function(info) return pp.growDirection == 1 end,
-							set = function(info, value) pp.growDirection = (value and 1 or 0); UpdateAll() end,
+							get = function(info) return pp.orientation == 1 end,
+							set = function(info, value) pp.orientation = (value and 1 or 0); UpdateAll() end,
 						},
 						HorizontalDirection = {
 							type = "toggle", order = 20, name = "Horizontal Direction",
