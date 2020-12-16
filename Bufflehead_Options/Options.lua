@@ -12,6 +12,8 @@ local PLAYER_BUFFS = "PlayerBuffs"
 local PLAYER_DEBUFFS = "PlayerDebuffs"
 local HEADER_PLAYER_BUFFS = HEADER_NAME .. PLAYER_BUFFS
 local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. PLAYER_DEBUFFS
+local DEFAULT_SPACING = 4
+local MINIBAR_WIDTH = 10
 
 local acereg = LibStub("AceConfigRegistry-3.0")
 local acedia = LibStub("AceConfigDialog-3.0")
@@ -122,6 +124,10 @@ end
 
 -- Apply the selected preset to the profile, overwriting current settings
 function MOD.UseTemplate()
+	local bp = pp.barPosition
+	local lp = pp.labelPosition
+	local tp = pp.timePosition
+
 	local i = 0
 	for k, template in ipairs(MOD.SupportedTemplates) do
 		if ((templateType == "icons") and template.icons) or ((templateType == "bars") and template.bars) then
@@ -137,27 +143,66 @@ function MOD.UseTemplate()
 						pp.showBar = true
 					elseif template.time == "vbar" then
 						pp.showBar = true
+						pp.spaceX = (3 * DEFAULT_SPACING) + MINIBAR_WIDTH
 						pp.barOrientation = false -- vertical orientation
-						pp.barWidth = pp.barHeight -- swap dimensions from hbar
+						pp.barWidth = MINIBAR_WIDTH -- swap dimensions from hbar
 						pp.barHeight = 0
 						local bp = pp.barPosition
 						bp.point = "RIGHT"
 						bp.relativePoint = "LEFT"
-						bp.offsetX = -4
+						bp.offsetX = -DEFAULT_SPACING
 						bp.offsetY = 0
 					end
 				elseif templateType == "bars" then -- apply optional settings for bars
-					if template.label == "right" then -- default in base template is for label on left
-						local lp = pp.labelPosition
+					if template.label == "right" then
 						lp.point = "RIGHT"
 						lp.relativePoint = "RIGHT"
-						lp.offsetX = -lp.offsetX
+						lp.offsetX = -DEFAULT_SPACING
+					elseif template.label == "left" then
+						local lp = pp.labelPosition
+						lp.point = "LEFT"
+						lp.relativePoint = "LEFT"
+						lp.offsetX = DEFAULT_SPACING
+					elseif template.label == "none" then
+						bp.showLabel = false
 					end
-					if template.icon == "right" then -- default in base template is for icon on left
-						local bp = pp.barPosition
+
+					if template.time == "right" then
+						tp.point = "RIGHT"
+						tp.relativePoint = "RIGHT"
+						tp.offsetX = -DEFAULT_SPACING
+					elseif template.time == "left" then
+						tp.point = "LEFT"
+						tp.relativePoint = "LEFT"
+						tp.offsetX = DEFAULT_SPACING
+					elseif template.time == "top" then
+						tp.point = "TOP"
+						tp.relativePoint = "TOP"
+						tp.offsetY = -DEFAULT_SPACING
+					elseif template.time == "bottom" then
+						tp.point = "BOTTOM"
+						tp.relativePoint = "BOTTOM"
+						tp.offsetX = DEFAULT_SPACING
+					elseif template.time == "none" then
+						bp.showTime = false
+					end
+
+					if template.icon == "right" then
 						bp.point = "RIGHT"
 						bp.relativePoint = "LEFT"
-						bp.offsetX = -bp.offsetX
+						bp.offsetX = -DEFAULT_SPACING
+					elseif template.icon == "left" then
+						bp.point = "LEFT"
+						bp.relativePoint = "RIGHT"
+						bp.offsetX = DEFAULT_SPACING
+					elseif template.icon == "top" then
+						bp.point = "TOP"
+						bp.relativePoint = "BOTTOM"
+						bp.offsetY = -DEFAULT_SPACING
+					elseif template.icon == "bottom" then
+						bp.point = "BOTTOM"
+						bp.relativePoint = "TOP"
+						bp.offsetY = DEFAULT_SPACING
 					end
 				end
 				UpdateAll()
@@ -252,11 +297,11 @@ MOD.OptionsTable = {
 					type = "group", order = 20, name = "Templates", inline = true,
 					args = {
 						Description = {
-							type = "description", order = 1, name = "These templates provide a starting point for new users and " ..
+							type = "description", order = 1, name = "Templates provide a starting point for new users and " ..
 							"also demonstrate the variety of ways that Bufflehead can be configured. " ..
-							"Select the icon-oriented or bar-oriented template closest to your preferred display of players buffs/debuffs. " ..
+							"Select the icon-oriented or bar-oriented template closest to your preferred way to display player buffs and debuffs. " ..
 							"Click on the Use Template button to apply the template's settings. " ..
-							"Click on the Toggle Previews button to show what the full set of player buffs/debuffs looks like."
+							"Click on the Toggle Previews button to show what full sets of player buffs and debuffs look like."
 						},
 						IconConfiguration = {
 							type = "toggle", order = 10, name = "Icon Templates",
@@ -265,30 +310,25 @@ MOD.OptionsTable = {
 							set = function(info, value) if templateType ~= "icons" then templateType = "icons"; selectedTemplate = 0 end end,
 						},
 						BarConfiguration = {
-							type = "toggle", order = 11, name = "Bar Templates",
+							type = "toggle", order = 20, name = "Bar Templates",
 							desc = "If checked, list bar-oriented templates.",
 							get = function(info) return templateType == "bars" end,
 							set = function(info, value) if templateType ~= "bars" then templateType = "bars"; selectedTemplate = 0 end end,
 						},
+						Spacer1 = { type = "description", name = "", order = 100 },
 						Configuration = {
-							type = "select", order = 12, name = "Templates", width = "double",
+							type = "select", order = 110, name = "Templates", width = "double",
 							desc = "Select a template option for bars or icons.",
 							get = function(info) if selectedTemplate == 0 then return nil else return selectedTemplate end end,
 							set = function(info, value) selectedTemplate = value end,
 							values = function(info) return MOD.GetTemplates() end,
 							style = "dropdown",
 						},
-						Spacer = { type = "description", name = "", order = 100 },
 						UseTemplate = {
-							type = "execute", order = 110, name = "Use Template",
-							desc = "Use the selected template.",
-							confirm = ConfirmTemplate,
-							func = function(info) MOD.UseTemplate() end,
-						},
-						PreviewToggle = {
-							type = "execute", order = 120, name = "Toggle Previews",
-							desc = "Toggle display of previews. Previews show what a full set of player buffs/debuffs look like.",
-							func = function(info) MOD.TogglePreviews(); UpdateAll() end,
+							type = "execute", order = 120, name = "Use Template",
+							desc = "Use selected template.",
+							-- confirm = ConfirmTemplate,
+							func = function(info) if selectedTemplate ~= 0 then MOD.UseTemplate(selectedTemplate) end end,
 						},
 					},
 				},
@@ -302,6 +342,11 @@ MOD.OptionsTable = {
 							"Texts and timer bars may be outside the bounding boxes around icons so be sure to provide sufficient space.",
 							get = function(info) return MOD.showAnchors end,
 							set = function(info, value) MOD.showAnchors = value; UpdateAll() end,
+						},
+						PreviewToggle = {
+							type = "execute", order = 20, name = "Toggle Previews",
+							desc = "Toggle display of previews. Previews demonstrate what full sets of player buffs and debuffs look like.",
+							func = function(info) MOD.TogglePreviews(); UpdateAll() end,
 						},
 						Spacer1 = { type = "description", name = "", order = 100 },
 						BuffsHorizontal = {

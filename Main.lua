@@ -485,8 +485,9 @@ end
 -- Skin the icon's clock overlay, must be done after skinning the border
 local function SkinClock(button, duration, expire)
 	local bc = button.clock
+	local remaining = (expire or 0) - GetTime()
 
-	if pp.showClock and duration and duration > 0 and expire and expire > 0 then
+	if pp.showClock and duration and duration > 0.1 and remaining > 0.05 then -- check if limited duration
 		-- bc:ClearAllPoints()
 		local w, h = button.iconTexture:GetSize()
 		bc:SetDrawEdge(pp.clockEdge)
@@ -1029,6 +1030,7 @@ end
 
 -- Scan through all the buff locations and show/hide previews as needed
 local function UpdatePreviews()
+	local now = GetTime()
 	if not previewMode then MOD.frame:SetScript("OnUpdate", nil) end
 
 	for k, header in pairs(MOD.headers) do
@@ -1059,8 +1061,12 @@ local function UpdatePreviews()
 					-- if IsAltKeyDown() then MOD.Debug("Preview: x/y", math.floor((dx * column) + (wx * row)), math.floor((dy * column) + (wy * row)), i, column, row,
 					--	math.floor(dx), math.floor(dy), math.floor(wx), math.floor(wy)) end
 
+
 					local duration = i * 5
-					local expire = button._expire or button.bar._expire or (GetTime() + duration)
+					local expire = button._refresh
+					if not expire or (expire < now) then expire = now + duration end
+					button._refresh = expire
+
 					local name = "#" .. i
 					local icon = PRESET_BUFF_ICON
 					local btype = "none"
@@ -1068,6 +1074,7 @@ local function UpdatePreviews()
 					local borderColor = pp.iconBuffColor
 					local barColor = pp.barBuffColor
 					local barBorderColor = pp.barBorderBuffColor
+
 					if filter == FILTER_DEBUFFS then
 						icon = PRESET_DEBUFF_ICON
 						iconColor = pp.iconDebuffColor
