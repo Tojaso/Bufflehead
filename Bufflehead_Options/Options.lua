@@ -330,10 +330,13 @@ MOD.OptionsTable = {
 						},
 						UseTemplate = {
 							type = "execute", order = 120, name = "Use Template",
-							desc = "Use selected template.",
+							desc = "Save current settings and switch to the selected template. " ..
+								"This will overwrite all layout-related settings but does not change fonts and other appearance options. " ..
+								"You can click the Undo button to restore the saved settings.",
 							-- confirm = ConfirmTemplate,
 							func = function(info) if selectedTemplate ~= 0 then MOD.UseTemplate(selectedTemplate) end end,
 						},
+						-- Add Undo button
 					},
 				},
 				PositionGroup = {

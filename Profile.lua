@@ -87,8 +87,8 @@ MOD.DefaultProfile = {
 		barUseForeground = true,
 		barDebuffColoring = true, -- use debuff color for bar if applicable
 		barBorder = "one", -- "none", "one", "two", "media"
-		barBorderBuffColor = { r = 0.3, g = 0.6, b = 0.3, a = 1 },
-    barBorderDebuffColor = { r = 0.6, g = 0.3, b = 0.3, a = 1 },
+		barBorderBuffColor = { r = 1, g = 1, b = 1, a = 1 },
+    barBorderDebuffColor = { r = 1, g = 1, b = 1, a = 1 },
     barBorderMedia = "None", -- shared media border name
     barBorderWidth = 1, -- depends on selected media file
     barBorderOffset = 0, -- depends on selected media file
