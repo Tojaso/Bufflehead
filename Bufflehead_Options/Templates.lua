@@ -22,10 +22,10 @@ MOD.SupportedTemplates = { -- table of templates to be used in options to select
   [6] = { desc = "Icons in columns, time shown with clock overlay", icons = true, base = 2, time = "clock" },
   [7] = { desc = "Icons in columns, time shown with bar below icon", icons = true, base = 2, time = "hbar" },
   [8] = { desc = "Icons in columns, time shown with bar beside icon", icons = true, base = 2, time = "vbar" },
-	[9] = { desc = "Horizontal bar to the right of icon", bars = true, base = 3, label = "left", time = "right", icon = "left" },
-  [10] = { desc = "Horizontal bar to the left of icon", bars = true, base = 3, label = "left", time = "right", icon = "right" },
-  [11] = { desc = "Vertical bar below the icon", bars = true, base = 4, label = "none", time = "top", icon = "top" },
-  [12] = { desc = "Vertical bar above the icon", bars = true, base = 4, label = "none", time = "bottom", icon = "bottom" },
+	[9] = { desc = "Horizontal bar to the right of the icons", bars = true, base = 3, label = "left", time = "right", icon = "left" },
+  [10] = { desc = "Horizontal bar to the left of the icons", bars = true, base = 3, label = "left", time = "right", icon = "right" },
+  [11] = { desc = "Vertical bar below the icons", bars = true, base = 4, label = "none", time = "top", icon = "top" },
+  [12] = { desc = "Vertical bar above the icons", bars = true, base = 4, label = "none", time = "bottom", icon = "bottom" },
 }
 
 MOD.BaseTemplates = { -- table of base template settings that are used to configuration selected template

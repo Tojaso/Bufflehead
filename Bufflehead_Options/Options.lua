@@ -6,6 +6,7 @@ local initialized = false -- set when options are first accessed
 local pg, pp -- global and character-specific profiles
 local templateType = "icons"
 local selectedTemplate = 0
+local savedProfile = false -- set when template is used
 
 local HEADER_NAME = "BuffleheadSecureHeader"
 local PLAYER_BUFFS = "PlayerBuffs"
@@ -106,7 +107,7 @@ end
 local function ConfirmChange() return "Changing this setting requires that you reload your user interface. Continue?" end
 
 -- Applying a template will overwrite most current settings so ask for confirmation
-local function ConfirmTemplate() return "Using a template will overwrite current settings. Continue?" end
+-- local function ConfirmTemplate() return "Using a template will overwrite current settings. Continue?" end
 
 -- Get list of available templates given setting for bar or icon orientation
 function MOD.GetTemplates()
@@ -122,11 +123,24 @@ function MOD.GetTemplates()
 	return t
 end
 
+-- Save current settings
+function MOD.SaveProfile()
+	if not savedProfile then savedProfile = {} end
+	CopyTable(pp, savedProfile)
+end
+
+-- Restore saved settings
+function MOD.RestoreProfile()
+	if savedProfile then CopyTable(savedProfile, pp) end
+end
+
 -- Apply the selected preset to the profile, overwriting current settings
 function MOD.UseTemplate()
 	local bp = pp.barPosition
 	local lp = pp.labelPosition
 	local tp = pp.timePosition
+
+	if selectedTemplate == 0 then return end
 
 	local i = 0
 	for k, template in ipairs(MOD.SupportedTemplates) do
@@ -332,11 +346,23 @@ MOD.OptionsTable = {
 							type = "execute", order = 120, name = "Use Template",
 							desc = "Save current settings and switch to the selected template. " ..
 								"This will overwrite all layout-related settings but does not change fonts and other appearance options. " ..
-								"You can click the Undo button to restore the saved settings.",
-							-- confirm = ConfirmTemplate,
-							func = function(info) if selectedTemplate ~= 0 then MOD.UseTemplate(selectedTemplate) end end,
+								"Click the Restore button to revert to the saved settings.",
+							func = function(info)
+								MOD.SaveProfile()
+								MOD.UseTemplate(selectedTemplate)
+							end,
 						},
-						-- Add Undo button
+						RestoreProfile = {
+							type = "execute", order = 130, name = "Restore", width = "half",
+							desc = function(info)
+								if savedProfile then
+									return "Restore settings saved when Use Template was last clicked."
+								else
+									return "No settings have been saved yet."
+								end
+							end,
+							func = function(info) MOD.RestoreProfile(); UpdateAll() end,
+						},
 					},
 				},
 				PositionGroup = {
