@@ -518,13 +518,18 @@ MOD.OptionsTable = {
 						},
 						DefaultBorder = {
 							type = "toggle", order = 20, name = "Default", width = "half",
-							desc = "Show Blizzard's default icon borders.",
+							desc = "Show Blizzard's default icon borders. " ..
+							"Default borders do not support customized border colors but, " ..
+							"when Debuff Type Override is enabled, glow effects with debuff type colors are shown when appropriate.",
 							get = function(info) return pp.iconBorder == "default" end,
 							set = function(info, value) pp.iconBorder = "default"; UpdateAll() end,
 						},
 						MasqueBorder = {
 							type = "toggle", order = 30, name = "Masque", width = "half",
-							desc = "Use the Masque addon to show icon borders.",
+							desc = "Use the Masque addon to show icon borders. " ..
+							"Masque borders support custom buff and debuff border colors but some masque skins may not look good. " ..
+							"You can suppress the custom border colors by making them transparent. " ..
+							"When Debuff Type Override is enabled, debuff type colors will still be shown when appropriate.",
 							hidden = function(info) return not MOD.MSQ end, -- only show if Masque is loaded
 							get = function(info) return pp.iconBorder == "masque" end,
 							set = function(info, value) pp.iconBorder = "masque"; UpdateAll() end,
@@ -551,6 +556,7 @@ MOD.OptionsTable = {
 						BuffBorderColor = {
 							type = "color", order = 110, name = "Buff Borders", hasAlpha = true,
 							desc = "Set color for icon borders.",
+							disabled = function(info) return pp.iconBorder == "default" end,
 							get = function(info)
 								local t = pp.iconBuffColor
 								return t.r, t.g, t.b, t.a
@@ -564,6 +570,7 @@ MOD.OptionsTable = {
 						DebuffBorderColor = {
 							type = "color", order = 120, name = "Debuff Borders", hasAlpha = true,
 							desc = "Set color for icon borders.",
+							disabled = function(info) return pp.iconBorder == "default" end,
 							get = function(info)
 								local t = pp.iconDebuffColor
 								return t.r, t.g, t.b, t.a

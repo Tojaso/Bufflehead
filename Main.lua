@@ -66,6 +66,7 @@ local MSQ_ButtonData = nil -- template for masque button data structure
 local weaponDurations = {} -- best guess for weapon buff durations, indexed by enchant id
 local buffTooltip = {} -- temporary table for getting weapon enchant names
 local previewMode = false -- toggle for preview mode extra icons
+local transparent = { r = 0, g = 0, b = 0, a = 0 } -- transparent color
 local pg, pp -- global and character-specific profiles
 
 local UnitAura = UnitAura
@@ -806,8 +807,8 @@ function MOD:Button_OnAttributeChanged(k, v)
 	local show, hide = false, false
 	local name, icon, count, btype, duration, expire
 	local enchant, remaining, id, offEnchant, offRemaining, offCount, offId
+	local borderColor = (pp.iconBorder == "default") and transparent or pp.iconBuffColor
 	local barColor = pp.barBuffColor
-	local borderColor = pp.iconBuffColor
 	local barBorderColor = pp.barBorderBuffColor
 
 	if k == "index" then -- update a buff or debuff
@@ -815,8 +816,8 @@ function MOD:Button_OnAttributeChanged(k, v)
 		if name then
 			show = true
 			if filter == FILTER_DEBUFFS then
+				borderColor = (pp.iconBorder == "default") and transparent or pp.iconDebuffColor
 				barColor = pp.barDebuffColor
-				borderColor = pp.iconDebuffColor
 				barBorderColor = pp.barBorderDebuffColor
 				btype = btype or "none"
 				local c = _G.DebuffTypeColor[btype]
@@ -830,9 +831,9 @@ function MOD:Button_OnAttributeChanged(k, v)
 			hide = true
 		end
 	elseif k == "target-slot" and ((v == 16) or (v == 17)) then -- player mainhand or offhand weapon enchant
-		enchanted, remaining, count, id, offEnchanted, offRemaining, offCount, offId = GetWeaponEnchantInfo()
-		if v == 17 then enchanted = offEnchanted; remaining = offRemaining; count = offCount; id = offId end
-		if enchanted then
+		enchant, remaining, count, id, offEnchant, offRemaining, offCount, offId = GetWeaponEnchantInfo()
+		if v == 17 then enchant = offEnchant; remaining = offRemaining; count = offCount; id = offId end
+		if enchant then
 			remaining = remaining / 1000 -- blizz function returned milliseconds
 			expire = remaining + GetTime()
 			expire = 0.01 * math.floor(expire * 100 + 0.5) -- round to nearest 1/100
@@ -1071,13 +1072,13 @@ local function UpdatePreviews()
 					local icon = PRESET_BUFF_ICON
 					local btype = "none"
 					local count = (i % 5) + 1
-					local borderColor = pp.iconBuffColor
+					local borderColor = (pp.iconBorder == "default") and transparent or pp.iconBuffColor
 					local barColor = pp.barBuffColor
 					local barBorderColor = pp.barBorderBuffColor
 
 					if filter == FILTER_DEBUFFS then
 						icon = PRESET_DEBUFF_ICON
-						iconColor = pp.iconDebuffColor
+						borderColor = (pp.iconBorder == "default") and transparent or pp.iconDebuffColor
 						barColor = pp.barDebuffColor
 						barBorderColor = pp.barBorderDebuffColor
 						local btype = debuffTypes[count]
