@@ -945,14 +945,21 @@ function MOD.UpdateHeader(header)
 			local filter = header:GetAttribute("filter")
 			header:ClearAllPoints() -- set position any time called
 			if group.enabled then
+				local dirX = pp.directionX
+				local dirY = pp.directionY
 				local s = BUFFS_TEMPLATE
 				local i = tonumber(pp.iconSize) -- use different template for each size, constrained by available templates
 				if i and (i >= 12) and (i <= 64) then i = 2 * math.floor(i / 2); s = s .. tostring(i) end
+
 				if filter == FILTER_BUFFS then
 					red = 0; green = 1
 					header:SetAttribute("consolidateTo", 0) -- no consolidation
 					if pp.weaponEnchants then header:SetAttribute("weaponTemplate", s) end
+				elseif filter == FILTER_DEBUFFS then
+					if pp.mirrorX then dirX = -dirX end
+					if pp.mirrorY then dirY = -dirY end
 				end
+
 				header:SetAttribute("template", s)
 				header:SetAttribute("sortMethod", pp.sortMethod)
 				header:SetAttribute("sortDirection", pp.sortDirection)
@@ -961,10 +968,10 @@ function MOD.UpdateHeader(header)
 				header:SetAttribute("maxWraps", pp.maxWraps)
 
 				local pt = "TOPRIGHT"
-				if pp.directionX > 0 then
-					if pp.directionY > 0 then pt = "BOTTOMLEFT" else pt = "TOPLEFT" end
+				if dirX > 0 then
+					if dirY > 0 then pt = "BOTTOMLEFT" else pt = "TOPLEFT" end
 				else
-					if pp.directionY > 0 then pt = "BOTTOMRIGHT" end
+					if dirY > 0 then pt = "BOTTOMRIGHT" end
 				end
 				header:SetAttribute("point", pt) -- relative point on icons based on grow and wrap directions
 				header.anchorPoint = pt
@@ -973,14 +980,16 @@ function MOD.UpdateHeader(header)
 				if (pp.maxWraps * pp.wrapAfter) > 40 then wraps = math.ceil(40 / pp.wrapAfter) end
 				local dx, dy, mw, mh, wx, wy = 0, 0, 0, 0, 0, 0
 				if pp.orientation == 1 then -- grow horizontally
-					dx = pp.directionX * (pp.spaceX + pp.iconSize)
-					wy = pp.directionY * (pp.spaceY + pp.iconSize)
-					mw = (PS(pp.spaceX + pp.iconSize) * (pp.wrapAfter - 1)) + PS(pp.iconSize)
+					dx = dirX * (pp.spaceX + pp.iconSize)
+					wy = dirY * (pp.spaceY + pp.iconSize)
+					-- mw = (PS(pp.spaceX + pp.iconSize) * (pp.wrapAfter - 1)) + PS(pp.iconSize)
+					mw = PS(pp.spaceX + pp.iconSize) * pp.wrapAfter
 					mh = PS(pp.spaceY + pp.iconSize) * wraps
 				else -- otherwise grow vertically
-					dy = pp.directionY * (pp.spaceY + pp.iconSize)
-					wx = pp.directionX * (pp.spaceX + pp.iconSize)
-					mw = (PS(pp.spaceX + pp.iconSize) * (wraps - 1)) + PS(pp.iconSize)
+					dy = dirY * (pp.spaceY + pp.iconSize)
+					wx = dirX * (pp.spaceX + pp.iconSize)
+					-- mw = (PS(pp.spaceX + pp.iconSize) * (wraps - 1)) + PS(pp.iconSize)
+					mw = PS(pp.spaceX + pp.iconSize) * wraps
 					mh = PS(pp.spaceY + pp.iconSize) * pp.wrapAfter
 				end
 				header:SetAttribute("xOffset", PS(dx))

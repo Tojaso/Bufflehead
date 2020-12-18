@@ -167,61 +167,6 @@ function MOD.UseTemplate()
 						bp.offsetX = -DEFAULT_SPACING
 						bp.offsetY = 0
 					end
-				elseif templateType == "bars" then -- apply optional settings for bars
-					if template.label == "right" then
-						lp.point = "RIGHT"
-						lp.relativePoint = "RIGHT"
-						lp.offsetX = -DEFAULT_SPACING
-					elseif template.label == "left" then
-						local lp = pp.labelPosition
-						lp.point = "LEFT"
-						lp.relativePoint = "LEFT"
-						lp.offsetX = DEFAULT_SPACING
-					elseif template.label == "none" then
-						bp.showLabel = false
-					end
-
-					if template.time == "right" then
-						tp.point = "RIGHT"
-						tp.relativePoint = "RIGHT"
-						tp.offsetX = -DEFAULT_SPACING
-					elseif template.time == "left" then
-						tp.point = "LEFT"
-						tp.relativePoint = "LEFT"
-						tp.offsetX = DEFAULT_SPACING
-					elseif template.time == "top" then
-						tp.point = "TOP"
-						tp.relativePoint = "TOP"
-						tp.offsetY = -DEFAULT_SPACING
-					elseif template.time == "bottom" then
-						tp.point = "BOTTOM"
-						tp.relativePoint = "BOTTOM"
-						tp.offsetX = DEFAULT_SPACING
-					elseif template.time == "none" then
-						bp.showTime = false
-					end
-
-					if template.icon == "right" then
-						bp.point = "RIGHT"
-						bp.relativePoint = "LEFT"
-						bp.offsetX = -DEFAULT_SPACING
-						pp.barDirection = false
-					elseif template.icon == "left" then
-						bp.point = "LEFT"
-						bp.relativePoint = "RIGHT"
-						bp.offsetX = DEFAULT_SPACING
-						pp.barDirection = true
-					elseif template.icon == "top" then
-						bp.point = "TOP"
-						bp.relativePoint = "BOTTOM"
-						bp.offsetY = -DEFAULT_SPACING
-						pp.barDirection = false
-					elseif template.icon == "bottom" then
-						bp.point = "BOTTOM"
-						bp.relativePoint = "TOP"
-						bp.offsetY = DEFAULT_SPACING
-						pp.barDirection = true
-					end
 				end
 				UpdateAll()
 				return
@@ -427,13 +372,13 @@ MOD.OptionsTable = {
 							set = function(info, value) pp.iconSize = value; UpdateAll() end,
 						},
 						SpacingX = {
-							type = "range", order = 20, name = "Horizontal Spacing", min = 0, max = 100, step = 1,
+							type = "range", order = 20, name = "Horizontal Spacing", min = 0, max = 500, step = 1,
 							desc = "Adjust horizontal spacing between icons.",
 							get = function(info) return pp.spaceX end,
 							set = function(info, value) pp.spaceX = value; UpdateAll() end,
 						},
 						SpacingY = {
-							type = "range", order = 30, name = "Vertical Spacing", min = 0, max = 100, step = 1,
+							type = "range", order = 30, name = "Vertical Spacing", min = 0, max = 500, step = 1,
 							desc = "Adjust vertical spacing between icons.",
 							get = function(info) return pp.spaceY end,
 							set = function(info, value) pp.spaceY = value; UpdateAll() end,
@@ -475,6 +420,18 @@ MOD.OptionsTable = {
 							"There can be no more than 40 total icons.",
 							get = function(info) return pp.maxWraps end,
 							set = function(info, value) pp.maxWraps = value; UpdateAll() end,
+						},
+						MirrorX = {
+							type = "toggle", order = 130, name = "Mirror X", width = "half",
+							desc = "If checked, horizontal direction for debuffs is opposite of buffs.",
+							get = function(info) return pp.mirrorX end,
+							set = function(info, value) pp.mirrorX = value; UpdateAll() end,
+						},
+						MirrorY = {
+							type = "toggle", order = 140, name = "Mirror Y", width = "half",
+							desc = "If checked, vertical direction for debuffs is opposite of buffs.",
+							get = function(info) return pp.mirrorY end,
+							set = function(info, value) pp.mirrorY = value; UpdateAll() end,
 						},
 					},
 				},

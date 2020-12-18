@@ -28,6 +28,8 @@ MOD.DefaultProfile = {
 		orientation = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down
+		mirrorX = false, -- true = directionX for debuffs is opposite of buffs
+		mirrorY = false, -- true = directionY for debuffs is opposite of buffs
 		wrapAfter = 20,
 		maxWraps = 2,
 		spaceX = 6, -- horizontal distance between icons (allow space for elements positioned between icons)
@@ -84,7 +86,7 @@ MOD.DefaultProfile = {
     barBuffColor = { r = 0.3, g = 0.6, b = 0.3, a = 1 },
 		barDebuffColor = { r = 0.6, g = 0.3, b = 0.3, a = 1 },
 		barBackgroundColor = { r = 0, g = 0, b = 0, a = 1 },
-		barUseForeground = true,
+		barUseForeground = false,
 		barDebuffColoring = true, -- use debuff color for bar if applicable
 		barBorder = "one", -- "none", "one", "two", "media"
 		barBorderBuffColor = { r = 1, g = 1, b = 1, a = 1 },
