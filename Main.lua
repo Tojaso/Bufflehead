@@ -989,10 +989,10 @@ function MOD.UpdateHeader(header)
 					local offsetX = bpos.offsetX
 					local offsetY = bpos.offsetY
 
-					if (bpt == "RIGHT") and ((pt == "TOPRIGHT") or (pt == "BOTTOMRIGHT")) then dx = pp.barWidth + offsetX end
-					if (bpt == "LEFT") and ((pt == "TOPLEFT") or (pt == "BOTTOMLEFT")) then dx = pp.barWidth - offsetX end
-					if (bpt == "TOP") and ((pt == "TOPRIGHT") or (pt == "TOPLEFT")) then dy = pp.barHeight + offsetY end
-					if (bpt == "BOTTOM") and ((pt == "BOTTOMRIGHT") or (pt == "BOTTOMLEFT")) then dy = pp.barHeight - offsetY end
+					if (string.find(bpt, "RIGHT") and string.find(pt, "RIGHT")) then dx = pp.barWidth + offsetX end
+					if (string.find(bpt, "LEFT") and string.find(pt, "LEFT")) then dx = pp.barWidth - offsetX end
+					if (string.find(bpt, "TOP") and string.find(pt, "TOP")) then dy = pp.barHeight + offsetY end
+					if (string.find(bpt, "BOTTOM") and string.find(pt, "BOTTOM")) then dy = pp.barHeight - offsetY end
 
 					backdrop._deltaX = dx
 					backdrop._deltaY = dy
@@ -1104,7 +1104,7 @@ local function UpdatePreviews()
 					local name = "#" .. i
 					local icon = PRESET_BUFF_ICON
 					local btype = "none"
-					local count = (i % 5) + 1
+					local count = ((i - 1) % 5) + 1
 					local borderColor = (pp.iconBorder == "default") and transparent or pp.iconBuffColor
 					local barColor = pp.barBuffColor
 					local barBorderColor = pp.barBorderBuffColor
