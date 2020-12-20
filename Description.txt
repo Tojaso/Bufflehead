@@ -1,0 +1,49 @@
+Introduction
+
+Bufflehead offers improved player buffs and debuffs with many layout and appearance options. Bufflehead supports right-click cancel in combat.
+
+Scope
+
+Bufflehead is designed to be used either standalone or as a companion addon with a full-featured buff/debuff addon like Raven.
+As a standalone addon, Bufflehead provides a complete solution for better looking player buffs and debuffs.
+As a companion to Raven, Bufflehead provides right-click cancellable player buffs while Raven covers the player's debuffs plus
+buffs and debuffs for the target and other units.
+
+Bufflehead uses Blizzard's secure framework, which limits filtering, sorting and layout options. Bufflehead does support both
+icon-oriented and bar-oriented layouts and appearance customization with fonts, textures, colors and borders.
+
+Compatibility
+
+Bufflehead works with Masque and OmniCC, when they are installed and enabled in the options panel. Bufflehead does not interfere with
+other buff/debuff addons. For example, it runs fine alongside Blizzard's default buffs and debuffs and ElvUI's player buffs and debuffs.
+
+Installation
+
+Install Bufflehead by copying its files into your WoW addons folder (or use your favorite addons update utility).
+
+Project page: http://wow.curseforge.com/addons/bufflehead
+
+You can bring up the options panel by typing in "/bufflehead" or "/buffle" and by clicking on Bufflehead's optional minimap button
+or data broker icon.
+
+Options Panel
+
+Bufflehead's options panel has five tabs. The Setup tab covers basics, with templates for general layout and appearance plus position settings.
+The next three tabs address details related to the major elements of buff and debuff appearance: Icons, Texts and Timer Bars.
+It is best to focus on icons first since they are directly controlled by Blizzard's secure framework. Texts and timer bars are
+configured relative to icons. The final tab is the standard Profiles tab included in many addons and it can be used to have different settings
+for each character or, perhaps, to switch between them on the same character.
+
+Getting Started
+
+The quickest way to get started is to use the templates on the Setup tab.
+
+Recommended steps:
+
+1. Enable previews
+2. Select a template that most closely matches desired layout
+3. Enable bounding boxes and drag into position, refining with the numbers to align, if necessary.
+4. On Icons tab, set icon size and adjust spacing.
+5. On Timer Bars tab, if using bars, set bar size and spacing from icon and appearance options.
+6. On Texts tab, adjust offsets and appearance options for texts you are using. If using bars you can position relative to them instead of the icon.
+7. Use /reload to make sure your settings are saved in the profile. Backup your WTF folder any time you make significant changes to your UI.

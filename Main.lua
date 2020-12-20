@@ -290,6 +290,8 @@ function MOD:PLAYER_ENTERING_WORLD()
 				backdrop:SetFrameStrata("LOW") -- show it behind Bufflehead's buttons
 				backdrop:SetMovable(true)
 				backdrop.headerName = name
+				backdrop._deltaX = 0 -- delta for backdrop position when bars extend outside bounding box
+				backdrop._deltaY = 0
 				header.anchorBackdrop = backdrop
 				MOD.UpdateHeader(header)
 			end
@@ -868,20 +870,22 @@ local function UpdatePosition(header)
 	header:ClearAllPoints()
 	PSetPoint(header, pt, UIParent, "BOTTOMLEFT", x, y)
 	backdrop:ClearAllPoints()
-	PSetPoint(backdrop, pt, UIParent, "BOTTOMLEFT", x, y)
+	PSetPoint(backdrop, pt, UIParent, "BOTTOMLEFT", x + backdrop._deltaX, y + backdrop._deltaY)
 end
 
 -- While moving an anchor, keep the header moving in sync
 local function UpdateBackdrop(backdrop)
 	if backdrop._moving then
-		local x = PS(backdrop:GetLeft())
-		local y = PS(backdrop:GetBottom())
-		if backdrop._lastX ~= x or backdrop._lastY ~= y then -- check if actually moving
+		local x, y = GetCursorPosition()
+		local dx = (backdrop._lastX - x)
+		local dy = (backdrop._lastY - y)
+		if dx < 0 then dx = -dx end
+		if dy < 0 then dy = -dy end
+		if (dx >= 1) or (dy >= 1) then -- see if moved at least one pixel distance in either direction
 			local header = MOD.headers[backdrop.headerName]
 			local pt = header.anchorPoint -- relative point for positioning
 			local name = backdrop.headerName
 			local group = pp.groups[name] -- use settings specific to this header
-			local dx, dy
 			if pt == "TOPLEFT" then
 				dx = backdrop:GetLeft()
 				dy = backdrop:GetTop()
@@ -891,16 +895,15 @@ local function UpdateBackdrop(backdrop)
 			elseif pt == "BOTTOMRIGHT" then
 				dx = backdrop:GetRight()
 				dy = backdrop:GetBottom()
-			elseif pt == "BOTTOMLEFT" then
+			else -- must be BOTTOMLEFT
 				dx = backdrop:GetLeft()
 				dy = backdrop:GetBottom()
-			else
-				MOD.Debug("Bufflehead: unknown anchor point", name, pt)
 			end
-			group.anchorX = dx / displayWidth
-			group.anchorY = dy / displayHeight
+			group.anchorX = (dx - backdrop._deltaX) / displayWidth
+			group.anchorY = (dy - backdrop._deltaY) / displayHeight
 			backdrop._lastX = x
 			backdrop._lastY = y
+			-- MOD.Debug("moveto", backdrop.headerName, group.anchorX, group.anchorY, x, y, backdrop._deltaX, backdrop._deltaY)
 			UpdatePosition(header)
 			MOD.UpdateOptions() -- also update sliders in options panel, if it is open
 		end
@@ -912,12 +915,13 @@ local function Backdrop_OnMouseDown(backdrop)
 	if InCombatLockdown() then return end -- don't move anchors in combat!
 	if not backdrop.moving then
 		backdrop._moving = true
-		backdrop._lastX = PS(backdrop:GetLeft())
-		backdrop._lastY = PS(backdrop:GetBottom())
+		local x, y = GetCursorPosition()
+		backdrop._lastX = x
+		backdrop._lastY = y
 		backdrop:SetFrameStrata("HIGH")
 		backdrop:StartMoving()
 		backdrop:SetScript("OnUpdate", UpdateBackdrop) -- start updating for anchor movement
-		-- MOD.Debug("start moving", backdrop.headerName, backdrop._lastX, backdrop._lastY)
+		-- MOD.Debug("start moving", backdrop.headerName, x, y)
 	end
 end
 
@@ -943,6 +947,8 @@ function MOD.UpdateHeader(header)
 		if group then
 			local red, green = 1, 0 -- anchor color
 			local filter = header:GetAttribute("filter")
+			local backdrop = header.anchorBackdrop
+
 			header:ClearAllPoints() -- set position any time called
 			if group.enabled then
 				local dirX = pp.directionX
@@ -975,6 +981,25 @@ function MOD.UpdateHeader(header)
 				end
 				header:SetAttribute("point", pt) -- relative point on icons based on grow and wrap directions
 				header.anchorPoint = pt
+
+				if pp.showBar then -- adjust backdrop position when bars are outside bounding box
+					local dx, dy = 0, 0 -- deltas are how far outside the bars are
+					local bpos = pp.barPosition
+					local bpt =  bpos.relativePoint -- where bars attach to icon
+					local offsetX = bpos.offsetX
+					local offsetY = bpos.offsetY
+
+					if (bpt == "RIGHT") and ((pt == "TOPRIGHT") or (pt == "BOTTOMRIGHT")) then dx = pp.barWidth + offsetX end
+					if (bpt == "LEFT") and ((pt == "TOPLEFT") or (pt == "BOTTOMLEFT")) then dx = pp.barWidth - offsetX end
+					if (bpt == "TOP") and ((pt == "TOPRIGHT") or (pt == "TOPLEFT")) then dy = pp.barHeight + offsetY end
+					if (bpt == "BOTTOM") and ((pt == "BOTTOMRIGHT") or (pt == "BOTTOMLEFT")) then dy = pp.barHeight - offsetY end
+
+					backdrop._deltaX = dx
+					backdrop._deltaY = dy
+				else
+					backdrop._deltaX = 0 -- no adjustment when bar is not shown
+					backdrop._deltaY = 0
+				end
 
 				local wraps = pp.maxWraps -- limit anchor to include just enough rows and columns for 40 buttons
 				if (pp.maxWraps * pp.wrapAfter) > 40 then wraps = math.ceil(40 / pp.wrapAfter) end
@@ -1013,7 +1038,6 @@ function MOD.UpdateHeader(header)
 					button = select(k, header:GetChildren())
 				end
 
-				local backdrop = header.anchorBackdrop
 				PSetSize(backdrop, mw, mh)
 				backdrop:SetBackdrop(twoPixelBackdrop)
 				backdrop:SetBackdropColor(0, 0, 0, 0) -- transparent background
@@ -1066,7 +1090,7 @@ local function UpdatePreviews()
 
 				if not real or not real:IsShown() then -- check if real button is currently shown
 					button:ClearAllPoints()
-					PSetPoint(button, pt, header.anchorBackdrop, pt, (dx * column) + (wx * row), (dy * column) + (wy * row))
+					PSetPoint(button, pt, header, pt, (dx * column) + (wx * row), (dy * column) + (wy * row))
 					button:SetSize(pp.iconSize, pp.iconSize)
 					-- if IsAltKeyDown() then MOD.Debug("Preview: x/y", math.floor((dx * column) + (wx * row)), math.floor((dy * column) + (wy * row)), i, column, row,
 					--	math.floor(dx), math.floor(dy), math.floor(wx), math.floor(wy)) end
