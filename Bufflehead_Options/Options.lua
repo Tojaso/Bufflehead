@@ -1007,7 +1007,7 @@ MOD.OptionsTable = {
 			},
 		},
 		TimerBarGroup = {
-			type = "group", order =50, name = "Bars",
+			type = "group", order =50, name = "Timer Bars",
 			args = {
 				EnableGroup = {
 					type = "toggle", order = 10, name = "Enable",

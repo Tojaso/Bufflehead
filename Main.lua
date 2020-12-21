@@ -1,11 +1,12 @@
--- Bufflehead is an addon to skin player buffs, including weapon enchants, and debuffs.
+-- Bufflehead is an addon to skin player buffs and debuffs.
 --
 -- Features:
 -- 1. Hide/show Blizzard buff frame (buffs, debuffs, weapon enchants)
 -- 2. Options panel to configure display of player buffs and debuffs
--- 3. Option to use Masque to skin borders (note: no ElvUI option since doesn't make sense to use with ElvUI or Tukui)
--- 4. Options for direction, wrap, size, etc. as provided by SecureAuraHeaderTemplate
--- 5. Event-driven handler to make changes only when player buffs and debuffs change
+-- 3. Option to use Masque to skin borders
+-- 4. Options for layout although limited by SecureAuraHeaderTemplate
+-- 5. Efficient event-driven handler
+-- 6. Load-on-demand options panel to minimize memory use
 --
 -- Author: Tomber/Tojaso (curseforge, github, wowinterface)
 -- Copyright 2020, All Rights Reserved
