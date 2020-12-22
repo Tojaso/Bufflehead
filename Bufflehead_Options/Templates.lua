@@ -133,7 +133,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
     showBar = true,
     barPosition = { point = "LEFT", relativePoint = "RIGHT", anchor = "icon", offsetX = DEFAULT_SPACING, offsetY = 0 },
 		barWidth = 200, --  0 = same as icon width
-		barHeight = 24, --  0 = same as icon height
+		barHeight = 0, --  0 = same as icon height
 		barOrientation = true, -- true = "HORIZONTAL", false = "VERTICAL"
 		barDirection = true, -- true = "STANDARD", false = "REVERSE"
     groups = {
@@ -177,7 +177,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
     showBar = true,
     barPosition = { point = "RIGHT", relativePoint = "LEFT", anchor = "icon", offsetX = -DEFAULT_SPACING, offsetY = 0 },
 		barWidth = 200, --  0 = same as icon width
-		barHeight = 24, --  0 = same as icon height
+		barHeight = 0, --  0 = same as icon height
 		barOrientation = true, -- true = "HORIZONTAL", false = "VERTICAL"
 		barDirection = false, -- true = "STANDARD", false = "REVERSE"
     groups = {
@@ -218,7 +218,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
 		showClock = false, -- show clock overlay to indicate remaining time
     showBar = true,
     barPosition = { point = "TOP", relativePoint = "BOTTOM", anchor = "icon", offsetX = 0, offsetY = -DEFAULT_SPACING },
-		barWidth = 24, --  0 = same as icon width
+		barWidth = 0, --  0 = same as icon width
 		barHeight = 120, --  0 = same as icon height
 		barOrientation = false, -- true = "HORIZONTAL", false = "VERTICAL"
 		barDirection = false, -- true = "STANDARD", false = "REVERSE"
@@ -260,7 +260,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
 		showClock = false, -- show clock overlay to indicate remaining time
     showBar = true,
     barPosition = { point = "BOTTOM", relativePoint = "TOP", anchor = "icon", offsetX = 0, offsetY = DEFAULT_SPACING },
-		barWidth = 24, --  0 = same as icon width
+		barWidth = 0, --  0 = same as icon width
 		barHeight = 120, --  0 = same as icon height
 		barOrientation = false, -- true = "HORIZONTAL", false = "VERTICAL"
 		barDirection = true, -- true = "STANDARD", false = "REVERSE"

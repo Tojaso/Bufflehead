@@ -25,7 +25,8 @@ MOD.LibLDB = nil -- LibDataBroker support
 MOD.ldb = nil -- set to addon's data broker object
 MOD.ldbi = nil -- set for addon's minimap icon
 MOD.uiOpen = false -- true when options panel is open
-MOD.showAnchors = false -- toggle to show anchors
+MOD.showAnchors = false -- enable to show anchors
+MOD.showPreviews = false -- enable to show previews
 
 local FILTER_BUFFS = "HELPFUL"
 local FILTER_DEBUFFS = "HARMFUL"
@@ -60,13 +61,15 @@ local debuffTypes = { "none", "Disease", "Poison", "Curse", "Magic" }
 
 local addonInitialized = false -- set when the addon is initialized
 local addonEnabled = false -- set when the addon is enabled
+local optionsLoaded = false -- set when options panel is loaded
+local optionsFailed = false -- set if loading options panel fails
+local enteredWorld = false -- set when player enter world event handled
 local blizzHidden = false -- set when blizzard buffs and debuffs are hidden
 local updateAll = false -- set in combat to defer running event handler
 local MSQ_Group = nil -- create a single group for masque
 local MSQ_ButtonData = nil -- template for masque button data structure
 local weaponDurations = {} -- best guess for weapon buff durations, indexed by enchant id
 local buffTooltip = {} -- temporary table for getting weapon enchant names
-local previewMode = false -- toggle for preview mode extra icons
 local transparent = { r = 0, g = 0, b = 0, a = 0 } -- transparent color
 local pg, pp -- global and character-specific profiles
 
@@ -128,7 +131,6 @@ function MOD.OptionsPanel()
 end
 
 -- Initialize tooltip to be used for determining weapon buffs
--- This code is based on the Pitbull implementation
 local function InitializeBuffTooltip()
 	buffTooltip = CreateFrame("GameTooltip", nil, UIParent)
 	buffTooltip:SetOwner(UIParent, "ANCHOR_NONE")
@@ -1066,7 +1068,7 @@ end
 -- Scan through all the buff locations and show/hide previews as needed
 local function UpdatePreviews()
 	local now = GetTime()
-	if not previewMode then MOD.frame:SetScript("OnUpdate", nil) end
+	if not MOD.showPreviews then MOD.frame:SetScript("OnUpdate", nil) end
 
 	for k, header in pairs(MOD.headers) do
 		local pt = header:GetAttribute("point") -- relative point on icons based on grow and wrap directions
@@ -1086,7 +1088,7 @@ local function UpdatePreviews()
 			local column = (i - 1) % columns -- which column the button is in, numbered from 0
 			local row = math.floor((i - 1) / columns) -- which row the button is in, numbered from 0
 
-			if previewMode and i <= num then
+			if MOD.showPreviews and i <= num then
 				local real = header:GetAttribute("child" .. i)
 
 				if not real or not real:IsShown() then -- check if real button is currently shown
@@ -1136,9 +1138,8 @@ local function UpdatePreviews()
 end
 
 -- Toggle preview mode and allocate preview buttons as needed
-function MOD.TogglePreviews()
-	previewMode = not previewMode -- toggle on/off preview mode
-	if previewMode then
+function MOD.CheckPreviews()
+	if MOD.showPreviews then
 		local num = pp.maxWraps * pp.wrapAfter -- number of icons needed for previewing
 		if num > 40 then num = 40 end -- respect the limit on player buffs/debuffs
 		for k, header in pairs(MOD.headers) do
