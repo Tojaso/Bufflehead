@@ -10,6 +10,7 @@ local PLAYER_BUFFS = "Player Buffs"
 local PLAYER_DEBUFFS = "Player Debuffs"
 local HEADER_PLAYER_BUFFS = HEADER_NAME .. "PlayerBuffs"
 local HEADER_PLAYER_DEBUFFS = HEADER_NAME .. "PlayerDebuffs"
+local DEFAULT_FONT = "Arial Narrow"
 
 -- Default profile description used to initialize the SavedVariables persistent database
 MOD.DefaultProfile = {
@@ -43,7 +44,7 @@ MOD.DefaultProfile = {
 		timeFormat = 24, -- use simple time format
 		timeSpaces = false, -- if true include spaces in time text
 		timeCase = false, -- if true use upper case in time text
-		timeFont = "Arial Narrow", -- default font
+		timeFont = DEFAULT_FONT, -- default font
 		timeFontPath = 0, -- actual font path
 		timeFontSize = 14,
 		timeFontFlags = { outline = true, thick = false, mono = false },
@@ -52,7 +53,7 @@ MOD.DefaultProfile = {
 		expireColor = { r = 1, g = 0, b = 0, a = 1 },
 		showCount = true,
 		countPosition = { point = "CENTER", relativePoint = "CENTER", anchor = "icon", offsetX = 0, offsetY = 0 },
-		countFont = "Arial Narrow", -- default font
+		countFont = DEFAULT_FONT, -- default font
 		countFontPath = 0, -- actual font path
 		countFontSize = 14,
 		countFontFlags = { outline = true, thick = false, mono = false },
@@ -63,7 +64,7 @@ MOD.DefaultProfile = {
 		labelMaxWidth = 40, -- set if want to truncate or wrap
 		labelWrap = false,
 		labelWordWrap = false,
-		labelFont = "Arial Narrow", -- default font
+		labelFont = DEFAULT_FONT, -- default font
 		labelFontPath = 0, -- actual font path
 		labelFontSize = 14,
 		labelFontFlags = { outline = true, thick = false, mono = false },

@@ -367,7 +367,7 @@ MOD.OptionsTable = {
 					type = "group", order = 10, name = "Size and Spacing", inline = true,
 					args = {
 						IconSize = {
-							type = "range", order = 10, name = "Icon Size", min = 12, max = 64, step = 2,
+							type = "range", order = 10, name = "Icon Size", min = 10, max = 64, step = 2,
 							desc = "Set icon's width and height.",
 							get = function(info) return pp.iconSize end,
 							set = function(info, value) pp.iconSize = value; UpdateAll() end,

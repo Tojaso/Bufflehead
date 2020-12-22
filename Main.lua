@@ -958,7 +958,7 @@ function MOD.UpdateHeader(header)
 				local dirY = pp.directionY
 				local s = BUFFS_TEMPLATE
 				local i = tonumber(pp.iconSize) -- use different template for each size, constrained by available templates
-				if i and (i >= 12) and (i <= 64) then i = 2 * math.floor(i / 2); s = s .. tostring(i) end
+				if i and (i >= 10) and (i <= 64) then i = 2 * math.floor(i / 2); s = s .. tostring(i) end
 
 				if filter == FILTER_BUFFS then
 					red = 0; green = 1

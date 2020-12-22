@@ -6,8 +6,8 @@ Scope
 
 Bufflehead is designed to be used either standalone or as a companion addon with a full-featured buff/debuff addon like Raven. As a standalone addon, Bufflehead provides a complete solution for better looking player buffs and debuffs. As a companion to Raven, Bufflehead provides right-click cancellable player buffs while Raven covers other buffs and debuffs plus cooldowns and other features.
 
-Bufflehead uses Blizzard's secure framework, which limits filtering, sorting and layout options. Bufflehead does support both
-icon-oriented and bar-oriented layouts and appearance customization with fonts, textures, colors and borders.
+Bufflehead uses Blizzard's secure framework, which limits filtering, sorting and layout options. Bufflehead does support both icon-oriented and bar-oriented layouts and appearance customization with fonts, textures, colors and borders.
+
 
 Compatibility
 
@@ -25,7 +25,7 @@ or data broker icon.
 
 Options Panel
 
-Bufflehead's options panel has five tabs. The Setup tab covers basics, with templates for general layout and appearance plus position settings. The next three tabs address details related to the major elements of buff and debuff appearance: Icons, Texts and Timer Bars. It is best to focus on icons first since they are directly controlled by Blizzard's secure framework. Texts and timer bars are configured relative to icons. The final tab is the standard Profiles tab included in many addons and it can be used to have different settings for each character or, perhaps, to switch between them on the same character.
+Bufflehead's options panel has five tabs. The Setup tab covers basics, with templates for general layout and appearance plus position settings. The next three tabs address details related to the major elements of buff and debuff appearance: Icons, Texts and Timer Bars. It is best to focus on icons first since they are directly controlled by Blizzard's secure framework. Texts and timer bars are configured relative to icons. The final tab is the standard Profiles tab included in many addons and it can be used to have different settings for each character or, perhaps, to switch between them on the same character. All settings include tooltips with more information.
 
 Getting Started
 
@@ -34,9 +34,9 @@ The quickest way to get started is to use the templates on the Setup tab.
 Recommended steps:
 
 1. On the Setup tab, in the Enable section, click Show Player Debuffs on or off, depending on whether you want Bufflehead to provide them.
-2. On the Setup tab, in the Positions section, click Show Bounding Boxes and Toggle Previews so they are both visible.
+2. On the Setup tab, in the Positions section, click Show Bounding Boxes and Show Previews so they are both visible.
 3. On the Setup tab, in the Templates section, select a template that most closely matches your desired layout.
-4. On the Setup tab, in the Positions section, click-and-drag the bounding boxes and use numeric entry s to align, if necessary.
+4. On the Setup tab, in the Positions section, click-and-drag the bounding boxes and use numeric entry to align, if necessary.
 5. On Icons tab, set icon size and adjust spacing.
 6. On Timer Bars tab, if using bars, set bar size and spacing options.
 7. On Texts tab, adjust offsets and appearance options for enabled texts. If using bars you can position relative to them instead of icons.

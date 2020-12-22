@@ -25,6 +25,7 @@
 </Button>
 
 <!-- What a messy way to support multiple icon sizes (thanks to ElvUI team for figuring this one out!) -->
+<Button name="BuffleheadAuraTemplate10" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="10" y="10"/> </Button>
 <Button name="BuffleheadAuraTemplate12" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="12" y="12"/> </Button>
 <Button name="BuffleheadAuraTemplate14" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="14" y="14"/> </Button>
 <Button name="BuffleheadAuraTemplate16" inherits="BuffleheadAuraTemplate" virtual="true"> <Size x="16" y="16"/> </Button>
