@@ -335,6 +335,13 @@ function MOD.InitializeLDB()
 	if MOD.ldbi then MOD.ldbi:Register("Bufflehead", MOD.ldb, pg.Minimap) end
 end
 
+-- Toggle visibility of previews
+function MOD.TogglePreviews()
+	MOD.showPreviews = not MOD.showPreviews
+	MOD.CheckPreviews()
+	MOD.UpdateAll()
+end
+
 -- Show or hide the blizzard buff frames, called during update so synched with other changes
 function MOD.CheckBlizzFrames()
 	if not MOD.isClassic and C_PetBattles.IsInBattle() then return end -- don't change visibility of any frame during pet battles
