@@ -5,6 +5,8 @@ ignore:
  - .pkgmeta
  - README.md
  - Description.txt
+ - Bufflehead_Classic.toc
+ - Bufflehead_Options/Bufflehead_Options_Classic.toc
 
 externals:
   Libs/Ace3/AceAddon-3.0: https://repos.wowace.com/wow/ace3/trunk/AceAddon-3.0
