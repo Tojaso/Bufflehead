@@ -2,7 +2,7 @@
 ## Title: Bufflehead
 ## Notes: Skins player buffs and debuffs
 ## Author: Tojaso/Tomber
-## Version: 9.0.2
+## Version: 1.0.1
 ## DefaultState: enabled
 ## OptionalDependencies: Masque
 ## SavedVariables: BuffleheadDB

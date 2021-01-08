@@ -2,7 +2,7 @@
 ## Title: Bufflehead Options
 ## Notes: Load-on-demand options for Bufflehead
 ## Author: Tojaso/Tomber
-## Version: 1.36
+## Version: 1.0.1
 ## Dependencies: Bufflehead
 ## LoadOnDemand: 1
 
