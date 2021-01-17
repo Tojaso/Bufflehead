@@ -225,6 +225,7 @@ end
 -- Only execute this when not in combat, defer to when leave combat if necessary
 function MOD.UpdateAll()
 	if not enteredWorld then return end
+	pg = MOD.db.global; pp = MOD.db.profile
 	if InCombatLockdown() then
 		updateAll = true
 	else
@@ -546,7 +547,7 @@ local function UpdateButtonTime(button)
 		local remaining = button._expire - now
 		local c = pp.timeColor
 		if remaining < 5 then c = pp.expireColor end -- set either regular or expiring color
-		button.timeText:SetTextColor(c.r, c.g, c.b, c.a)
+		if c then button.timeText:SetTextColor(c.r, c.g, c.b, c.a) end
 		if remaining > 0.05 then
 			if (button._update == 0) or ((now - button._update) > 0.05) then -- about 20/second
 				button._update = now
@@ -607,7 +608,7 @@ local function SkinCount(button, count)
 			pp.countFontPath = MOD.LSM:Fetch("font", pp.countFont)
 		end
 		local c = pp.countColor
-		ct:SetTextColor(c.r, c.g, c.b, c.a)
+		if c then ct:SetTextColor(c.r, c.g, c.b, c.a) end
 		ct:SetShadowColor(0, 0, 0, pp.countShadow and 1 or 0)
 		ct:SetText(count)
 		local pos = pp.countPosition
@@ -638,7 +639,7 @@ local function SkinLabel(button, name)
 		end
 
 		local c = pp.labelColor
-		lt:SetTextColor(c.r, c.g, c.b, c.a)
+		if c then lt:SetTextColor(c.r, c.g, c.b, c.a) end
 		lt:SetShadowColor(0, 0, 0, pp.labelShadow and 1 or 0)
 		lt:SetText(name)
 		if pp.labelMaxWidth > 0 then PSetWidth(lt, pp.labelMaxWidth) end

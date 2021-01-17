@@ -54,8 +54,9 @@ end
 
 -- Function called when profile is changed
 local function UpdateProfile()
-	MOD.UpdateOptions()
+	pg = MOD.db.global; pp = MOD.db.profile
 	MOD.UpdateAll()
+	MOD.UpdateOptions()
 end
 
 -- Register the options table and link to the Blizzard addons interface
