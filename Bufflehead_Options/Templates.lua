@@ -31,6 +31,7 @@ MOD.SupportedTemplates = { -- table of templates to be used in options to select
 MOD.BaseTemplates = { -- table of base template settings that are used to configuration selected template
   [1] = { -- icons in rows, includes settings for all time left options so can toggle them on/off
     iconSize = 40,
+    debuffIconSize = 40,
 		orientation = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down
@@ -73,6 +74,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
   },
   [2] = { -- icons in columns, includes settings for all time left options so can toggle them on/off
     iconSize = 40,
+    debuffIconSize = 40,
     orientation = 0, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down
@@ -113,6 +115,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
   },
   [3] = { -- horizontal bars, icon on left
     iconSize = 24,
+    debuffIconSize = 24,
 		orientation = 0, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down
@@ -157,6 +160,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
   },
   [4] = { -- horizontal bars, icon on right
     iconSize = 24,
+    debuffIconSize = 24,
 		orientation = 0, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down
@@ -201,6 +205,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
   },
   [5] = { -- vertical bars, icon on bottom
     iconSize = 24,
+    debuffIconSize = 24,
 		orientation = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down
@@ -243,6 +248,7 @@ MOD.BaseTemplates = { -- table of base template settings that are used to config
   },
   [6] = { -- vertical bars, icon on top
     iconSize = 24,
+    debuffIconSize = 24,
 		orientation = 1, -- horizontal = 1, otherwise vertical
 		directionX = -1, -- 1 = right, -1 = left
 		directionY = -1, -- 1 = up, -1 = down

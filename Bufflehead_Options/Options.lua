@@ -367,20 +367,26 @@ MOD.OptionsTable = {
 				DimensionGroup = {
 					type = "group", order = 10, name = "Size and Spacing", inline = true,
 					args = {
-						IconSize = {
-							type = "range", order = 10, name = "Icon Size", min = 10, max = 64, step = 2,
-							desc = "Set icon's width and height.",
+						BuffIconSize = {
+							type = "range", order = 10, name = "Buff Icon Size", min = 10, max = 64, step = 2,
+							desc = "Set width and height for buff icons.",
 							get = function(info) return pp.iconSize end,
 							set = function(info, value) pp.iconSize = value; UpdateAll() end,
 						},
+						DebuffIconSize = {
+							type = "range", order = 20, name = "Debuff Icon Size", min = 10, max = 64, step = 2,
+							desc = "Set width and height for debuff icons.",
+							get = function(info) if not pp.debuffIconSize then pp.debuffIconSize = pp.iconSize end return pp.debuffIconSize end,
+							set = function(info, value) pp.debuffIconSize = value; UpdateAll() end,
+						},
 						SpacingX = {
-							type = "range", order = 20, name = "Horizontal Spacing", min = 0, max = 500, step = 1,
+							type = "range", order = 30, name = "Horizontal Spacing", min = 0, max = 500, step = 1,
 							desc = "Adjust horizontal spacing between icons.",
 							get = function(info) return pp.spaceX end,
 							set = function(info, value) pp.spaceX = value; UpdateAll() end,
 						},
 						SpacingY = {
-							type = "range", order = 30, name = "Vertical Spacing", min = 0, max = 500, step = 1,
+							type = "range", order = 40, name = "Vertical Spacing", min = 0, max = 500, step = 1,
 							desc = "Adjust vertical spacing between icons.",
 							get = function(info) return pp.spaceY end,
 							set = function(info, value) pp.spaceY = value; UpdateAll() end,

@@ -22,6 +22,7 @@ MOD.DefaultProfile = {
 	},
 	profile = { -- settings specific to a profile
 		iconSize = 40,
+		debuffIconSize = 40,
 		iconBorder = "one", -- "default", "none", "one", "two", "raven", "masque"
 		iconBuffColor = { r = 1, g = 1, b = 1, a = 1 },
     iconDebuffColor = { r = 1, g = 1, b = 1, a = 1 },

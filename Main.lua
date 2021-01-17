@@ -438,6 +438,7 @@ local function SkinBorder(button, c)
 	local bik = button.iconBackdrop
 	local bih = button.iconHighlight
 	local tex = button.iconTexture
+	local iconSize = button.iconSize
 	local masqueLoaded = MOD.MSQ and MSQ_Group and button.buttonData
 	local opt = pp.iconBorder -- option for type of border
 	bib:ClearAllPoints()
@@ -446,7 +447,7 @@ local function SkinBorder(button, c)
 	if not c then c = { r = 0.5, g = 0.5, b = 0.5, a = 1 } end
 
 	if opt == "raven" then -- skin with raven's border
-		IconTextureTrim(tex, button, true, pp.iconSize * 0.91)
+		IconTextureTrim(tex, button, true, iconSize * 0.91)
 		bib:SetAllPoints(button)
 		bib:SetTexture(GetFileIDFromPath(RAVEN_ICON_BORDER))
 		bib:SetVertexColor(c.r, c.g, c.b, c.a or 1)
@@ -455,7 +456,7 @@ local function SkinBorder(button, c)
 		bih:Hide()
 		bik:Hide()
 	elseif (opt == "one") or (opt == "two") then -- skin with single or double pixel border
-		IconTextureTrim(tex, button, true, pp.iconSize - ((opt == "one") and PS(2) or PS(4)))
+		IconTextureTrim(tex, button, true, iconSize - ((opt == "one") and PS(2) or PS(4)))
 		bik:SetAllPoints(button)
 		bik:SetBackdrop((opt == "one") and onePixelBackdrop or twoPixelBackdrop)
 		bik:SetBackdropColor(0, 0, 0, 0)
@@ -464,7 +465,7 @@ local function SkinBorder(button, c)
 		bih:Hide()
 		bib:Hide()
 	elseif (opt == "masque") and masqueLoaded then -- use Masque only if available
-		IconTextureTrim(tex, button, false, pp.iconSize)
+		IconTextureTrim(tex, button, false, iconSize)
 		bib:SetAllPoints(button)
 		bib:SetVertexColor(c.r, c.g, c.b, c.a or 1)
 		bib:SetBlendMode("ADD")
@@ -479,17 +480,17 @@ local function SkinBorder(button, c)
 		MSQ_Group:AddButton(button, bdata)
 		bik:Hide()
 	elseif opt == "default" then -- show blizzard's standard border
-		IconTextureTrim(tex, button, false, pp.iconSize)
+		IconTextureTrim(tex, button, false, iconSize)
 		bib:SetTexture(GetFileIDFromPath(DEFAULT_ICON_BORDER))
 		bib:SetVertexColor(c.r, c.g, c.b, c.a or 1)
 		bib:SetBlendMode("ADD")
-		PSetSize(bib, pp.iconSize * 1.7, pp.iconSize * 1.7)
+		PSetSize(bib, iconSize * 1.7, iconSize * 1.7)
 		PSetPoint(bib, "CENTER", button, "CENTER")
 		bib:Show()
 		bih:Hide()
 		bik:Hide()
 	else -- no border (remove standard border)
-		IconTextureTrim(tex, button, true, pp.iconSize)
+		IconTextureTrim(tex, button, true, iconSize)
 		bib:Hide()
 		bih:Hide()
 		bik:Hide()
@@ -698,6 +699,7 @@ local function SkinBar(button, duration, expire, barColor, barBorderColor)
 	local bb = button.bar
 	local bbk = button.barBackdrop
 	local opt = pp.barBorder -- option for type of border
+	local iconSize = button.iconSize
 	local remaining = (expire or 0) - GetTime()
 	local showBorder = false -- set to true when showing border
 	local delta, width = 0, 0
@@ -711,8 +713,8 @@ local function SkinBar(button, duration, expire, barColor, barBorderColor)
 		bb._limited = pp.barUnlimited
 		local pos = pp.barPosition
 		PSetPoint(bb, pos.point, button, pos.relativePoint, pos.offsetX, pos.offsetY)
-		local bw = (pp.barWidth > 0) and pp.barWidth or pp.iconSize
-		local bh = (pp.barHeight > 0) and pp.barHeight or pp.iconSize
+		local bw = (pp.barWidth > 0) and pp.barWidth or iconSize
+		local bh = (pp.barHeight > 0) and pp.barHeight or iconSize
 
 		bb:SetOrientation(pp.barOrientation and "HORIZONTAL" or "VERTICAL")
 		bb:SetFillStyle(pp.barDirection and "STANDARD" or "REVERSE")
@@ -823,6 +825,10 @@ function MOD:Button_OnAttributeChanged(k, v)
 	local borderColor = (pp.iconBorder == "default") and transparent or pp.iconBuffColor
 	local barColor = pp.barBuffColor
 	local barBorderColor = pp.barBorderBuffColor
+	
+	local iconSize = pp.iconSize
+	if (filter == FILTER_DEBUFFS) and pp.debuffIconSize then iconSize = pp.debuffIconSize end
+	button.iconSize = iconSize
 
 	if k == "index" then -- update a buff or debuff
 		name, icon, count, btype, duration, expire = UnitAura(unit, v, filter)
@@ -964,8 +970,12 @@ function MOD.UpdateHeader(header)
 			if group.enabled then
 				local dirX = pp.directionX
 				local dirY = pp.directionY
+
+				local iconSize = pp.iconSize
+				if (filter == FILTER_DEBUFFS) and pp.debuffIconSize then iconSize = pp.debuffIconSize end
+
 				local s = BUFFS_TEMPLATE
-				local i = tonumber(pp.iconSize) -- use different template for each size, constrained by available templates
+				local i = tonumber(iconSize) -- use different template for each size, constrained by available templates
 				if i and (i >= 10) and (i <= 64) then i = 2 * math.floor(i / 2); s = s .. tostring(i) end
 
 				if filter == FILTER_BUFFS then
@@ -1016,17 +1026,17 @@ function MOD.UpdateHeader(header)
 				if (pp.maxWraps * pp.wrapAfter) > 40 then wraps = math.ceil(40 / pp.wrapAfter) end
 				local dx, dy, mw, mh, wx, wy = 0, 0, 0, 0, 0, 0
 				if pp.orientation == 1 then -- grow horizontally
-					dx = dirX * (pp.spaceX + pp.iconSize)
-					wy = dirY * (pp.spaceY + pp.iconSize)
-					-- mw = (PS(pp.spaceX + pp.iconSize) * (pp.wrapAfter - 1)) + PS(pp.iconSize)
-					mw = PS(pp.spaceX + pp.iconSize) * pp.wrapAfter
-					mh = PS(pp.spaceY + pp.iconSize) * wraps
+					dx = dirX * (pp.spaceX + iconSize)
+					wy = dirY * (pp.spaceY + iconSize)
+					-- mw = (PS(pp.spaceX + iconSize) * (pp.wrapAfter - 1)) + PS(iconSize)
+					mw = PS(pp.spaceX + iconSize) * pp.wrapAfter
+					mh = PS(pp.spaceY + iconSize) * wraps
 				else -- otherwise grow vertically
-					dy = dirY * (pp.spaceY + pp.iconSize)
-					wx = dirX * (pp.spaceX + pp.iconSize)
-					-- mw = (PS(pp.spaceX + pp.iconSize) * (wraps - 1)) + PS(pp.iconSize)
-					mw = PS(pp.spaceX + pp.iconSize) * wraps
-					mh = PS(pp.spaceY + pp.iconSize) * pp.wrapAfter
+					dy = dirY * (pp.spaceY + iconSize)
+					wx = dirX * (pp.spaceX + iconSize)
+					-- mw = (PS(pp.spaceX + iconSize) * (wraps - 1)) + PS(iconSize)
+					mw = PS(pp.spaceX + iconSize) * wraps
+					mh = PS(pp.spaceY + iconSize) * pp.wrapAfter
 				end
 				header:SetAttribute("xOffset", PS(dx))
 				header:SetAttribute("yOffset", PS(dy))
@@ -1043,7 +1053,8 @@ function MOD.UpdateHeader(header)
 				local k = 1
 				local button = select(1, header:GetChildren())
 				while button do
-					button:SetSize(pp.iconSize, pp.iconSize)
+					button:SetSize(iconSize, iconSize)
+					button.iconSize = iconSize
 					if k > (pp.wrapAfter * pp.maxWraps) and button:IsShown() then button:Hide() end
 					k = k + 1
 					button = select(k, header:GetChildren())
@@ -1090,6 +1101,9 @@ local function UpdatePreviews()
 		if num > 40 then num = 40 end -- respect the limit on player buffs/debuffs
 		local previewButtons = MOD.previews[k]
 
+		local iconSize = pp.iconSize
+		if (filter == FILTER_DEBUFFS) and pp.debuffIconSize then iconSize = pp.debuffIconSize end
+
 		for i = 1, #previewButtons do -- check if any icon displayed in each location and show/hide previews
 			local button = previewButtons[i]
 			local hide = true
@@ -1102,7 +1116,8 @@ local function UpdatePreviews()
 				if not real or not real:IsShown() then -- check if real button is currently shown
 					button:ClearAllPoints()
 					PSetPoint(button, pt, header, pt, (dx * column) + (wx * row), (dy * column) + (wy * row))
-					button:SetSize(pp.iconSize, pp.iconSize)
+					button:SetSize(iconSize, iconSize)
+					button.iconSize = iconSize
 					-- if IsAltKeyDown() then MOD.Debug("Preview: x/y", math.floor((dx * column) + (wx * row)), math.floor((dy * column) + (wy * row)), i, column, row,
 					--	math.floor(dx), math.floor(dy), math.floor(wx), math.floor(wy)) end
 
