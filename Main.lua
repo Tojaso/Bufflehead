@@ -16,7 +16,7 @@ local MOD = Bufflehead
 local MOD_Options = "Bufflehead_Options"
 local _
 
-MOD.isClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
+MOD.isClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC) or (WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC)
 MOD.frame = nil
 MOD.headers = {}
 MOD.previews = {}
@@ -825,7 +825,7 @@ function MOD:Button_OnAttributeChanged(k, v)
 	local borderColor = (pp.iconBorder == "default") and transparent or pp.iconBuffColor
 	local barColor = pp.barBuffColor
 	local barBorderColor = pp.barBorderBuffColor
-	
+
 	local iconSize = pp.iconSize
 	if (filter == FILTER_DEBUFFS) and pp.debuffIconSize then iconSize = pp.debuffIconSize end
 	button.iconSize = iconSize
