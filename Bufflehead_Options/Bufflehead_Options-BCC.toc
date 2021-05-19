@@ -1,0 +1,11 @@
+## Interface: 20501
+## Title: Bufflehead Options
+## Notes: Load-on-demand options for Bufflehead
+## Author: Tojaso/Tomber
+## Version: 1.0.3
+## Dependencies: Bufflehead
+## LoadOnDemand: 1
+
+embeds.xml
+Options.lua
+Templates.lua
