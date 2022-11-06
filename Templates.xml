@@ -10,7 +10,7 @@
   <Scripts>
     <OnLoad>
       Bufflehead:Button_OnLoad(self)
-      self:RegisterForClicks("RightButtonUp")
+      self:RegisterForClicks("RightButtonUp", "RightButtonDown")
     </OnLoad>
     <OnEnter>
       GameTooltip:SetOwner(self, "ANCHOR_BOTTOM", 0, 0)
